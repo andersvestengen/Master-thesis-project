@@ -1,0 +1,22 @@
+Coarse Master study plan:
+
+Goals:
+	- Train GAN's network.
+	- Implement network on FPGA (create hardware platform)
+	- testing methodology
+	- create a written report (thesis)
+
+
+Timeline:
+
+	August - September:
+		- Finish the GAN's architecture and training
+
+	September - Desember:
+		- Finish FPGA Neural Network platform
+
+	Desember - January:
+		- Create testing methodology, compare and test.
+
+	January - May:
+		- Write thesis report on the results of the experiment.
