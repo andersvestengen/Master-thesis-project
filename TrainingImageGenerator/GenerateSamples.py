@@ -1,46 +1,67 @@
 #Packages
+from email.mime import image
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-channels=[0, 1, 2]
+from timeit import default_timer as timer
+boolean_sample = [True, False]
+rnum = np.random.random_sample() 
+""" numpy random_sample alias"""
+
+BoxSize = 5
+"""The pixelbox size"""
+
+def getSample(sampleinput):
+    """
+    returns a random sample between the minimum Boxsize and the sampleInput (height/width)
+    """
+    return int( ( sampleinput - BoxSize ) * rnum)
+
+def CreateTrainingSample(imageMatrix):
+    """
+    Takes a matrix-converted image and returns a training sample of that image
+    
+    """
+    ImageHeight = imageMatrix.shape[0]
+    ImageWidth = imageMatrix.shape[1]
+    SampleH = getSample(ImageHeight)
+    SampleW = getSample(ImageWidth)
+    intSample = imageMatrix[SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize,:]  
+    mask = np.random.choice(boolean_sample, p=[0.8, 0.2], size=(intSample.shape[:-1]))
+    r = np.full((intSample.shape), 0)
+    intSample[mask,:] = r[mask,:] 
+    imageMatrix[SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize,:] = intSample
+    
+    return imageMatrix
+
+"""
+Dev notes:
+    - Algorithm to be simplified
+    - No more random walks etc.
+    - Algorithm will:
+        - sample a random 10x10 pixel box of the image
+        - remove a random subset of that sample
+        - implant the randomly constructed 'defect'
+
+"""
+
+
 # Get names of the images in the working folder. 
 workingdir = os.getcwd()
 sortedlist = sorted(os.listdir(workingdir), key=len) # try and get the name of the current directory
-filteredlist = [x for x in sortedlist if not ".py" in x]
+print(sortedlist)
 
-# Convert images to tensors / matrices 
+filteredlist = [x for x in sortedlist if ".jpg" in x]
+print(filteredlist)
+
 img = Image.open(filteredlist[0])
 imageSample = np.array(img)
 
-# Discrete channels of the image 
-Channels = np.array([imageSample[:,:,i] for i in range(3)])
 
-#print(imageSample.shape)
-"""
-plt.imshow(imageSample)
-plt.show()
-"""
-# Create meshgrid for the random walk
-Y, X, C = imageSample.shape
-X = np.arange(X)
-Y = np.arange(Y)
-xx, yy = np.meshgrid(X, Y)
-
-# Creating Random walks 
-#print(xx.shape)
-dim = 2
-n_step = 500
-step_choice = [-1, 0, 1]
-origin = np.zeros((1, dim))
-
-step_shape = np.asarray((n_step, dim))
-print("this is step shape: ", step_shape)
-steps = np.random.choice(a=step_choice, size=step_shape)
-print("this is steps:", steps.shape)
-print(steps[0])
-path =  np.concatenate([origin, steps]).cumsum(0)
-print(path.shape)
-
-
-
+#start = timer()
+TimeSampler = CreateTrainingSample(imageSample)
+#stop = timer()
+#print("elapsed time for creating training sample was:", (stop - start)*1E3, " ms")
+convertedSample = Image.fromarray(TimeSampler)
+convertedSample.save("BasicTrainingSample.jpg")
