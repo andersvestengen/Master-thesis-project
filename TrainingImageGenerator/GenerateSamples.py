@@ -1,67 +1,86 @@
 #Packages
-from email.mime import image
+#from email.mime import image
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import glob
+from tqdm import tqdm
+import csv
 from timeit import default_timer as timer
 boolean_sample = [True, False]
-rnum = np.random.random_sample() 
-""" numpy random_sample alias"""
 
 BoxSize = 5
 """The pixelbox size"""
+
+def OutputDir():
+    """
+    Check that the output directory exists, if not create it, also check if the .csv output file exists
+    """
+    outputdir = workingdir + outputname
+    if not os.path.isdir(outputdir):
+        os.makedirs(outputdir)
+        print("Created output directory ", outputname)
+    csvdir = outputdir + csvname
+        
+        
+        
+    
 
 def getSample(sampleinput):
     """
     returns a random sample between the minimum Boxsize and the sampleInput (height/width)
     """
-    return int( ( sampleinput - BoxSize ) * rnum)
 
-def CreateTrainingSample(imageMatrix):
+    return int( ( sampleinput - BoxSize ) * np.random.random_sample())
+    
+
+def CreateTrainingSample(imageMatrix, imagenum):
     """
-    Takes a matrix-converted image and returns a training sample of that image
+    Takes a matrix-converted image and returns a training sample of that image with a randomly degraded [Boxsize * Boxsize] square, and coordinates for loss function.
     
     """
     ImageHeight = imageMatrix.shape[0]
     ImageWidth = imageMatrix.shape[1]
     SampleH = getSample(ImageHeight)
     SampleW = getSample(ImageWidth)
-    intSample = imageMatrix[SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize,:]  
+    Hstart = SampleH
+    Hstop = Hstart + BoxSize
+    Wstart = SampleW
+    Wstop = Wstart + BoxSize
+    intSample = imageMatrix[SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize]  
     mask = np.random.choice(boolean_sample, p=[0.8, 0.2], size=(intSample.shape[:-1]))
     r = np.full((intSample.shape), 0)
     intSample[mask,:] = r[mask,:] 
-    imageMatrix[SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize,:] = intSample
+    imageMatrix[SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize] = intSample
     
-    return imageMatrix
-
-"""
-Dev notes:
-    - Algorithm to be simplified
-    - No more random walks etc.
-    - Algorithm will:
-        - sample a random 10x10 pixel box of the image
-        - remove a random subset of that sample
-        - implant the randomly constructed 'defect'
-
-"""
+    # Need to add the new sample as images to the '/CompletedSamples/' folder and update the .cvs file
+    convertedSample = Image.fromarray(imageMatrix)
+    outputname =  str(imagenum) + ".jpg"
+    convertedSample.save(sampledir + outputname)
+    
+    return Hstart, Hstop, Wstart, Wstop
 
 
-# Get names of the images in the working folder. 
+
+#Main sample creation loop. 
 workingdir = os.getcwd()
-sortedlist = sorted(os.listdir(workingdir), key=len) # try and get the name of the current directory
-print(sortedlist)
+outputname = '/CompletedSamples/'
+csvname = "Samples.csv" # this is the name of the .csv file
+csvdir = workingdir + outputname + csvname
+sampledir = workingdir + outputname
+OutputDir() #Check if the output directory exists, if not create it. 
+imagedir = workingdir + "/NewImages/" + "**/*.jpg" # NewImages is where the unaltered images must be manually placed
+sortedlist = sorted(glob.glob(imagedir, recursive=True))
 
-filteredlist = [x for x in sortedlist if ".jpg" in x]
-print(filteredlist)
-
-img = Image.open(filteredlist[0])
-imageSample = np.array(img)
 
 
-#start = timer()
-TimeSampler = CreateTrainingSample(imageSample)
-#stop = timer()
-#print("elapsed time for creating training sample was:", (stop - start)*1E3, " ms")
-convertedSample = Image.fromarray(TimeSampler)
-convertedSample.save("BasicTrainingSample.jpg")
+imagenum = 0
+with open(csvdir, 'w+', newline='') as csvfile:
+    for imagename in tqdm(sortedlist): # runs through the list and feeds the generator function new image samples converted to matrices, added tqdm for loading bar during runtime.
+        writer = csv.writer(csvfile, delimiter=' ') # adds the write csv write handler to the file.
+        imageSample = np.array(Image.open(imagename)) 
+        Hstart, Hstop, Wstart, Wstop = CreateTrainingSample(imageSample, imagenum)
+        writer.writerow([Hstart, Hstop, Wstart, Wstop]) # H is height, not horizontal (And W is Width not W(?)ertical) :)
+        imagenum += 1 
+
