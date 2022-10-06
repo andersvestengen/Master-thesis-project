@@ -44,10 +44,6 @@ def CreateTrainingSample(imageMatrix, imagenum):
     ImageWidth = imageMatrix.shape[1]
     SampleH = getSample(ImageHeight)
     SampleW = getSample(ImageWidth)
-    Hstart = SampleH
-    Hstop = Hstart + BoxSize
-    Wstart = SampleW
-    Wstop = Wstart + BoxSize
     intSample = imageMatrix[SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize]  
     mask = np.random.choice(boolean_sample, p=[0.8, 0.2], size=(intSample.shape[:-1]))
     r = np.full((intSample.shape), 0)
@@ -59,7 +55,7 @@ def CreateTrainingSample(imageMatrix, imagenum):
     outputname =  str(imagenum) + ".jpg"
     convertedSample.save(sampledir + outputname)
     
-    return Hstart, Hstop, Wstart, Wstop
+    return SampleH, SampleW, BoxSize
 
 
 
@@ -80,7 +76,7 @@ with open(csvdir, 'w+', newline='') as csvfile:
     for imagename in tqdm(sortedlist): # runs through the list and feeds the generator function new image samples converted to matrices, added tqdm for loading bar during runtime.
         writer = csv.writer(csvfile, delimiter=' ') # adds the write csv write handler to the file.
         imageSample = np.array(Image.open(imagename)) 
-        Hstart, Hstop, Wstart, Wstop = CreateTrainingSample(imageSample, imagenum)
-        writer.writerow([Hstart, Hstop, Wstart, Wstop]) # H is height, not horizontal (And W is Width not W(?)ertical) :)
+        Hstart, Wstart, len = CreateTrainingSample(imageSample, imagenum)
+        writer.writerow([Hstart, Wstart, len]) # H is height, not horizontal (And W is Width not W(?)ertical) :)
         imagenum += 1 
 
