@@ -21,7 +21,6 @@ def OutputDir():
     if not os.path.isdir(outputdir):
         os.makedirs(outputdir)
         print("Created output directory ", outputname)
-    csvdir = outputdir + csvname
         
         
         
@@ -68,7 +67,7 @@ sampledir = workingdir + outputname
 OutputDir() #Check if the output directory exists, if not create it. 
 imagedir = workingdir + "/NewImages/" + "**/*.jpg" # NewImages is where the unaltered images must be manually placed
 sortedlist = sorted(glob.glob(imagedir, recursive=True))
-
+oldimdir = workingdir + "/NewImages/"
 
 
 imagenum = 0
@@ -76,6 +75,10 @@ with open(csvdir, 'w+', newline='') as csvfile:
     for imagename in tqdm(sortedlist): # runs through the list and feeds the generator function new image samples converted to matrices, added tqdm for loading bar during runtime.
         writer = csv.writer(csvfile, delimiter=' ') # adds the write csv write handler to the file.
         imageSample = np.array(Image.open(imagename)) 
+        #Rename the old .jpg file to the new number scheme
+        newname = oldimdir + str(imagenum) + ".jpg"
+        os.rename(imagename, newname)
+        #Write the coordinates into the .csv file
         Hstart, Wstart, len = CreateTrainingSample(imageSample, imagenum)
         writer.writerow([Hstart, Wstart, len]) # H is height, not horizontal (And W is Width not W(?)ertical) :)
         imagenum += 1 
