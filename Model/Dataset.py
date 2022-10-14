@@ -6,7 +6,11 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms, utils
 import glob
 torch.manual_seed = 55
-
+"""
+TODO:
+    - add normalization to the image outputs [0, 255] -> [0, 1]
+    - Make the pixel defect generator a part of the Pytorch Transform suite so it's dynamically created in the dataset-class.
+"""
 def_transform = transforms.ToTensor()
 class GAN_dataset(Dataset):
     """
