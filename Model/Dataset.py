@@ -63,7 +63,7 @@ class GAN_dataset(Dataset):
             image = self.transform(image)
             sample = self.transform(sample)
         
-        return image, sample, coordinates
+        return ( image / 255.0 ), ( sample / 255.0 ), coordinates
 
             
         
