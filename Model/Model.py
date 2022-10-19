@@ -132,6 +132,7 @@ def Discriminator_block(input_filters, output_filters, normalization=True):
 
 
 #Discriminator class, Fully convolutional PatchGan discriminator
+
 class Discriminator_1(nn.Module):
     def __init__(self, input_channels=3):
         super(Discriminator_1).__init__()
