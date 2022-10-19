@@ -1,3 +1,4 @@
+from random import shuffle
 import torch 
 from .Model import Generator_Unet1, Discriminator_1
 from .Dataset import GAN_dataset
@@ -5,16 +6,32 @@ from torch.utils.data import dataloader, dataset
 from torch.optim import Adam
 import torchvision
 from torchvision import transforms
+import numpy as np
+
+# Seed states
+seed = 18
+torch.manual_seed(seed)
+np.random.seed(seed)
 
 
+#TODO: add numpy load/store functionality and complete the analytics section at the bottom of the training loop.
 
+# Calculate output of image discriminator (PatchGAN)
+patch = (1, 512 // 2 ** 4, 512 // 2 ** 4)
+
+
+# Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
-    "epochs" : 20,
-    "batch_size" : 16,
-    "L1_loss_weight": 100,
-    "lr" : 0.001,
-    
-    }
+            "epochs"            : 20,
+            "batch_size"        : 16,
+            "L1_loss_weight"    : 100,
+            "lr"                : 0.001,
+            "dataset_loc"       : "",
+            "num_workers"       : 2,
+            "shuffle"           : True,
+            "Datasplit"         : [0.7, 0.3],
+            "epochs"            : 20,
+            }
 
 device = ""
 
@@ -52,6 +69,73 @@ def main():
     
 
     # Configure dataloaders
-    training_dataloader = dataloader(dataset=GAN_dataset(
+    Custom_dataset = GAN_dataset(workingdir=Settings["dataset_loc"], transform=training_transforms,
+                                     num_workers = Settings["num_workers"],
+                                     batch_size = Settings["batch_size"], 
+                                     shuffle = Settings["shuffle"])
+    
+    train_loader, val_loader = torch.utils.data.random_split(Custom_dataset, [Settings["Datasplit"][0], Settings["Datasplit"][1]], generator=torch.Generator().manual_seed(seed))
+    
+    
+    # Tensor type (Do I need this?)
+    Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+    
+    
+    for epoch in range(1, Settings["epochs"] + 1):
+        # Look to add something for loweing the learning rate after a number of epochs
+            
+        # Add tqdm loading bar eventually
         
-    ))
+        # Add a try except block for more robust functionality.
+        
+        mean_loss = 0
+        for i, (inputs, targets) in enumerate(train_loader):
+            
+            #Model inputs
+            Gen_faulty_image = inputs
+            True_output_image = targets
+            
+            # Adversarial ground truths
+            valid = Tensor(np.ones(Gen_faulty_image.size(0), *patch)).requires_grad=False
+            fake = Tensor(np.zeros(Gen_faulty_image.size(0), *patch)).requires_grad=False
+            
+            #------ Train the Generator
+            Generator_optimizer.zero_grad()
+            
+            # Generator loss            
+            Generated_output_image = Generator(Gen_faulty_image)
+            predict_fake = Discriminator(Generated_output_image, Gen_faulty_image)
+            loss_GAN = GAN_loss(predict_fake, valid)
+            #Pixelwise loss
+            loss_pixel = pixelwise_loss(Generated_output_image, True_output_image) # might be misinterpreting the loss inputs here.
+            
+            #Total loss
+            Total_loss_Generator = loss_GAN + Settings["L1_loss_weight"] * loss_pixel
+            
+            Total_loss_Generator.backward()
+            
+            Generator_optimizer.step()
+            
+            
+            #------ Train Discriminator
+            
+            Discriminator_optimizer.zero_grad()
+            
+            # Real loss 
+            predicted_real = Discriminator(True_output_image, Gen_faulty_image)
+            loss_real = GAN_loss(predicted_real, valid)
+            
+            # Fake loss
+            predict_fake = Discriminator(Generated_output_image.detach(), True_output_image)
+            loss_fake = GAN_loss(predict_fake, fake)
+            # Total loss
+            Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
+            
+            Total_loss_Discriminator.backwards()
+            
+            Discriminator_optimizer.step()
+            
+            
+            #Analytics
+            
+            

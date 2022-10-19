@@ -24,12 +24,12 @@ class GAN_dataset(Dataset):
         [/NewImages/, /CompletedSamples/, /CompletedSamples/, /Samples.csv,]
     """
     
-    def __init__(self, imagefolder="/NewImages/", samplefolder="/CompletedSamples/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
+    def __init__(self, workingdir=None, imagefolder="/NewImages/", samplefolder="/CompletedSamples/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
         super().__init__()
         
         self.transform = transform
         #Setting up the directories
-        self.workingdir = os.getcwd()
+        self.workingdir = os.getcwd() if workingdir == None else workingdir
         self.csvdir = self.workingdir + csvfolder + csvname
         self.samplecoordinates= []
         # Setting up special paths and creating the glob directory-lists here
@@ -51,22 +51,22 @@ class GAN_dataset(Dataset):
         return len(self.SampleImagesList)
 
     def __getitem__(self, index):
-        #TODO: add image augmentation
+        #TODO: add image augmentation, add coordinates after the relevant loss is implemented
         imagedir = self.OriginalImagesList[index]
         sampledir = self.SampleImagesList[index]
-        coordinates = self.samplecoordinates[index]
+        #coordinates = self.samplecoordinates[index]
         
         image = Image.open(imagedir)
         sample = Image.open(sampledir)
         if self.transform is not None:
-            # Can I run this twice on the image and sample, and expect the same transform to happen?
+            # Can I run this twice on the image and sample, and expect the same transform to happen? I think so
             image = self.transform(image)
             sample = self.transform(sample)
         else:
                 image = transforms.ToTensor()(image)
                 sample = transforms.ToTensor()(sample)
         
-        return ( image / 255.0 ), ( sample / 255.0 ), coordinates
+        return ( image / 255.0 ), ( sample / 255.0 ) #, coordinates
 
             
         
