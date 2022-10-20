@@ -13,8 +13,17 @@ seed = 18
 torch.manual_seed(seed)
 np.random.seed(seed)
 
+"""
+TODO:
+    - Add tqdm loading bar to the training loop
+    - Add something to figure out the location of the 'dataset_loc' in the Settings Dict.
+    - Complete Numpy load/store functionality
+    - Add a try/except block to the training loop
+    - Add a way to save the model during/after training.
 
-#TODO: add numpy load/store functionality and complete the analytics section at the bottom of the training loop.
+
+    - Test the whole thing on a laptop or computer (home computer), and then on the server
+"""
 
 # Calculate output of image discriminator (PatchGAN)
 patch = (1, 512 // 2 ** 4, 512 // 2 ** 4)
@@ -29,7 +38,7 @@ Settings = {
             "dataset_loc"       : "",
             "num_workers"       : 2,
             "shuffle"           : True,
-            "Datasplit"         : [0.7, 0.3],
+            "Datasplit"         : [0.8, 0.2],
             "epochs"            : 20,
             }
 
@@ -41,6 +50,13 @@ training_transforms = transforms.Compose([
     transforms.RandomVerticalFlip(),
     transforms.ToTensor()
 ])
+
+
+#TODO: add numpy load/store functionality and complete the analytics section at the bottom of the training loop.
+Generator_loss_train = np.zeros(Settings["epochs"])
+Discriminator_loss_train = np.zeros(Settings["epochs"])
+Generator_loss_validation = np.zeros(Settings["epochs"])
+Discriminator_loss_validation = np.zeros(Settings["epochs"])
 
 
 def main():
@@ -79,16 +95,50 @@ def main():
     
     # Tensor type (Do I need this?)
     Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
-    
+
+    def validation_sampler(epoch):
+        with torch.no_grad():
+            Generator.eval()
+            Discriminator.eval()
+            inputs, targets = torch.utils.data.RandomSampler(val_loader)
+            Gen_faulty_image = inputs
+            True_output_image = targets
+            
+            # Adversarial ground truths
+            valid = Tensor(np.ones(Gen_faulty_image.size(0), *patch)).requires_grad=False
+            fake = Tensor(np.zeros(Gen_faulty_image.size(0), *patch)).requires_grad=False                       
+            
+            # Generator loss            
+            Generated_output_image = Generator(Gen_faulty_image)
+            predict_fake = Discriminator(Generated_output_image, Gen_faulty_image)
+            loss_GAN = GAN_loss(predict_fake, valid)
+            #Pixelwise loss
+            loss_pixel = pixelwise_loss(Generated_output_image, True_output_image) # might be misinterpreting the loss inputs here.
+            
+            #Total loss
+            Total_loss_Generator = loss_GAN + Settings["L1_loss_weight"] * loss_pixel
+
+            predicted_real = Discriminator(True_output_image, Gen_faulty_image)
+            loss_real = GAN_loss(predicted_real, valid)
+            
+            # Fake loss
+            predict_fake = Discriminator(Generated_output_image.detach(), True_output_image)
+            loss_fake = GAN_loss(predict_fake, fake)
+            # Total loss
+            Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
+
+            Generator_loss_validation[epoch] = Total_loss_Generator
+            Discriminator_loss_validation[epoch] = Total_loss_Discriminator  
     
     for epoch in range(1, Settings["epochs"] + 1):
-        # Look to add something for loweing the learning rate after a number of epochs
+        # Look to add something for lowering the learning rate after a number of epochs
             
         # Add tqdm loading bar eventually
         
         # Add a try except block for more robust functionality.
         
         mean_loss = 0
+        # Training loop
         for i, (inputs, targets) in enumerate(train_loader):
             
             #Model inputs
@@ -137,5 +187,8 @@ def main():
             
             
             #Analytics
-            
-            
+            Generator_loss_train[epoch] = Total_loss_Generator
+            Discriminator_loss_train[epoch] = Total_loss_Discriminator
+        
+        # Validation loop
+        validation_sampler(epoch)
