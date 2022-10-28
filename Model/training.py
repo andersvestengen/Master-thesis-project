@@ -40,7 +40,7 @@ Settings = {
             "dataset_loc"       : "",
             "num_workers"       : 1,
             "shuffle"           : True,
-            "Datasplit"         : [0.8, 0.2],
+            "Datasplit"         : [0.7, 0.3],
             "Device"            : "cpu",
             }
 
