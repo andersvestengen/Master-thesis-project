@@ -41,7 +41,6 @@ Settings = {
             "num_workers"       : 1,
             "shuffle"           : True,
             "Datasplit"         : [0.8, 0.2],
-            "epochs"            : 20,
             "Device"            : "cpu",
             }
 
