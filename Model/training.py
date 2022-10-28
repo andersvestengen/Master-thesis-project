@@ -7,6 +7,8 @@ from torch.optim import Adam
 import torchvision
 from torchvision import transforms
 import numpy as np
+from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # Seed states
 seed = 18
@@ -31,18 +33,18 @@ patch = (1, 512 // 2 ** 4, 512 // 2 ** 4)
 
 # Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
-            "epochs"            : 20,
-            "batch_size"        : 16,
+            "epochs"            : 10,
+            "batch_size"        : 2,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
             "dataset_loc"       : "",
-            "num_workers"       : 2,
+            "num_workers"       : 1,
             "shuffle"           : True,
             "Datasplit"         : [0.8, 0.2],
             "epochs"            : 20,
+            "Device"            : "cpu",
             }
 
-device = ""
 
 
 training_transforms = transforms.Compose([
@@ -58,6 +60,13 @@ Discriminator_loss_train = np.zeros(Settings["epochs"])
 Generator_loss_validation = np.zeros(Settings["epochs"])
 Discriminator_loss_validation = np.zeros(Settings["epochs"])
 
+def Display_graphs(in1, in2, in3, in4, epochs):
+    xaxis = np.arange(0, epochs+1)
+    plt.plot(xaxis, in1)
+    plt.plot(xaxis, in2)
+    plt.plot(xaxis, in3)    
+    plt.plot(xaxis, in4)
+    plt.show()
 
 def main():
 
@@ -97,6 +106,7 @@ def main():
     Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
     def validation_sampler(epoch):
+        print("Running validation sample")
         with torch.no_grad():
             Generator.eval()
             Discriminator.eval()
@@ -139,7 +149,7 @@ def main():
         
         mean_loss = 0
         # Training loop
-        for i, (inputs, targets) in enumerate(train_loader):
+        for i, (inputs, targets) in tqdm(enumerate(train_loader)):
             
             #Model inputs
             Gen_faulty_image = inputs
@@ -192,3 +202,4 @@ def main():
         
         # Validation loop
         validation_sampler(epoch)
+    Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
