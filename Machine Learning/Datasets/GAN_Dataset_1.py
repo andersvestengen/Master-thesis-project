@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms, utils
 import glob
-torch.manual_seed = 55
+
 """
 TODO:
     - add normalization to the image outputs [0, 255] -> [0, 1]

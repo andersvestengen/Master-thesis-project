@@ -1,7 +1,7 @@
 from random import shuffle
 import torch 
-from .Model import Generator_Unet1, Discriminator_1
-from .Dataset import GAN_dataset
+from Models.GAN_Model_1 import Generator_Unet1, Discriminator_1
+from Datasets.GAN_Dataset_1 import GAN_dataset
 from torch.utils.data import dataloader, dataset
 from torch.optim import Adam
 import torchvision
@@ -9,11 +9,12 @@ from torchvision import transforms
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import random
 
-# Seed states
-seed = 18
-torch.manual_seed(seed)
-np.random.seed(seed)
+#Defining random seeds
+torch.manual_seed(0)
+random.seed(0)
+np.random.seed(0)
 
 """
 TODO:
@@ -37,7 +38,7 @@ Settings = {
             "batch_size"        : 2,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
-            "dataset_loc"       : "",
+            "dataset_loc"       : "C:/Users/ander/Documents/Master-thesis-project/TrainingImageGenerator",
             "num_workers"       : 1,
             "shuffle"           : True,
             "Datasplit"         : [0.7, 0.3],
@@ -98,7 +99,7 @@ def main():
                                      batch_size = Settings["batch_size"], 
                                      shuffle = Settings["shuffle"])
     
-    train_loader, val_loader = torch.utils.data.random_split(Custom_dataset, [Settings["Datasplit"][0], Settings["Datasplit"][1]], generator=torch.Generator().manual_seed(seed))
+    train_loader, val_loader = torch.utils.data.random_split(Custom_dataset, [Settings["Datasplit"][0], Settings["Datasplit"][1]])
     
     
     # Tensor type (Do I need this?)
@@ -146,6 +147,7 @@ def main():
         
         # Add a try except block for more robust functionality.
         
+        print("Training on epoch: ", epoch)
         mean_loss = 0
         # Training loop
         for i, (inputs, targets) in tqdm(enumerate(train_loader)):
@@ -198,6 +200,7 @@ def main():
             #Analytics
             Generator_loss_train[epoch] = Total_loss_Generator
             Discriminator_loss_train[epoch] = Total_loss_Discriminator
+            print("Loss for epoch:", epoch, "was: (Generator loss)", Total_loss_Generator, "(Discriminator) ", Total_loss_Discriminator)
         
         # Validation loop
         validation_sampler(epoch)
