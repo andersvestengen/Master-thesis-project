@@ -36,7 +36,7 @@ patch = (1, 512 // 2 ** 4, 512 // 2 ** 4)
 # Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
             "epochs"            : 10,
-            "batch_size"        : 2,
+            "batch_size"        : 1,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
             "dataset_loc"       : "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator",
