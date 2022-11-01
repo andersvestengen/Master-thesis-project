@@ -2,7 +2,7 @@ from random import shuffle
 import torch 
 from Models.GAN_Model_1 import Generator_Unet1, Discriminator_1
 from Datasets.GAN_Dataset_1 import GAN_dataset
-from torch.utils.data import dataloader, dataset
+from torch.utils.data import DataLoader, Dataset
 from torch.optim import Adam
 import torchvision
 from torchvision import transforms
@@ -12,9 +12,10 @@ import matplotlib.pyplot as plt
 import random
 
 #Defining random seeds
-torch.manual_seed(0)
-random.seed(0)
-np.random.seed(0)
+seed_num = 18
+gan_gen = torch.manual_seed(seed_num)
+random.seed(seed_num)
+np.random.seed(seed_num)
 
 """
 TODO:
@@ -38,10 +39,10 @@ Settings = {
             "batch_size"        : 2,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
-            "dataset_loc"       : "C:/Users/ander/Documents/Master-thesis-project/TrainingImageGenerator",
+            "dataset_loc"       : "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator",
             "num_workers"       : 1,
             "shuffle"           : True,
-            "Datasplit"         : [0.7, 0.3],
+            "Datasplit"         : 0.7,
             "Device"            : "cpu",
             }
 
@@ -94,14 +95,24 @@ def main():
     
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(workingdir=Settings["dataset_loc"], transform=training_transforms,
-                                     num_workers = Settings["num_workers"],
-                                     batch_size = Settings["batch_size"], 
-                                     shuffle = Settings["shuffle"])
+    Custom_dataset = GAN_dataset(workingdir=Settings["dataset_loc"], transform=training_transforms)
+
+    dataset_len = len(Custom_dataset)
+
+    train_split = int(dataset_len*Settings["Datasplit"])
+    val_split = int(dataset_len - train_split)
     
-    train_loader, val_loader = torch.utils.data.random_split(Custom_dataset, [Settings["Datasplit"][0], Settings["Datasplit"][1]])
+    train_set, val_set = torch.utils.data.random_split(Custom_dataset, [train_split, val_split])
     
-    
+    train_loader = DataLoader(train_set,
+                                   num_workers = Settings["num_workers"],
+                                   batch_size = Settings["batch_size"], 
+                                   shuffle = Settings["shuffle"])
+
+    val_loader = DataLoader(val_set,
+                                   num_workers = Settings["num_workers"],
+                                   batch_size = Settings["batch_size"], 
+                                   shuffle = Settings["shuffle"])   
     # Tensor type (Do I need this?)
     Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
@@ -205,3 +216,7 @@ def main():
         # Validation loop
         validation_sampler(epoch)
     Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
+
+
+if __name__ == '__main__':
+    main()

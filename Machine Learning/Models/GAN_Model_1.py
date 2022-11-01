@@ -24,8 +24,8 @@ Dev notes:
 # Unet structure for the GAN
 class UnetEncoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, normalize=True, dropout=0.0):
-        super(UnetEncoderLayer).__init__()
-        layers = [nn.conv2d(channel_in, channel_out, 4, 2, 1, bias=False)]
+        super(UnetEncoderLayer, self).__init__()
+        layers = [nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=False)]
         if normalize:
             layers.append(nn.InstanceNorm2d(channel_out))
         layers.append(nn.LeakyReLU(0.2))
@@ -38,7 +38,7 @@ class UnetEncoderLayer(nn.Module):
 
 class UnetDecoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, dropout=0.0):
-        super(UnetDecoderLayer).__init__()
+        super(UnetDecoderLayer, self).__init__()
         layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
                   nn.InstanceNorm2d(channel_out),
                   nn.ReLU(inplace=True),
@@ -57,7 +57,7 @@ class UnetDecoderLayer(nn.Module):
 
 class ConvRelu(nn.Module):
     def __init__(self, in_, out):
-        super(ConvRelu).__init__()
+        super(ConvRelu, self).__init__()
         self.model = nn.Sequential(
             nn.Conv2d(in_, out, 3, padding=1),
             nn.ReLU(inplace=True),
@@ -70,7 +70,7 @@ class ConvRelu(nn.Module):
 #Pix2pix Unet type, with optimized values from the papers github page, with help from Hemin.
 class Generator_Unet1(nn.Module):
     def __init__(self, input_channels=3, output_channels=3):
-        super(Generator_Unet1).__init__()
+        super(Generator_Unet1, self).__init__()
         #Encoder structure
         self.encode_layer_1 = UnetEncoderLayer(input_channels, 64, normalize=False)
         self.encode_layer_2 = UnetEncoderLayer(64, 128)
@@ -135,7 +135,7 @@ def Discriminator_block(input_filters, output_filters, normalization=True):
 
 class Discriminator_1(nn.Module):
     def __init__(self, input_channels=3):
-        super(Discriminator_1).__init__()
+        super(Discriminator_1, self).__init__()
         
         self.model = nn.Sequential(
             *Discriminator_block(input_channels * 2, 64, normalization=False),

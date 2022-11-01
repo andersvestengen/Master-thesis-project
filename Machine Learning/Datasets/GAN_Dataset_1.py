@@ -25,7 +25,7 @@ class GAN_dataset(Dataset):
     """
     
     def __init__(self, workingdir=None, imagefolder="/NewImages/", samplefolder="/CompletedSamples/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
-        super().__init__()
+        super(GAN_dataset, self).__init__()
         
         self.transform = transform
         #Setting up the directories
