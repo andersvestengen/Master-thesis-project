@@ -154,7 +154,6 @@ def main():
     for epoch in range(1, Settings["epochs"] + 1):
         # Look to add something for lowering the learning rate after a number of epochs
             
-        # Add tqdm loading bar eventually
         
         # Add a try except block for more robust functionality.
         
@@ -168,6 +167,7 @@ def main():
             True_output_image = targets
             
             # Adversarial ground truths
+            print("This is the image size", Gen_faulty_image.size())
             valid = Tensor(np.ones(Gen_faulty_image.size(0), *patch)).requires_grad=False
             fake = Tensor(np.zeros(Gen_faulty_image.size(0), *patch)).requires_grad=False
             
