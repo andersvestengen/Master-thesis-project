@@ -39,7 +39,7 @@ Settings = {
             "batch_size"        : 1,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
-            "dataset_loc"       : "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator",
+            "dataset_loc"       : "C:/Users/ander/Documents/Master-thesis-project/Machine Learning/TrainingImageGenerator",#"G:/Master-thesis-project/Machine Learning/TrainingImageGenerator",
             "num_workers"       : 1,
             "shuffle"           : True,
             "Datasplit"         : 0.7,
@@ -126,8 +126,8 @@ def main():
             True_output_image = targets
             
             # Adversarial ground truths
-            valid = Tensor(np.ones(Gen_faulty_image.size(0), *patch)).requires_grad=False
-            fake = Tensor(np.zeros(Gen_faulty_image.size(0), *patch)).requires_grad=False                       
+            valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).requires_grad=False
+            fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).requires_grad=False                       
             
             # Generator loss            
             Generated_output_image = Generator(Gen_faulty_image)
@@ -168,8 +168,8 @@ def main():
             
             # Adversarial ground truths
             print("This is the image size", Gen_faulty_image.size())
-            valid = Tensor(np.ones(Gen_faulty_image.size(0), *patch)).requires_grad=False
-            fake = Tensor(np.zeros(Gen_faulty_image.size(0), *patch)).requires_grad=False
+            valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).requires_grad=False
+            fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).requires_grad=False
             
             #------ Train the Generator
             Generator_optimizer.zero_grad()
