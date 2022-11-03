@@ -34,7 +34,9 @@ class UnetEncoderLayer(nn.Module):
         self.model = nn.Sequential(*layers)       
         
     def forward(self, input):
-        return self.model(input)
+        output = self.model(input)
+        print("this is the Encoder layer output size:", output.size())
+        return output
 
 class UnetDecoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, dropout=0.0):
@@ -50,6 +52,7 @@ class UnetDecoderLayer(nn.Module):
         
     def forward(self, input, skip_input):
         input = self.model(input)
+        print("input is:", input.size(), "while skip_input is:", skip_input.size())
         return torch.cat((input, skip_input), 1)
 
 
@@ -79,7 +82,7 @@ class Generator_Unet1(nn.Module):
         self.encode_layer_5 = UnetEncoderLayer(512, 512, dropout=0.5)
         self.encode_layer_6 = UnetEncoderLayer(512, 512, dropout=0.5)
         self.encode_layer_7 = UnetEncoderLayer(512, 512, dropout=0.5)        
-        self.encode_layer_8 = UnetEncoderLayer(256, 512, normalize=False, dropout=0.5)
+        self.encode_layer_8 = UnetEncoderLayer(512, 512, normalize=False, dropout=0.5)
         
         #Decoder structure
         self.decode_layer_1 = UnetDecoderLayer(512, 512, dropout=0.5)
@@ -106,7 +109,7 @@ class Generator_Unet1(nn.Module):
         e4 = self.encode_layer_4(e3)
         e5 = self.encode_layer_5(e4)
         e6 = self.encode_layer_6(e5)
-        e7 = self.encode_layer_7(e7)
+        e7 = self.encode_layer_7(e6)
         e8 = self.encode_layer_8(e7)
         
         #Decode steps

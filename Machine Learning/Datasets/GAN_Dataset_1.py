@@ -5,6 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms, utils
 import glob
+import numpy as np
 
 """
 TODO:
@@ -56,15 +57,8 @@ class GAN_dataset(Dataset):
         sampledir = self.SampleImagesList[index]
         #coordinates = self.samplecoordinates[index]
         
-        image = Image.open(imagedir)
-        sample = Image.open(sampledir)
-        if self.transform is not None:
-            # Can I run this twice on the image and sample, and expect the same transform to happen? I think so
-            image = self.transform(image)
-            sample = self.transform(sample)
-        else:
-                image = transforms.ToTensor()(image)
-                sample = transforms.ToTensor()(sample)
+        image = self.transform(Image.open(imagedir))
+        sample = self.transform(Image.open(sampledir))
         
         return ( image / 255.0 ), ( sample / 255.0 ) #, coordinates
 

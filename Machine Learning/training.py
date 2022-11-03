@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import random
 
 #Defining random seeds
-seed_num = 18
+seed_num = 23
 gan_gen = torch.manual_seed(seed_num)
 random.seed(seed_num)
 np.random.seed(seed_num)
@@ -162,12 +162,12 @@ def main():
         # Training loop
         for i, (inputs, targets) in tqdm(enumerate(train_loader)):
             
+            print("on input", i, "input has size:", inputs.size())
             #Model inputs
             Gen_faulty_image = inputs
             True_output_image = targets
             
             # Adversarial ground truths
-            print("This is the image size", Gen_faulty_image.size())
             valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).requires_grad=False
             fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).requires_grad=False
             
