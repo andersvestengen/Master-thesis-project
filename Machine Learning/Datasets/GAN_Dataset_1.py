@@ -73,7 +73,7 @@ class GAN_dataset(Dataset):
     
     def __len__(self):
         # I'm (hoping) assuming the sample/image/csv lists are all the same length
-        return len(self.SampleImagesList)
+        return len(self.OriginalImagesList)
 
     def __getitem__(self, index):
         #TODO: add image augmentation, add coordinates after the relevant loss is implemented

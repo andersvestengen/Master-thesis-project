@@ -49,6 +49,7 @@ Settings = {
 
 
 training_transforms = transforms.Compose([
+    transforms.CenterCrop(256),
     transforms.RandomHorizontalFlip(),
     transforms.RandomVerticalFlip(),
     transforms.ToTensor()
@@ -168,9 +169,9 @@ def main():
             True_output_image = targets
             
             # Adversarial ground truths
-            valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).requires_grad=False
-            fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).requires_grad=False
-            
+            valid = torch.from_numpy(np.ones((Gen_faulty_image.size(0), *patch))).requires_grad=False
+            fake = torch.from_numpy(np.zeros((Gen_faulty_image.size(0), *patch))).requires_grad=False
+            print("This is the size:", valid.size(), fake.size)
             #------ Train the Generator
             Generator_optimizer.zero_grad()
             
