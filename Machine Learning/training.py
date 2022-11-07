@@ -10,6 +10,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import random
+from sys import exit
 
 #Defining random seeds
 seed_num = 23
@@ -29,8 +30,6 @@ TODO:
     - Test the whole thing on a laptop or computer (home computer), and then on the server
 """
 
-# Calculate output of image discriminator (PatchGAN)
-patch = (1, 512 // 2 ** 4, 512 // 2 ** 4)
 
 
 # Need to add os.getcwd() to dataset_loc or figure out something similar.
@@ -44,12 +43,16 @@ Settings = {
             "shuffle"           : True,
             "Datasplit"         : 0.7,
             "Device"            : "cpu",
+            "ImageHW"           : 256,
             }
 
 
 
+# Calculate output of image discriminator (PatchGAN)
+patch = (1, Settings["ImageHW"] // 2 ** 4, Settings["ImageHW"] // 2 ** 4)
+
 training_transforms = transforms.Compose([
-    transforms.CenterCrop(256),
+    transforms.CenterCrop(Settings["ImageHW"]),
     transforms.RandomHorizontalFlip(),
     transforms.RandomVerticalFlip(),
     transforms.ToTensor()
@@ -169,8 +172,8 @@ def main():
             True_output_image = targets
             
             # Adversarial ground truths
-            valid = torch.from_numpy(np.ones((Gen_faulty_image.size(0), *patch))) # These both used to have requires_grad=False, but that seems to force-cast this to a bool variable which produces errors.
-            fake = torch.from_numpy(np.zeros((Gen_faulty_image.size(0), *patch)))
+            valid = torch.from_numpy(np.ones((Gen_faulty_image.size(0), *patch))).float() # These both used to have requires_grad=False, but that seems to force-cast this to a bool variable which produces errors.
+            fake = torch.from_numpy(np.zeros((Gen_faulty_image.size(0), *patch))).float()
             #print("This is the size:", valid.size(), fake.size)
             #------ Train the Generator
             Generator_optimizer.zero_grad()
@@ -185,8 +188,10 @@ def main():
             #Total loss
             Total_loss_Generator = loss_GAN + Settings["L1_loss_weight"] * loss_pixel
             
-            Total_loss_Generator.backward()
+            print("These are all the dtypes:", "\ninputs", inputs.dtype, "\ntargets", targets.dtype, "\nvalid", valid.dtype, "\nfake", fake.dtype, "\nGenerated_output_image", Generated_output_image.dtype, "\npredict_fake", predict_fake.dtype, "\nloss_GAN", loss_GAN.dtype, "\nloss_pixel", loss_pixel.dtype, "\nTotal_loss_Generator ", Total_loss_Generator.dtype)
             
+            Total_loss_Generator.backward()
+
             Generator_optimizer.step()
             
             
@@ -204,7 +209,7 @@ def main():
             # Total loss
             Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
             
-            Total_loss_Discriminator.backwards()
+            Total_loss_Discriminator.backward()
             
             Discriminator_optimizer.step()
             
