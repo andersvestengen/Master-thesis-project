@@ -20,14 +20,10 @@ np.random.seed(seed_num)
 
 """
 TODO:
-    - Add tqdm loading bar to the training loop
-    - Add something to figure out the location of the 'dataset_loc' in the Settings Dict.
     - Complete Numpy load/store functionality
     - Add a try/except block to the training loop
     - Add a way to save the model during/after training.
 
-
-    - Test the whole thing on a laptop or computer (home computer), and then on the server
 """
 
 
@@ -64,6 +60,8 @@ Generator_loss_train = np.zeros(Settings["epochs"])
 Discriminator_loss_train = np.zeros(Settings["epochs"])
 Generator_loss_validation = np.zeros(Settings["epochs"])
 Discriminator_loss_validation = np.zeros(Settings["epochs"])
+
+
 
 def Display_graphs(in1, in2, in3, in4):
     #Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
@@ -130,38 +128,50 @@ def main():
     fake = Tensor(torch.zeros((Settings["batch_size"], *patch))).to(torch.device(device))
     
     def validation_sampler(epoch):
+        Gen_loss_avg = 0
+        Disc_loss_avg = 0
         with torch.no_grad():
-            Generator.eval()
-            Discriminator.eval()
-            inputs, targets  = next(iter(val_loader))
-            Gen_faulty_image = inputs
-            True_output_image = targets
-            
-            # Adversarial ground truths
-            #valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).float()
-            #fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).float()                    
-            
-            # Generator loss            
-            Generated_output_image = Generator(Gen_faulty_image)
-            predict_fake = Discriminator(Generated_output_image, Gen_faulty_image)
-            loss_GAN = GAN_loss(predict_fake, valid)
-            #Pixelwise loss
-            loss_pixel = pixelwise_loss(Generated_output_image, True_output_image) # might be misinterpreting the loss inputs here.
-            
-            #Total loss
-            Total_loss_Generator = loss_GAN + Settings["L1_loss_weight"] * loss_pixel
+            with tqdm(val_loader, unit='batch') as vepoch:
+                Generator.eval()
+                Discriminator.eval()
+                
+                for inputs, targets in vepoch:
+                    tepoch.set_description(f"Validation on Epoch {epoch}/{Settings['epochs']}")
+                    
+                    Gen_faulty_image = inputs
+                    True_output_image = targets
+                    
+                    # Adversarial ground truths
+                    #valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).float()
+                    #fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).float()                    
+                    
+                    # Generator loss            
+                    Generated_output_image = Generator(Gen_faulty_image)
+                    predict_fake = Discriminator(Generated_output_image, Gen_faulty_image)
+                    loss_GAN = GAN_loss(predict_fake, valid)
+                    #Pixelwise loss
+                    loss_pixel = pixelwise_loss(Generated_output_image, True_output_image) # might be misinterpreting the loss inputs here.
+                    
+                    #Total loss
+                    Total_loss_Generator = loss_GAN + Settings["L1_loss_weight"] * loss_pixel
 
-            predicted_real = Discriminator(True_output_image, Gen_faulty_image)
-            loss_real = GAN_loss(predicted_real, valid)
-            
-            # Fake loss
-            predict_fake = Discriminator(Generated_output_image.detach(), True_output_image)
-            loss_fake = GAN_loss(predict_fake, fake)
-            # Total loss
-            Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
-
-            Generator_loss_validation[epoch] = Total_loss_Generator
-            Discriminator_loss_validation[epoch] = Total_loss_Discriminator  
+                    predicted_real = Discriminator(True_output_image, Gen_faulty_image)
+                    loss_real = GAN_loss(predicted_real, valid)
+                    
+                    # Fake loss
+                    predict_fake = Discriminator(Generated_output_image.detach(), True_output_image)
+                    loss_fake = GAN_loss(predict_fake, fake)
+                    # Total loss
+                    Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
+                    
+                    # Analytics
+                    Gen_loss_avg += Total_loss_Generator.item()
+                    Disc_loss_avg += Total_loss_Discriminator.item()
+                
+                    vepoch.set_postfix(Gen_loss_val = (Gen_loss_avg / val_split), Disc_loss_val = (Disc_loss_avg / val_split), Validation_run_on_epoch=epoch)
+                
+            Generator_loss_validation[epoch] = Gen_loss_avg / val_split
+            Discriminator_loss_validation[epoch] = Disc_loss_avg / val_split  
     
     
     for epoch in range(Settings["epochs"]):
@@ -172,18 +182,18 @@ def main():
         Gen_loss_avg = 0
         Disc_loss_avg = 0
         # Training loop
-        with tqdm(train_loader, unit='"batch', leave=False) as tepoch:
+        with tqdm(train_loader, unit='batch', leave=False) as tepoch:
             for inputs, targets in tepoch:
-                tepoch.set_description(f"Epoch {epoch}/{Settings['epochs']}")
+                tepoch.set_description(f"Training on Epoch {epoch}/{Settings['epochs']}")
                 if epoch > 0:
-                    tepoch.set_description(f"Epoch {epoch}/{Settings['epochs']} Gen_loss {Generator_loss_train[epoch]:.5f} Disc_loss {Discriminator_loss_train[epoch]:.5f}")
-               
+                    tepoch.set_description(f"Epoch {epoch}/{Settings['epochs']} Gen_loss {Generator_loss_train[epoch-1]:.5f} Disc_loss {Discriminator_loss_train[epoch-1]:.5f}")
+ 
                 #Model inputs
                 
                 Gen_faulty_image = inputs
                 True_output_image = targets
                 
-                #print("This is the size:", valid.size(), fake.size)
+
                 #------ Train the Generator
                 Generator_optimizer.zero_grad()
                 
@@ -226,14 +236,12 @@ def main():
                 #Analytics
                 Gen_loss_avg += Total_loss_Generator.item()
                 Disc_loss_avg += Total_loss_Discriminator.item()
-                #print("Loss for epoch:", epoch, "was: (Generator loss)", Total_loss_Generator, "(Discriminator) ", Total_loss_Discriminator)
                 
-            Generator_loss_train[epoch] = Gen_loss_avg / Settings["batch_size"]
-            Discriminator_loss_train[epoch] = Disc_loss_avg / Settings["batch_size"]          
+                
+            Generator_loss_train[epoch] = Gen_loss_avg / train_split
+            Discriminator_loss_train[epoch] = Disc_loss_avg / train_split          
             # Validation loop
             validation_sampler(epoch)
-    print("These are the shapes for the training analytics:")
-    print(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
     Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
 
 
