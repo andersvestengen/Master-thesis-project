@@ -169,10 +169,14 @@ def main():
         # Add a try except block for more robust functionality.
         
         mean_loss = 0
+        Gen_loss_avg = 0
+        Disc_loss_avg = 0
         # Training loop
         with tqdm(train_loader, unit='"batch', leave=False) as tepoch:
             for inputs, targets in tepoch:
-                tepoch.set_description(f"Epoch {epoch}/{Settings['epochs']} Gen_loss {Generator_loss_train[epoch]:.5f} Disc_loss {Discriminator_loss_train[epoch]:.5f}")
+                tepoch.set_description(f"Epoch {epoch}/{Settings['epochs']}")
+                if epoch > 0:
+                    tepoch.set_description(f"Epoch {epoch}/{Settings['epochs']} Gen_loss {Generator_loss_train[epoch]:.5f} Disc_loss {Discriminator_loss_train[epoch]:.5f}")
                
                 #Model inputs
                 
@@ -220,13 +224,16 @@ def main():
                 
                 
                 #Analytics
-                Generator_loss_train[epoch] = Total_loss_Generator
-                Discriminator_loss_train[epoch] = Total_loss_Discriminator
+                Gen_loss_avg += Total_loss_Generator.item()
+                Disc_loss_avg += Total_loss_Discriminator.item()
                 #print("Loss for epoch:", epoch, "was: (Generator loss)", Total_loss_Generator, "(Discriminator) ", Total_loss_Discriminator)
                 
-            
+            Generator_loss_train[epoch] = Gen_loss_avg / Settings["batch_size"]
+            Discriminator_loss_train[epoch] = Disc_loss_avg / Settings["batch_size"]          
             # Validation loop
             validation_sampler(epoch)
+    print("These are the shapes for the training analytics:")
+    print(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
     Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
 
 
