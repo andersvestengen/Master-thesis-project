@@ -35,7 +35,6 @@ class UnetEncoderLayer(nn.Module):
         
     def forward(self, input):
         output = self.model(input)
-        print("this is the Encoder layer output size:", output.size())
         return output
 
 class UnetDecoderLayer(nn.Module):
@@ -52,7 +51,6 @@ class UnetDecoderLayer(nn.Module):
         
     def forward(self, input, skip_input):
         input = self.model(input)
-        print("input is:", input.size(), "while skip_input is:", skip_input.size())
         return torch.cat((input, skip_input), 1)
 
 

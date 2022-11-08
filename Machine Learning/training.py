@@ -125,13 +125,13 @@ def main():
         with torch.no_grad():
             Generator.eval()
             Discriminator.eval()
-            inputs, targets = torch.utils.data.RandomSampler(val_loader)
+            inputs, targets  = next(iter(val_loader))
             Gen_faulty_image = inputs
             True_output_image = targets
             
             # Adversarial ground truths
-            valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).requires_grad=False
-            fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).requires_grad=False                       
+            valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).float()
+            fake = Tensor(np.zeros((Gen_faulty_image.size(0), *patch))).float()                    
             
             # Generator loss            
             Generated_output_image = Generator(Gen_faulty_image)
@@ -155,7 +155,7 @@ def main():
             Generator_loss_validation[epoch] = Total_loss_Generator
             Discriminator_loss_validation[epoch] = Total_loss_Discriminator  
     
-    for epoch in range(1, Settings["epochs"] + 1):
+    for epoch in range(1, Settings["epochs"]):
         # Look to add something for lowering the learning rate after a number of epochs
             
         
@@ -188,7 +188,7 @@ def main():
             #Total loss
             Total_loss_Generator = loss_GAN + Settings["L1_loss_weight"] * loss_pixel
             
-            print("These are all the dtypes:", "\ninputs", inputs.dtype, "\ntargets", targets.dtype, "\nvalid", valid.dtype, "\nfake", fake.dtype, "\nGenerated_output_image", Generated_output_image.dtype, "\npredict_fake", predict_fake.dtype, "\nloss_GAN", loss_GAN.dtype, "\nloss_pixel", loss_pixel.dtype, "\nTotal_loss_Generator ", Total_loss_Generator.dtype)
+           
             
             Total_loss_Generator.backward()
 
