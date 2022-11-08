@@ -75,6 +75,9 @@ def Display_graphs(in1, in2, in3, in4):
     plt.legend()
     plt.show()
 
+def SaveNPY(*args):
+    np.savez('Analytics.npz', *args)
+
 def main():
 
     # Loss functions
@@ -243,6 +246,7 @@ def main():
             # Validation loop
             validation_sampler(epoch)
     Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
+    SaveNPY(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
 
 
 if __name__ == '__main__':
