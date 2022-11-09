@@ -1,9 +1,7 @@
-.JPG
-.jpg
-.zip
-.tar
+*.JPG
+*.zip
+*.tar
 *.jpg
-*.jpeg
 *.png
 *.gif
 *.tiff

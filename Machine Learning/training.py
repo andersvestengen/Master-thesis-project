@@ -30,8 +30,8 @@ TODO:
 
 # Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
-            "epochs"            : 10,
-            "batch_size"        : 1,
+            "epochs"            : 60,
+            "batch_size"        : 16,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
             "dataset_loc"       : "C:/Users/ander/Documents/Master-thesis-project/Machine Learning/TrainingImageGenerator",#"G:/Master-thesis-project/Machine Learning/TrainingImageGenerator",
