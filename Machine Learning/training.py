@@ -35,7 +35,7 @@ Settings = {
             "batch_size"        : 16,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
-            "dataset_loc"       : "/itf-fi-ml/home/andergv/Master-thesis-project/Machine Learning/TrainingImageGenerator",
+            "dataset_loc"       : "/itf-fi-ml/home/andergv/Master-thesis-project/Machine\ Learning/TrainingImageGenerator",
             "num_workers"       : 1,
             "shuffle"           : True,
             "Datasplit"         : 0.7,
