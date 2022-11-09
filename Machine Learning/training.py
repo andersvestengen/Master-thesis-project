@@ -40,6 +40,8 @@ Settings = {
             "Datasplit"         : 0.7,
             "Device"            : "cpu",
             "ImageHW"           : 256,
+            "RestoreModel"      : False,
+            "ModelName"         : "GAN_1_best.pth",
             }
 
 
@@ -77,7 +79,8 @@ def Display_graphs(in1, in2, in3, in4):
 
 def SaveNPY(*args):
     np.savez('Analytics.npz', *args)
-
+     
+    
 def main():
 
     # Loss functions
@@ -88,7 +91,7 @@ def main():
     Generator       = Generator_Unet1()
     Discriminator   = Discriminator_1()
     
-    
+        
     # Setup GPU (or not)
     if torch.cuda.is_available():
         device = "cuda"
@@ -97,6 +100,15 @@ def main():
     else:
         device = "cpu"
         
+    #Restore previous model
+    if Settings["RestoreModel"]:
+        checkpoint = torch.load(str( Settings["dataset_loc"] + "/" +  Settings["ModelName"] ), map_location=device)
+        Generator.load_state_dict(checkpoint["Generator_state_dict"])
+        Discriminator.load_state_dict(checkpoint["Discriminator_state_dict"])
+        
+        Generator.to(device)
+        Discriminator.to(device)
+        print("Succesfully loaded previous model")
     
     # Optimizers
     Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"])
@@ -124,6 +136,7 @@ def main():
                                    shuffle = Settings["shuffle"])   
     # Tensor type (Do I need this?)
     Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+
 
 
     #Adversarial ground truths
@@ -176,7 +189,8 @@ def main():
             Generator_loss_validation[epoch] = Gen_loss_avg / val_split
             Discriminator_loss_validation[epoch] = Disc_loss_avg / val_split  
     
-    
+
+        
     for epoch in range(Settings["epochs"]):
         # Look to add something for lowering the learning rate after a number of epochs
         # Add a try except block for more robust functionality.
@@ -245,7 +259,14 @@ def main():
             Discriminator_loss_train[epoch] = Disc_loss_avg / train_split          
             # Validation loop
             validation_sampler(epoch)
-    Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
+            #Update model if validation score increased
+            if (epoch > 0) and ( Generator_loss_validation[epoch] < Generator_loss_validation[epoch-1] ):
+                torch.save({
+                    "Generator_state_dict"      :   Generator.state_dict(),
+                    "Discriminator_state_dict"  :   Discriminator.state_dict(),
+                }, str( Settings["dataset_loc"] + "/" +  Settings["ModelName"] ))
+    if device == "cpu":
+        Display_graphs(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
     SaveNPY(Generator_loss_train, Generator_loss_validation, Discriminator_loss_train, Discriminator_loss_validation)
 
 
