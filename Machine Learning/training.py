@@ -28,14 +28,14 @@ TODO:
 
 Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 Desk_dir = "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator"
-
+Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 # Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
             "epochs"            : 60,
             "batch_size"        : 16,
             "L1_loss_weight"    : 100,
             "lr"                : 0.001,
-            "dataset_loc"       : "/itf-fi-ml/home/andergv/Master-thesis-project/Machine\ Learning/TrainingImageGenerator",
+            "dataset_loc"       : Server_dir,
             "num_workers"       : 1,
             "shuffle"           : True,
             "Datasplit"         : 0.7,
