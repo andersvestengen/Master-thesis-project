@@ -133,15 +133,13 @@ def main():
                                    batch_size = Settings["batch_size"], 
                                    shuffle = Settings["shuffle"])   
     # Tensor type (Do I need this?)
-    Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
+    #Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
 
 
-    #Adversarial ground truths
-    print(Tensor.dtype)
-    print("Is CUDA available?", torch.cuda.is_available())
-    valid = Tensor(torch.ones((Settings["batch_size"], *patch)))# These both used to have requires_grad=False, but that seems to force-cast this to a bool variable which produces errors.
-    fake = Tensor(torch.zeros((Settings["batch_size"], *patch)))
+
+    valid = torch.ones((Settings["batch_size"], *patch)).to(device)# These both used to have requires_grad=False, but that seems to force-cast this to a bool variable which produces errors.
+    fake = torch.zeros((Settings["batch_size"], *patch)).to(device)
     
     def validation_sampler(epoch):
         Gen_loss_avg = 0
