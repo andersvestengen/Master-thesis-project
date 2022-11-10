@@ -109,8 +109,8 @@ def main():
         print("Succesfully loaded previous model")
     
     # Optimizers
-    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]).to(device)
-    Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"]).to(device)
+    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"])
+    Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"])
     
 
     # Configure dataloaders
