@@ -43,6 +43,7 @@ Settings = {
             "ImageHW"           : 256,
             "RestoreModel"      : False,
             "ModelName"         : "GAN_1_best.pth",
+            "preprocess"        : True,
             }
 
 
@@ -114,7 +115,7 @@ def main():
     
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(workingdir=Settings["dataset_loc"], transform=training_transforms)
+    Custom_dataset = GAN_dataset(device=device, seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
 
     dataset_len = len(Custom_dataset)
 
