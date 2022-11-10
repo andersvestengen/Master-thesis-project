@@ -8,6 +8,7 @@ import glob
 import numpy as np
 import torch
 import tqdm as tqdm
+import sys
 """
 TODO:
     - add normalization to the image outputs [0, 255] -> [0, 1]
@@ -79,7 +80,7 @@ class GAN_dataset(Dataset):
         else:
             return len(self.OriginalImagesList)
 
-    def Preprocessor(self, Imagelist):
+    def Preprocessor(self):
         """
         TODO:
             # PREPROCESSING ON GPU has a hard cap of 10K images! Need to analyze this!
@@ -109,13 +110,14 @@ class GAN_dataset(Dataset):
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
         
         self.data.to(self.device)
+        print("data stack uses:", (sys.getsizeof(self.data))*1e-6, "MB")
                     
 
 
     def __getitem__(self, index):
         if self.preprocess:
             return self.data[index, 0,:], self.data[index, 1,:]
-            
+
         else:
 
             imagedir = self.OriginalImagesList[index]
