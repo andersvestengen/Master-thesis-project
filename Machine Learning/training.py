@@ -139,6 +139,7 @@ def main():
 
     #Adversarial ground truths
     print(Tensor.dtype)
+    print("Is CUDA available?", torch.cuda.is_available())
     valid = Tensor(torch.ones((Settings["batch_size"], *patch)))# These both used to have requires_grad=False, but that seems to force-cast this to a bool variable which produces errors.
     fake = Tensor(torch.zeros((Settings["batch_size"], *patch)))
     
