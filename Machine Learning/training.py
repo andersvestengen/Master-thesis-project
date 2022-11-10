@@ -205,8 +205,8 @@ def main():
  
                 #Model inputs
                 
-                Gen_faulty_image = inputs
-                True_output_image = targets
+                Gen_faulty_image = inputs.to(device)
+                True_output_image = targets.to(device)
                 
 
                 #------ Train the Generator
