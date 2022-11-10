@@ -96,8 +96,8 @@ def main():
     # Setup GPU (or not)
     if torch.cuda.is_available():
         device = "cuda"
-        Generator = Generator().cuda()
-        Discriminator = Discriminator().cuda()
+        Generator = Generator().to(device)
+        Discriminator = Discriminator().to(device)
     else:
         device = "cpu"
         
