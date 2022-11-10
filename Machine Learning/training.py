@@ -83,23 +83,20 @@ def SaveNPY(*args):
      
     
 def main():
-
-    # Loss functions
-    GAN_loss        = torch.nn.MSELoss()
-    pixelwise_loss  = torch.nn.L1Loss()
-
-    # Models
-    Generator       = Generator_Unet1()
-    Discriminator   = Discriminator_1()
-    
-        
     # Setup GPU (or not)
     if torch.cuda.is_available():
         device = "cuda"
-        Generator.to(device)
-        Discriminator.to(device)
     else:
         device = "cpu"
+
+    # Loss functions
+    GAN_loss        = torch.nn.MSELoss().to(device)
+    pixelwise_loss  = torch.nn.L1Loss().to(device)
+
+    # Models
+    Generator       = Generator_Unet1().to(device)
+    Discriminator   = Discriminator_1().to(device)
+    
         
     #Restore previous model
     if Settings["RestoreModel"]:
@@ -112,8 +109,8 @@ def main():
         print("Succesfully loaded previous model")
     
     # Optimizers
-    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"])
-    Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"])
+    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]).to(device)
+    Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"]).to(device)
     
 
     # Configure dataloaders
@@ -141,8 +138,8 @@ def main():
 
 
     #Adversarial ground truths
-    valid = Tensor(torch.ones((Settings["batch_size"], *patch))).to(torch.device(device))# These both used to have requires_grad=False, but that seems to force-cast this to a bool variable which produces errors.
-    fake = Tensor(torch.zeros((Settings["batch_size"], *patch))).to(torch.device(device))
+    valid = Tensor(torch.ones((Settings["batch_size"], *patch)))# These both used to have requires_grad=False, but that seems to force-cast this to a bool variable which produces errors.
+    fake = Tensor(torch.zeros((Settings["batch_size"], *patch)))
     
     def validation_sampler(epoch):
         Gen_loss_avg = 0
@@ -155,8 +152,8 @@ def main():
                 for inputs, targets in vepoch:
                     tepoch.set_description(f"Validation on Epoch {epoch}/{Settings['epochs']}")
                     
-                    Gen_faulty_image = inputs
-                    True_output_image = targets
+                    Gen_faulty_image = inputs.to(device)
+                    True_output_image = targets.to(device)
                     
                     # Adversarial ground truths
                     #valid = Tensor(np.ones((Gen_faulty_image.size(0), *patch))).float()
