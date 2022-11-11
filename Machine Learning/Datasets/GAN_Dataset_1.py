@@ -28,10 +28,9 @@ class GAN_dataset(Dataset):
         [/NewImages/, /CompletedSamples/, /CompletedSamples/, /Samples.csv,]
     """
 
-    def __init__(self, device="cpu", seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
+    def __init__(self, seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
         super(GAN_dataset, self).__init__()
         np.random.seed(seed)
-        self.device = device
         self.preprocess = preprocess
         self.BoxSize = BoxSize
         self.boolean_sample = [True, False]
@@ -105,7 +104,6 @@ class GAN_dataset(Dataset):
             print("space usage:", mb_per_image)
             print("estimate for 20k images:", (mb_per_image*20000)/1000, "GB")
             """
-        #self.data.to(self.device)
                     
 
 

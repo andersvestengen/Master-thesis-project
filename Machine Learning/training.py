@@ -31,19 +31,20 @@ Desk_dir = "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 # Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
-            "epochs"            : 60,
-            "batch_size"        : 16,
-            "L1_loss_weight"    : 100,
-            "lr"                : 0.001,
-            "dataset_loc"       : Server_dir,
-            "num_workers"       : 1,
-            "shuffle"           : True,
-            "Datasplit"         : 0.7,
-            "Device"            : "cpu",
-            "ImageHW"           : 256,
-            "RestoreModel"      : False,
-            "ModelName"         : "GAN_1_best.pth",
-            "preprocess"        : True,
+            "epochs"                : 10,
+            "batch_size"            : 4,
+            "L1_loss_weight"        : 100,
+            "lr"                    : 0.001,
+            "dataset_loc"           : Laptop_dir,
+            "num_workers"           : 1,
+            "shuffle"               : True,
+            "Datasplit"             : 0.7,
+            "Device"                : "cpu",
+            "ImageHW"               : 256,
+            "RestoreModel"          : False,
+            "ModelName"             : "GAN_1_best.pth",
+            "preprocess"            : True,
+            "Drop_incomplete_batch" : True,
             }
 
 
@@ -115,7 +116,7 @@ def main():
     
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(device=device, seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
+    Custom_dataset = GAN_dataset(seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
 
     dataset_len = len(Custom_dataset)
 
@@ -127,12 +128,14 @@ def main():
     train_loader = DataLoader(train_set,
                                    num_workers = Settings["num_workers"],
                                    batch_size = Settings["batch_size"], 
-                                   shuffle = Settings["shuffle"])
+                                   shuffle = Settings["shuffle"],
+                                   drop_last=Settings["Drop_incomplete_batch"])
 
     val_loader = DataLoader(val_set,
                                    num_workers = Settings["num_workers"],
                                    batch_size = Settings["batch_size"], 
-                                   shuffle = Settings["shuffle"])   
+                                   shuffle = Settings["shuffle"],
+                                   drop_last=Settings["Drop_incomplete_batch"])   
     # Tensor type (Do I need this?)
     #Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
 
@@ -146,7 +149,7 @@ def main():
         Gen_loss_avg = 0
         Disc_loss_avg = 0
         with torch.no_grad():
-            with tqdm(val_loader, unit='batch') as vepoch:
+            with tqdm(val_loader, unit='batch',position=1, leave=True) as vepoch:
                 Generator.eval()
                 Discriminator.eval()
                 
