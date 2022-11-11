@@ -45,6 +45,7 @@ Settings = {
             "ModelName"             : "GAN_1_best.pth",
             "preprocess"            : True,
             "Drop_incomplete_batch" : True,
+            "Num_training_samples"  : 20000,
             }
 
 
@@ -116,7 +117,7 @@ def main():
     
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
+    Custom_dataset = GAN_dataset(training_samples=Settings["Num_training_samples"], seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
 
     dataset_len = len(Custom_dataset)
 

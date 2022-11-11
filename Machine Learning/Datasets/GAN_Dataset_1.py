@@ -28,7 +28,7 @@ class GAN_dataset(Dataset):
         [/NewImages/, /CompletedSamples/, /CompletedSamples/, /Samples.csv,]
     """
 
-    def __init__(self, seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
+    def __init__(self, training_samples=None, seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
         super(GAN_dataset, self).__init__()
         np.random.seed(seed)
         self.preprocess = preprocess
@@ -43,7 +43,12 @@ class GAN_dataset(Dataset):
         self.OriginalImagePathglob = self.workingdir + imagefolder + "**/*.jpg"
         
         self.OriginalImagesList = sorted(glob.glob(self.OriginalImagePathglob, recursive=True))
-
+        if training_samples is not None:
+            if len(self.OriginalImagesList) > training_samples:
+                self.OriginalImagesList = self.OriginalImagesList[:training_samples]
+        
+        print("Number of training samples set to", len(self.OriginalImagesList))
+        
         if preprocess:
             self.data = 0
             self.Preprocessor()
