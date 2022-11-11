@@ -7,8 +7,9 @@ from torchvision import transforms, utils
 import glob
 import numpy as np
 import torch
-import tqdm as tqdm
+from tqdm import tqdm
 import sys
+import time
 """
 TODO:
     - add normalization to the image outputs [0, 255] -> [0, 1]
@@ -81,42 +82,36 @@ class GAN_dataset(Dataset):
             return len(self.OriginalImagesList)
 
     def Preprocessor(self):
-        """
-        TODO:
-            # PREPROCESSING ON GPU has a hard cap of 10K images! Need to analyze this!
-            - Run transform on image
-            - create the sample
-            - torch.stack both images to 'data'
-            - torch.save(data, PATH) # Do I actually need this stage?
-            - torch.load(data, PATH) # if not above, then definitely not this
-            - do data.to(device) to load on CUDA device
-            - reroute __getsample__ and __len__ to pull from data's len and samples
-            - should be much faster. ¨
-            - ADD a loading screen
-        """
-        with tqdm(self.OriginalImagesList, unit='images', leave=False) as Prepoch:
+        with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
             for num, imagedir in enumerate(Prepoch):
-                Prepoch.set_description(f"Preprocessing images for CUDA")
                 # Transform image and add 
                 image = self.transform(Image.open(imagedir))
                 sample = np.asarray(image).copy()
                 sample = torch.from_numpy(self.DefectGenerator(sample))
 
-                #add them to the stack
+                #stack them
                 if num == 0:
+                    Prepoch.set_description(f"Preprocessing images for CUDA")
                     self.data = torch.stack((image, sample), dim=0)
                 else:
+                    Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
-        
-        self.data.to(self.device)
-        print("data stack uses:", (sys.getsizeof(self.data))*1e-6, "MB")
+            """
+            print(f"time to completion: {stop - start:.0f} seconds")
+            print(f"final size is: {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
+            print("Number of images was", len(self.OriginalImagesList))
+            mb_per_image = (self.data.element_size() * self.data.nelement() * 1e-6) / len(self.OriginalImagesList)
+            print("space usage:", mb_per_image)
+            print("estimate for 20k images:", (mb_per_image*20000)/1000, "GB")
+            """
+        #self.data.to(self.device)
                     
 
 
     def __getitem__(self, index):
         if self.preprocess:
-            return self.data[index, 0,:], self.data[index, 1,:]
+            return self.data[index*2,:], self.data[index*2+1,:] # retrieving indexes this way has been tested (in limited scope.)
 
         else:
 
@@ -128,7 +123,7 @@ class GAN_dataset(Dataset):
             
             return image, sample
             # Dont need im / 255.0 normalization as transforms.ToTensor() converts [0,255] -> [0,1]   
-            #return ( image / 255.0 ), ( sample / 255.0 ) #, coordinates
+
 
             
         
