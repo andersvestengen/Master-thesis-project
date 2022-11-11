@@ -18,14 +18,8 @@ TODO:
 def_transform = transforms.ToTensor()
 class GAN_dataset(Dataset):
     """
-    Outputs:
-        The ready-made images and coordinates for loss function to train the GAN
-        
-    Input:
-        !Within the working directory! \n
-        [Image folder name, Sample folder name, csv folder name, csv filename]
-    Default Input:
-        [/NewImages/, /CompletedSamples/, /CompletedSamples/, /Samples.csv,]
+    TODO: 
+        - update the Description
     """
 
     def __init__(self, training_samples=None, seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
@@ -38,6 +32,7 @@ class GAN_dataset(Dataset):
         #Setting up the directories
         self.workingdir = os.getcwd() if workingdir == None else workingdir
         self.csvdir = self.workingdir + csvfolder + csvname
+        self.processedImages = self.workingdir + "/processed_images.pt"
         #self.samplecoordinates= []
         # Setting up special paths and creating the glob directory-lists here
         self.OriginalImagePathglob = self.workingdir + imagefolder + "**/*.jpg"
@@ -49,9 +44,15 @@ class GAN_dataset(Dataset):
         
         print("Number of training samples set to", len(self.OriginalImagesList))
         
-        if preprocess:
+        if not os.path.isfile(self.processedImages):
+            print("No file detected at:")
+            print(self.processedImages)
+            print("Starting image processing")
             self.data = 0
             self.Preprocessor()
+        else:
+            print("Processed image file found, loading...")
+            self.data = torch.load(self.processedImages)
         
 
 
@@ -81,9 +82,7 @@ class GAN_dataset(Dataset):
     
     def __len__(self):
         if self.preprocess:
-            return self.data.size(0) // 2 # because the preprocessor orders them in pairs
-        else:
-            return len(self.OriginalImagesList)
+            return self.data.size(0) // 2
 
     def Preprocessor(self):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
@@ -101,14 +100,7 @@ class GAN_dataset(Dataset):
                     Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
-            """
-            print(f"time to completion: {stop - start:.0f} seconds")
-            print(f"final size is: {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
-            print("Number of images was", len(self.OriginalImagesList))
-            mb_per_image = (self.data.element_size() * self.data.nelement() * 1e-6) / len(self.OriginalImagesList)
-            print("space usage:", mb_per_image)
-            print("estimate for 20k images:", (mb_per_image*20000)/1000, "GB")
-            """
+
                     
 
 
@@ -116,16 +108,7 @@ class GAN_dataset(Dataset):
         if self.preprocess:
             return self.data[index*2,:], self.data[index*2+1,:] # retrieving indexes this way has been tested (in limited scope.)
 
-        else:
-
-            imagedir = self.OriginalImagesList[index]
-                    
-            image = self.transform(Image.open(imagedir))
-            sample = np.asarray(image).copy()
-            sample = torch.from_numpy(self.DefectGenerator(sample))
-            
-            return image, sample
-            # Dont need im / 255.0 normalization as transforms.ToTensor() converts [0,255] -> [0,1]   
+  
 
 
             

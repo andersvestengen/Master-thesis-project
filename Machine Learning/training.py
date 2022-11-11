@@ -42,7 +42,7 @@ Settings = {
             "Device"                : "cpu",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
-            "ModelName"             : "GAN_1_best.pth",
+            "ModelName"             : "GAN_1_best.pt",
             "preprocess"            : True,
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 3000,
