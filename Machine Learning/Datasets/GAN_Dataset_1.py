@@ -52,7 +52,11 @@ class GAN_dataset(Dataset):
             self.Preprocessor()
         else:
             print("Processed image file found, loading...")
+            start = time.time()
             self.data = torch.load(self.processedImages)
+            stop = time.time()
+            print(f"Time spent loading file was: {stop - start:.2} seconds")
+            print("Number of images was:", len(self.OriginalImagesList))
         
 
 
@@ -100,6 +104,11 @@ class GAN_dataset(Dataset):
                     Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
+        print("Saving to file")
+        start = time.time()
+        torch.save(self.data, self.processedImages)
+        stop = time.time()
+        print(f"Done, time taken was: {stop - start:.0f}")
 
                     
 
