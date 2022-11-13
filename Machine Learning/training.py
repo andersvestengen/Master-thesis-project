@@ -120,7 +120,7 @@ def main():
     
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(preprocess_storage=Settings["preprocess_storage"] training_samples=Settings["Num_training_samples"], seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
+    Custom_dataset = GAN_dataset(preprocess_storage=Settings["preprocess_storage"], training_samples=Settings["Num_training_samples"], seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
 
     dataset_len = len(Custom_dataset)
 
