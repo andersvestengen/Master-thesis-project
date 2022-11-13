@@ -22,9 +22,10 @@ class GAN_dataset(Dataset):
         - update the Description
     """
 
-    def __init__(self, training_samples=None, seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
+    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
         super(GAN_dataset, self).__init__()
         np.random.seed(seed)
+        self.training_process_name = "/processed_images.pt"
         self.preprocess = preprocess
         self.BoxSize = BoxSize
         self.boolean_sample = [True, False]
@@ -32,7 +33,7 @@ class GAN_dataset(Dataset):
         #Setting up the directories
         self.workingdir = os.getcwd() if workingdir == None else workingdir
         self.csvdir = self.workingdir + csvfolder + csvname
-        self.processedImages = self.workingdir + "/processed_images.pt"
+        self.Small_cache_storage = self.workingdir + self.training_process_name
         #self.samplecoordinates= []
         # Setting up special paths and creating the glob directory-lists here
         self.OriginalImagePathglob = self.workingdir + imagefolder + "**/*.jpg"
@@ -44,19 +45,26 @@ class GAN_dataset(Dataset):
         
         print("Number of training samples set to", len(self.OriginalImagesList))
         
-        if not os.path.isfile(self.processedImages):
+        #replace storage string if no serverside storage is set
+        if preprocess_storage:
+            self.Large_cache_storage = preprocess_storage + self.training_process_name  
+        else:
+            self.Large_cache_storage = self.Small_cache_storage
+        
+        if not os.path.isfile(self.Large_cache_storage):
             print("No file detected at:")
-            print(self.processedImages)
+            print(self.Large_cache_storage)
             print("Starting image processing")
             self.data = 0
             self.Preprocessor()
         else:
             print("Processed image file found, loading...")
             start = time.time()
-            self.data = torch.load(self.processedImages)
+            self.data = torch.load(self.Large_cache_storage)
             stop = time.time()
             print(f"Time spent loading file was: {stop - start:.2} seconds")
             print("Number of images was:", len(self.OriginalImagesList))
+            
         
 
 
@@ -106,7 +114,7 @@ class GAN_dataset(Dataset):
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
         print("Saving to file")
         start = time.time()
-        torch.save(self.data, self.processedImages)
+        torch.save(self.data, self.Large_cache_storage)
         stop = time.time()
         print(f"Done, time taken was: {stop - start:.0f}")
 

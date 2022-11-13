@@ -29,6 +29,8 @@ TODO:
 Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 Desk_dir = "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine Learning/TrainingImageGenerator"
+Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
+
 # Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
             "epochs"                : 50,
@@ -36,6 +38,7 @@ Settings = {
             "L1_loss_weight"        : 100,
             "lr"                    : 0.001,
             "dataset_loc"           : Server_dir,
+            "preprocess_storage"    : Preprocess_dir,
             "num_workers"           : 1,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -117,7 +120,7 @@ def main():
     
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(training_samples=Settings["Num_training_samples"], seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
+    Custom_dataset = GAN_dataset(preprocess_storage=Settings["preprocess_storage"] training_samples=Settings["Num_training_samples"], seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
 
     dataset_len = len(Custom_dataset)
 
