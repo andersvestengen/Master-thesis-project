@@ -48,7 +48,7 @@ Settings = {
             "ModelName"             : "GAN_1_best.pt",
             "preprocess"            : True,
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 25000,
+            "Num_training_samples"  : 1500,
             }
 
 
