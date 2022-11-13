@@ -145,7 +145,6 @@ class GAN_dataset(Dataset):
 
 
     def __getitem__(self, index):
-        if self.preprocess:
             return self.data[index*2,:], self.data[index*2+1,:] # retrieving indexes this way has been tested (in limited scope.)
 
   
