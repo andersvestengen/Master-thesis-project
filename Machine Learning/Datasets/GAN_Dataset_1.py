@@ -26,7 +26,7 @@ class GAN_dataset(Dataset):
         super(GAN_dataset, self).__init__()
         np.random.seed(seed)
         self.training_process_name = "/processed_images.pt"
-        self.preprocess = preprocess
+        self.preprocess_storage = preprocess_storage
         self.BoxSize = BoxSize
         self.boolean_sample = [True, False]
         self.transform = transform
@@ -50,6 +50,7 @@ class GAN_dataset(Dataset):
         if preprocess_storage:
             self.Large_cache_storage = preprocess_storage + self.training_process_name  
         else:
+            self.preprocess_storage = self.workingdir
             self.Large_cache_storage = self.Small_cache_storage
         
         if not os.path.isfile(self.Large_cache_storage):
@@ -94,7 +95,6 @@ class GAN_dataset(Dataset):
         return imageMatrix       
     
     def __len__(self):
-        if self.preprocess:
             return self.data.size(0) // 2
 
     def Preprocessor(self):
@@ -106,7 +106,7 @@ class GAN_dataset(Dataset):
                 sample = torch.from_numpy(self.DefectGenerator(sample))
 
                 if (num > 0) and (num % 200 == 0):
-                    torch.save(self.data, self.workingdir+"/processed_images"+str(num)+".pt")
+                    torch.save(self.data, self.preprocess_storage+"/processed_images"+str(num)+".pt")
                     self.data = 0
                 #stack them
                 if num == 0 or num % 200 == 0:
@@ -117,10 +117,10 @@ class GAN_dataset(Dataset):
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
             if not len(self.OriginalImagesList) == self.max_training_samples:
-                torch.save(self.data, self.workingdir+"/processed_images"+str(self.OriginalImagesList)+".pt")
+                torch.save(self.data, self.preprocess_storage+"/processed_images"+str(self.OriginalImagesList)+".pt")
         print("reconstituting images into single file:")
         self.data = 0
-        cache_list = sorted(glob.glob(self.workingdir + "**/*.pt", recursive=True))
+        cache_list = sorted(glob.glob(self.preprocess_storage + "**/*.pt", recursive=True))
         with tqdm(cache_list, unit='images') as Crepoch:
             for num, cache in enumerate(Crepoch):
 
