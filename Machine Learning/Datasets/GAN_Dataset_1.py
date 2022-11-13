@@ -30,6 +30,7 @@ class GAN_dataset(Dataset):
         self.BoxSize = BoxSize
         self.boolean_sample = [True, False]
         self.transform = transform
+        self.max_training_samples = training_samples
         #Setting up the directories
         self.workingdir = os.getcwd() if workingdir == None else workingdir
         self.csvdir = self.workingdir + csvfolder + csvname
@@ -39,7 +40,7 @@ class GAN_dataset(Dataset):
         self.OriginalImagePathglob = self.workingdir + imagefolder + "**/*.jpg"
         
         self.OriginalImagesList = sorted(glob.glob(self.OriginalImagePathglob, recursive=True))
-        if training_samples is not None:
+        if training_samples is not None and  (len(self.OriginalImagesList) > training_samples):
             if len(self.OriginalImagesList) > training_samples:
                 self.OriginalImagesList = self.OriginalImagesList[:training_samples]
         
@@ -104,19 +105,41 @@ class GAN_dataset(Dataset):
                 sample = np.asarray(image).copy()
                 sample = torch.from_numpy(self.DefectGenerator(sample))
 
+                if (num > 0) and (num % 200 == 0):
+                    torch.save(self.data, self.workingdir+"/processed_images"+str(num)+".pt")
+                    self.data = 0
                 #stack them
-                if num == 0:
+                if num == 0 or num % 200 == 0:
                     Prepoch.set_description(f"Preprocessing images for CUDA")
                     self.data = torch.stack((image, sample), dim=0)
                 else:
                     Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
+            if not len(self.OriginalImagesList) == self.max_training_samples:
+                torch.save(self.data, self.workingdir+"/processed_images"+str(self.OriginalImagesList)+".pt")
+        print("reconstituting images into single file:")
+        self.data = 0
+        cache_list = sorted(glob.glob(self.workingdir + "**/*.pt", recursive=True))
+        with tqdm(cache_list, unit='images') as Crepoch:
+            for num, cache in enumerate(Crepoch):
+
+                if num == 0:
+                    #print("the file is:!!!", os.path.isfile(cache))
+                    #print(cache)
+                    self.data = torch.load(cache)
+                    os.remove(cache)
+                else:
+                    Crepoch.set_description(f"Stacking cache for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
+                    temp = torch.load(cache)
+                    os.remove(cache)
+                    self.data = torch.cat((self.data, temp), 0)
+
         print("Saving to file")
         start = time.time()
         torch.save(self.data, self.Large_cache_storage)
         stop = time.time()
-        print(f"Done, time taken was: {stop - start:.0f}")
+        print(f"Done, time taken was: {stop - start:.0f} seconds")
 
                     
 
