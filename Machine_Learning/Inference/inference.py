@@ -71,14 +71,15 @@ def RestoreModel(input):
 
 def Inference_run(input):
     image = np.asarray(training_transforms(Image.open(input))).copy()
-    image = torch.from_numpy(DefectGenerator(image))
-    print("This is the input tensor:", image.size())
+    image = torch.from_numpy(DefectGenerator(image)).unsqueeze(0)
     Generator.eval()
     Generated_output_image = Generator(image)
-    im = ToPILImageTrans(image)
+    im = ToPILImageTrans(image.squeeze(0))
     im.save("Defectgeneratedsample.jpg")
-    print("Genereated output:", Generated_output_image.size())
-    return ToPILImageTrans(Generated_output_image)
+    output = ToPILImageTrans(Generated_output_image.squeeze(0))
+    output.save("Reconstructed_Image.jpg")
+    print("Generated output:", Generated_output_image.size())
+
 
 
 # Define strings and models
@@ -96,5 +97,4 @@ Display_graphs((Desk_GAN1_dir + npy_store_dir))
 RestoreModel((Desk_GAN1_dir + GAN1_model_dir))
 
 # Do Inference on image
-reconstructed_img = Inference_run(inference_img)
-reconstructed_img.show()
+Inference_run(inference_img)
