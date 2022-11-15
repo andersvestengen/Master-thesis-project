@@ -10,7 +10,6 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import random
-from sys import exit
 
 #Defining random seeds
 seed_num = 23
@@ -20,7 +19,6 @@ np.random.seed(seed_num)
 
 """
 TODO:
-    - Complete Numpy load/store functionality
     - Add a try/except block to the training loop
     - Add a way to save the model during/after training.
 
@@ -31,7 +29,6 @@ Desk_dir = "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine Learning/TrainingImageGenerator"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
-# Need to add os.getcwd() to dataset_loc or figure out something similar.
 Settings = {
             "epochs"                : 50,
             "batch_size"            : 16,
