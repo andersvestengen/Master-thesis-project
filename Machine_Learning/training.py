@@ -33,7 +33,7 @@ Settings = {
             "epochs"                : 50,
             "batch_size"            : 16,
             "L1_loss_weight"        : 100,
-            "lr"                    : 0.001,
+            "lr"                    : 0.0001,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "num_workers"           : 1,
@@ -169,6 +169,7 @@ def main():
                     predict_fake = Discriminator(Generated_output_image, Gen_faulty_image)
                     loss_GAN = GAN_loss(predict_fake, valid)
                     #Pixelwise loss
+
                     loss_pixel = pixelwise_loss(Generated_output_image, True_output_image) # might be misinterpreting the loss inputs here.
                     
                     #Total loss

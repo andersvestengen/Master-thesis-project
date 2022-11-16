@@ -117,7 +117,8 @@ class GAN_dataset(Dataset):
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
             if not len(self.OriginalImagesList) == self.max_training_samples:
-                torch.save(self.data, self.preprocess_storage+"/processed_images"+str(self.OriginalImagesList)+".pt")
+                print("trying to save incomplete last cache size")
+                torch.save(self.data, self.preprocess_storage+"/processed_images"+str(len(self.OriginalImagesList))+".pt")
         print("reconstituting images into single file:")
         self.data = 0
         cache_list = sorted(glob.glob(self.preprocess_storage + "**/*.pt", recursive=True))

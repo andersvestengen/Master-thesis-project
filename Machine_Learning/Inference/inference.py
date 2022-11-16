@@ -1,10 +1,13 @@
 from torchvision import transforms
 import torch 
+from torch.utils.data import DataLoader
 import numpy as np
 import matplotlib.pyplot as plt 
 import sys
 sys.path.insert(0, "G:/Master-thesis-project/Machine_Learning/Models")
+sys.path.insert(0, "G:/Master-thesis-project/Machine_Learning/Datasets")
 from GAN_Model_1 import Generator_Unet1
+from GAN_Dataset_1 import GAN_dataset
 from PIL import Image
 
 
@@ -69,32 +72,40 @@ def RestoreModel(input):
     Generator.load_state_dict(checkpoint["Generator_state_dict"])
     print("Succesfully loaded previous model")
 
-def Inference_run(input):
-    image = np.asarray(training_transforms(Image.open(input))).copy()
-    image = torch.from_numpy(DefectGenerator(image)).unsqueeze(0)
+def Inference_run(image):
     Generator.eval()
     Generated_output_image = Generator(image)
     im = ToPILImageTrans(image.squeeze(0))
     im.save("Defectgeneratedsample.jpg")
     output = ToPILImageTrans(Generated_output_image.squeeze(0))
     output.save("Reconstructed_Image.jpg")
-    print("Generated output:", Generated_output_image.size())
 
 
+if __name__ == '__main__':
+    # Define strings and models
 
-# Define strings and models
+    Desk_GAN1_dir = "G:/Thesis_models_and_data/GAN_1/"
+    inference_img = "G:/Master-thesis-project/Machine_Learning/Inference/inference_img.jpg"
+    npy_store_dir = "Analytics.npz"
+    GAN1_model_dir = "GAN_1_best.pt"
 
-Desk_GAN1_dir = "G:/Thesis_models_and_data/GAN_1/"
-inference_img = "G:/Master-thesis-project/Machine_Learning/Inference/inference_img.jpg"
-npy_store_dir = "Analytics.npz"
-GAN1_model_dir = "GAN_1_best.pt"
+    #Blank model
+    Generator = Generator_Unet1()
 
-#Blank model
-Generator = Generator_Unet1()
+    # Datasets and loaders
+    Desk_dir = "G:/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
+    Expset = GAN_dataset(preprocess_storage=None, training_samples=1500, seed=18, workingdir=Desk_dir, transform=training_transforms, preprocess=True)
 
-# Load model and analytics
-Display_graphs((Desk_GAN1_dir + npy_store_dir))
-RestoreModel((Desk_GAN1_dir + GAN1_model_dir))
+    train_loader = DataLoader(Expset,
+                                    num_workers = 1,
+                                    batch_size = 1, 
+                                    shuffle = True,
+                                    drop_last=True)
 
-# Do Inference on image
-Inference_run(inference_img)
+    datasetimage, sample = next(iter(train_loader))
+    # Load model and analytics
+    Display_graphs((Desk_GAN1_dir + npy_store_dir))
+    RestoreModel((Desk_GAN1_dir + GAN1_model_dir))
+
+    # Do Inference on image
+    Inference_run(sample)
