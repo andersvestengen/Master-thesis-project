@@ -24,9 +24,9 @@ TODO:
 
 """
 
-Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine Learning/TrainingImageGenerator"
-Desk_dir = "G:/Master-thesis-project/Machine Learning/TrainingImageGenerator"
-Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine Learning/TrainingImageGenerator"
+Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
+Desk_dir = "G:/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
+Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
