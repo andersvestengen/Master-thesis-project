@@ -10,26 +10,29 @@ import torch
 from tqdm import tqdm
 import sys
 import time
-"""
-TODO:
-    - add normalization to the image outputs [0, 255] -> [0, 1]
-    - Make the pixel defect generator a part of the Pytorch Transform suite so it's dynamically created in the dataset-class.
-"""
-def_transform = transforms.ToTensor()
+
+def_transform = transforms.Compose([
+    transforms.CenterCrop(256),
+    transforms.ToTensor()
+])
+
 class GAN_dataset(Dataset):
     """
     TODO: 
         - update the Description
     """
 
-    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, preprocess=False, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
+    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
         super(GAN_dataset, self).__init__()
         np.random.seed(seed)
         self.training_process_name = "/processed_images.pt"
         self.preprocess_storage = preprocess_storage
         self.BoxSize = BoxSize
         self.boolean_sample = [True, False]
-        self.transform = transform
+        if transform is not None:
+            self.transform = transform
+        else:
+            self.transform = def_transform          
         self.max_training_samples = training_samples
         #Setting up the directories
         self.workingdir = os.getcwd() if workingdir == None else workingdir

@@ -43,7 +43,6 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             "ModelName"             : "GAN_1_best.pt",
-            "preprocess"            : True,
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             }
@@ -117,7 +116,7 @@ def main():
     
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(preprocess_storage=Settings["preprocess_storage"], training_samples=Settings["Num_training_samples"], seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms, preprocess=Settings["preprocess"])
+    Custom_dataset = GAN_dataset(preprocess_storage=Settings["preprocess_storage"], training_samples=Settings["Num_training_samples"], seed=seed_num, workingdir=Settings["dataset_loc"], transform=training_transforms)
 
     dataset_len = len(Custom_dataset)
 
@@ -157,7 +156,7 @@ def main():
 
                     real_A = inputs.to(device)
                     real_B = targets.to(device)
-                                        
+                    
                     
                     # Generator loss            
                     fake_B = Generator(real_B)
