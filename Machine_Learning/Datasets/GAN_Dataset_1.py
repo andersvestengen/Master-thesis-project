@@ -126,8 +126,6 @@ class GAN_dataset(Dataset):
             for num, cache in enumerate(Crepoch):
 
                 if num == 0:
-                    #print("the file is:!!!", os.path.isfile(cache))
-                    #print(cache)
                     self.data = torch.load(cache)
                     os.remove(cache)
                 else:

@@ -9,13 +9,6 @@ from torch import nn
 
 """
 Dev notes:
-    - Implement the Generator class
-    - Implement the Discriminator class
-    
-    - Implement the L1 loss function
-    
-    - Implement a training loop
-    
     - After the first successfull training iteration, add a local loss.
 
 """
