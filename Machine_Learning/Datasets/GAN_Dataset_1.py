@@ -22,7 +22,7 @@ class GAN_dataset(Dataset):
         - update the Description
     """
 
-    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, imagefolder="/Images/", csvfolder="/CompletedSamples/", csvname="Samples.csv", transform=None):
+    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, imagefolder="/Images/", transform=None):
         super(GAN_dataset, self).__init__()
         np.random.seed(seed)
         self.training_process_name = "/processed_images.pt"
@@ -36,7 +36,6 @@ class GAN_dataset(Dataset):
         self.max_training_samples = training_samples
         #Setting up the directories
         self.workingdir = os.getcwd() if workingdir == None else workingdir
-        self.csvdir = self.workingdir + csvfolder + csvname
         self.Small_cache_storage = self.workingdir + self.training_process_name
         #self.samplecoordinates= []
         # Setting up special paths and creating the glob directory-lists here
