@@ -37,6 +37,13 @@ class FileSender():
 class Training_Framework():
     def __init__(self, Settings):
         self.Settings = Settings
+
+
+
+        # Do I want to train or do Inference?
+
+
+        
         # Set the working Directory
         if not self.Settings["workingdir"]:
             self.workingdir = os.getcwd()
