@@ -1,4 +1,5 @@
 import gc
 import torch
-torch.cuda.empty_cache()
+with torch.no_grad():
+    torch.cuda.empty_cache()
 gc.collect()
