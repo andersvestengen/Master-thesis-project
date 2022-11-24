@@ -13,7 +13,7 @@ TODO: GOAL: Create class for holding functions and values associated with traini
 """
 class FileSender():
     def __init__(self):
-        self.externaldir = "dummytransferdir/"
+        self.externaldir = "Master-Thesis_Model_Directory/"
         print("setting up ssh and sftp")
         self.username = input("input username: ")
         self.server = "login.uio.no"
@@ -29,14 +29,11 @@ class FileSender():
 
     def send(self, directory):
         dir_struct = list(os.walk(directory))
-        print("received directory", directory)
-        foldername = dir_struct[0][0]
+        foldername = dir_struct[0][0].split("/")[-1]
         self.ftr.mkdir(self.externaldir + "/" + foldername)
-        print("made remote directory", self.externaldir + "/" + foldername)
         for filename in dir_struct[0][2]:
-            print("found file", filename, "in", foldername)
             file_external_path = self.externaldir + "/" + foldername + "/" + filename
-            file_local_path = foldername + "/" + filename
+            file_local_path = dir_struct[0][0] + "/" + filename
             self.ftr.put(file_local_path ,file_external_path)
             print("sent", filename, "to new path", file_external_path)
         print("finished sending directory", foldername)
@@ -52,9 +49,9 @@ class FileSender():
         dirs = []
         workingdir = "Trained_Models"
         for dir in range(5):
-            dirname = workingdir + str(dir)
+            dirname = workingdir + "/" "Testdir" + str(dir)
             dirs.append(dirname)
-            os.makedir(dirname)
+            os.mkdir(dirname)
             for file in range(5):
                 filename = dirname + "/File" + str(file) + ".txt"
                 with open(filename, 'w') as f:
@@ -96,5 +93,4 @@ class Training_Framework():
 
 
 if __name__ == '__main__':
-    Sender = FileSender()
-    Sender.send_tester()
+    pass
