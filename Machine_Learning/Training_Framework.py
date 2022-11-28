@@ -1,6 +1,7 @@
 import paramiko
 import os
 from datetime import datetime
+import numpy as np
 """
 TODO: GOAL: Create class for holding functions and values associated with training the ML models
         SubGoal: I want to be able to view analytics.npz image, and send model files to other server.
@@ -12,8 +13,15 @@ TODO: GOAL: Create class for holding functions and values associated with traini
 
 """
 class FileSender():
+    """
+    This class sets up sending files between the local directory given (!Only expects no subfolders!) and the uio folder "Master_Thesis_Model_Directory/"
+    It will make it easier to work with as the training cluster is not accessible to IP's outside the uio servers.
+
+    *In the future maybe add some functionality to pull from the uio server to the local folder where this program is run.
+    
+    """
     def __init__(self):
-        self.externaldir = "Master-Thesis_Model_Directory/"
+        self.externaldir = "Master_Thesis_Model_Directory/"
         print("setting up ssh and sftp")
         self.username = input("input username: ")
         self.server = "login.uio.no"
@@ -63,18 +71,24 @@ class FileSender():
             self.send(directory)
 
 
-
-
-
 class Training_Framework():
+
+    """
+    Framework for training the different networks, should not inherit or mess with pytorch itself, but instead passes the model by assignment to make training more like 
+    Legos and less like a novel.
+    
+
+    TODO:
+        - import the different methods of training as differing functions.
+        - then create the larger batch-training etc. functions.
+        - Bottom up architecture. 
+
+        - Function to keep track of the analytics 
+        - function to save figures of the analytics
+        - Add accuracy of the discriminator to the analytics (maybe in its own window.)
+    """
     def __init__(self, Settings):
         self.Settings = Settings
-
-
-
-        # Do I want to train or do Inference?
-
-
         
         # Set the working Directory
         if not self.Settings["workingdir"]:
@@ -82,14 +96,66 @@ class Training_Framework():
         else:
             self.workingdir = self.Settings["workingdir"]
 
+
+        """
+        #Create the directory of the model (Look back at this for batch training.)
         time = str(datetime.now())
         if not Settings["ModelName"]:
             self.Modeldir = "GAN_Model_" + self.Settings["epochs"] + "_" + self.Settings["batch_size"] + time[:-7].strip(" ")
             
-        os.mkdir(self.Modelname)
+        os.mkdir(self.Modeldir)
+        """
 
-    def make_loss_img(self):
+    def Analytics_training(self, *args):
+        """
+        current epoch needs to be the first argument, except when setting up training.  
+        """
+        if args[0] == "setup":
+            self.Generator_loss_train = np.zeros(self.Settings["epochs"])
+            self.Discriminator_loss_train = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_training = np.zeros(self.Settings["epochs"])
+
+
+        else:
+            epoch = args[0]
+            self.Generator_loss_train[epoch] = args[1]
+            self.Discriminator_loss_train[epoch] = args[2]
+            self.Discriminator_accuracy_training[epoch] = args[3]
+
+
+    def Analytics_validation(self, *args):
+        """
+        current epoch needs to be the first argument, except when setting up training. 
+        """
+        if args[0] == "setup":
+            self.Generator_loss_validation = np.zeros(self.Settings["epochs"])
+            self.Discriminator_loss_validation = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_validation = np.zeros(self.Settings["epochs"])
+
+        else:
+            epoch = args[0]
+            self.Generator_loss_validation[epoch] = args[1]
+            self.Discriminator_loss_validation[epoch] = args[2]
+            self.Discriminator_accuracy_validation[epoch] = args[3]  
+
+
+    def Save_Analytics(self):
+        np.savez(self.Modeldir, (self.Generator_loss_validation,
+                                self.Discriminator_loss_validation,
+                                self.Discriminator_accuracy_validation,
+                                self.Generator_loss_train,
+                                self.Discriminator_loss_train,
+                                self.Discriminator_accuracy_training
+                                ))
+
+    def trainer(self):
+        """
+        For now will only train one model at a time, but should be remade to train batches of models. 
+        """
+
+    def Train_init(self, Generator, Discriminator):
         pass
+
 
 
 if __name__ == '__main__':
