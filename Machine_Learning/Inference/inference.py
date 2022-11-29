@@ -84,8 +84,7 @@ def Inference_run(image):
 if __name__ == '__main__':
     # Define strings and models
 
-    Desk_GAN1_dir = "G:/Thesis_models_and_data/GAN_1/"
-    inference_img = "G:/Master-thesis-project/Machine_Learning/Inference/inference_img.jpg"
+    Desk_GAN1_dir = "G:/Thesis_models_and_data/GAN_1_better_parameters/"
     npy_store_dir = "Analytics.npz"
     GAN1_model_dir = "GAN_1_best.pt"
 
@@ -93,8 +92,8 @@ if __name__ == '__main__':
     Generator = Generator_Unet1()
 
     # Datasets and loaders
-    Desk_dir = "G:/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
-    Expset = GAN_dataset(preprocess_storage=None, training_samples=1500, seed=18, workingdir=Desk_dir, transform=training_transforms, preprocess=True)
+    Desk_dir = "G:/Master-thesis-project/Machine_Learning"
+    Expset = GAN_dataset(preprocess_storage=None, training_samples=1500, seed=18, workingdir=Desk_dir, transform=training_transforms)
 
     train_loader = DataLoader(Expset,
                                     num_workers = 1,

@@ -154,8 +154,8 @@ def main():
                     valid = torch.ones((Settings["batch_size"], *patch)).to(device)
                     fake = torch.zeros((Settings["batch_size"], *patch)).to(device)
 
-                    real_A = inputs.to(device)
-                    real_B = targets.to(device)
+                    real_A = targets.to(device)
+                    real_B = inputs.to(device)
                     
                     
                     # Generator loss            
@@ -208,16 +208,16 @@ def main():
                 valid = torch.ones((Settings["batch_size"], *patch)).to(device)
                 fake = torch.zeros((Settings["batch_size"], *patch)).to(device)
 
-                real_A = inputs.to(device)
-                real_B = targets.to(device)
+                real_A = targets.to(device)
+                real_B = inputs.to(device)
                 
 
                 #------ Train the Generator
                 Generator_optimizer.zero_grad()
                 
                 # Generator loss            
-                fake_B = Generator(real_A)
-                predict_fake = Discriminator(fake_B, real_A)
+                fake_B = Generator(real_A) # Predict from original doesnt make sense!
+                predict_fake = Discriminator(fake_B, real_A) # Compare fake output to original image
                 loss_GAN = GAN_loss(predict_fake, valid)
                 #Pixelwise loss
                 loss_pixel = pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
