@@ -15,18 +15,19 @@ class FileSender():
     
     """
     def __init__(self):
-        self.externaldir = "Master_Thesis_Model_Directory/"
+        self.externaldir = "Master_Thesis_Model_Directory"
         print("setting up ssh and sftp")
         self.username = input("input username: ")
         self.server = "login.uio.no"
         self.password = input("input password: ")
-
+        
         self.cli = paramiko.SSHClient()
         self.cli.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.cli.connect(hostname=self.server, port=22, username=self.username, password=self.password)
         print("Succesfully connected to", self.server)
         self.ftr = self.cli.open_sftp()
         print("sftp open")
+        self.local_Model_Directory = "Trained_Models"
     
 
     def send(self, directory):
@@ -37,19 +38,38 @@ class FileSender():
             file_external_path = self.externaldir + "/" + foldername + "/" + filename
             file_local_path = dir_struct[0][0] + "/" + filename
             self.ftr.put(file_local_path ,file_external_path)
-            print("sent", filename, "to new path", file_external_path)
         print("finished sending directory", foldername)
+
+
+    def pull(self, directory):
+        dir_struct = self.ftr.listdir(self.externaldir + "/" + directory)
+        os.mkdir(self.local_Model_Directory + "/" + directory)
+        for filename in dir_struct:
+            file_external_path = self.externaldir + "/" + directory + "/" + filename
+            file_local_path = self.local_Model_Directory + "/" + directory + "/" + filename
+            self.ftr.get(file_external_path, file_local_path)
+        print("retrieved ", directory, "from remote server")
+
+    def get_remote_models(self):
+        local_dir = "Trained_Models"
+        local_list = os.listdir(local_dir)
+        remote_list = self.ftr.listdir(self.externaldir)
+        fetch_list = [dir for dir in remote_list if dir not in local_list]
+        for folder in fetch_list:
+            self.pull(folder)
+        print("completed remote folder transfer")
 
 
     def close(self):
         self.ftr.close()
         self.cli.close()
+        print("SSH and SFTP closed")
 
     def send_tester(self):
         # Make Directories
         print("starting test of filesending infrastructure!")
         dirs = []
-        workingdir = "Trained_Models"
+        workingdir = self.local_Model_Directory
         for dir in range(5):
             dirname = workingdir + "/" "Testdir" + str(dir)
             dirs.append(dirname)
@@ -64,15 +84,8 @@ class FileSender():
         for directory in dirs:
             self.send(directory)
 
-    def get_remote_models(self):
-        """
-        TODO:
-            - must list local Trained_Models/directory
-            - must list remote Model_Thesis... directory
-            - must compare the two, if not found locally, must download directory.
 
-        """
-        
+
 
 class Training_Framework():
 
