@@ -2,16 +2,10 @@ import paramiko
 import os
 from datetime import datetime
 import numpy as np
-"""
-TODO: GOAL: Create class for holding functions and values associated with training the ML models
-        SubGoal: I want to be able to view analytics.npz image, and send model files to other server.
+import torch
+from torchvision import transforms
+import matplotlib.pyplot as plt
 
-    - Create Initial class
-    - Create Function which can create Images from Analytics file
-    - Create function which can send trained models along with their analytics to other storage.
-    - Create Function which can hold SSH username and password for file transfer. 
-
-"""
 class FileSender():
     """
     This class sets up sending files between the local directory given (!Only expects no subfolders!) and the uio folder "Master_Thesis_Model_Directory/"
@@ -70,6 +64,15 @@ class FileSender():
         for directory in dirs:
             self.send(directory)
 
+    def get_remote_models(self):
+        """
+        TODO:
+            - must list local Trained_Models/directory
+            - must list remote Model_Thesis... directory
+            - must compare the two, if not found locally, must download directory.
+
+        """
+        
 
 class Training_Framework():
 
@@ -96,15 +99,14 @@ class Training_Framework():
         else:
             self.workingdir = self.Settings["workingdir"]
 
-
-        """
         #Create the directory of the model (Look back at this for batch training.)
         time = str(datetime.now())
-        if not Settings["ModelName"]:
-            self.Modeldir = "GAN_Model_" + self.Settings["epochs"] + "_" + self.Settings["batch_size"] + time[:-7].strip(" ")
+        if Settings["ModelName"] is None:
+            stamp = time[:-16] + "_" + time[11:-7]
+            self.Modeldir = Settings["workingdir"] + "/Trained_Models/" + "GAN_Model_" + self.Settings["epochs"] + "_" + self.Settings["batch_size"] + "_" + self.Settings["lr"] + "_" + stamp
             
         os.mkdir(self.Modeldir)
-        """
+
 
     def Analytics_training(self, *args):
         """
@@ -157,6 +159,78 @@ class Training_Framework():
         pass
 
 
+
+class Model_Inference():
+    """
+    Class to do inference and get inference data from the model.
+    Made to only do inference on the Generator part of the GAN network.
+
+    Input:
+        - Modelref: This is the vanilla model class itself, from the Models/ dir
+        - Modeldir: This is the location of the trained model.pt file.
+    """
+    def __init__(self, modelref, modeldir, device="cpu"):
+        self.model = modelref
+        self.device = device
+        self.transform = transforms.ToPILImage()
+        self.modeldir = modeldir
+        self.modelname = self.modeldir.split("/")[-2]
+
+
+    def RestoreModel(self):
+        self.model.load_state_dict(torch.load(self.modeldir, map_location=torch.device(self.device)))
+        print("Succesfully loaded", self.modelname, "model") # Make this reference the model name. 
+
+
+    def Inference_run(self, image):
+        """
+        Does an inference run on the Model for a single image, requires an image from the Dataset.
+        """
+        print("Would you like to save or view images?")
+        decision = input("type save/view: ")
+        self.model.eval()
+        Generated_output_image = self.model(image)
+        im = self.transform(image.squeeze(0))
+        output = self.transforms(Generated_output_image.squeeze(0))
+        if decision == "view":
+            f, (ax1,ax2) = plt.subplot(1,2)
+            ax1.imshow(np.asarray(im))
+            ax2.imshow(np.asarray(output))
+            plt.show()
+        if decision == "save":
+            im.save(self.modelname + "defect_sample_input.jpg")
+            output.save(self.modelname + "reconstructed_image.jpg")
+
+    def Create_graphs(self):
+        decision = input("show[y] or just save[n]? [y/n]: ")
+        loaded_arrays = np.load(self.modeldir + "/" + "Analytics.npz")
+        xaxis = np.arange(0, loaded_arrays['arr_0'].shape[0])
+        plt.plot(xaxis, loaded_arrays['arr_0'], label="Generator loss training")
+        plt.plot(xaxis, loaded_arrays['arr_1'], label="Generator loss validation")
+        plt.plot(xaxis, loaded_arrays['arr_2'], label="Discriminator loss training")    
+        plt.plot(xaxis, loaded_arrays['arr_3'], label="Discriminator loss validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.title("Model loss curves")
+        if decision == "y":
+            plt.savefig(self.modeldir + "/" + "model_loss_curves.png")
+            plt.show()
+        else:
+            plt.savefig()
+        plt.clf() # clear the plot
+        plt.plot(xaxis, loaded_arrays['arr_4'], label="Discriminator accuracy training")
+        plt.plot(xaxis, loaded_arrays['arr_5'], label="Discriminator accuracy validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Percentage [%]")
+        plt.legend()
+        plt.title("Discriminator accuracy")
+        if decision == "y":
+            plt.savefig(self.modeldir + "/" + "discriminator_accuracy_curves.png")
+            plt.show()
+        else:
+            plt.savefig()
+        plt.clf() # clear the plot
 
 if __name__ == '__main__':
     pass
