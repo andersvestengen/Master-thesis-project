@@ -55,9 +55,12 @@ class FileSender():
         local_list = os.listdir(local_dir)
         remote_list = self.ftr.listdir(self.externaldir)
         fetch_list = [dir for dir in remote_list if dir not in local_list]
-        for folder in fetch_list:
-            self.pull(folder)
-        print("completed remote folder transfer")
+        if len(fetch_list) == 0:
+            print("found no new models")
+        else:
+            for folder in fetch_list:
+                self.pull(folder)
+            print("completed remote folder transfer")
 
 
     def close(self):
@@ -224,20 +227,21 @@ class Model_Inference():
         plt.plot(xaxis, loaded_arrays['arr_3'], label="Discriminator loss validation")
         plt.xlabel("epochs")
         plt.ylabel("Loss")
-        plt.legend()
         plt.title("Model loss curves")
+        plt.legend()
         if decision == "y":
             plt.savefig(self.modeldir + "/" + "model_loss_curves.png")
             plt.show()
         else:
             plt.savefig()
+
         plt.clf() # clear the plot
         plt.plot(xaxis, loaded_arrays['arr_4'], label="Discriminator accuracy training")
         plt.plot(xaxis, loaded_arrays['arr_5'], label="Discriminator accuracy validation")
         plt.xlabel("epochs")
         plt.ylabel("Percentage [%]")
-        plt.legend()
         plt.title("Discriminator accuracy")
+        plt.legend()
         if decision == "y":
             plt.savefig(self.modeldir + "/" + "discriminator_accuracy_curves.png")
             plt.show()
