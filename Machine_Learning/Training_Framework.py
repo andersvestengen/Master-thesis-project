@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 class FileSender():
     """
@@ -106,12 +107,23 @@ class Training_Framework():
         - function to save figures of the analytics
         - Add accuracy of the discriminator to the analytics (maybe in its own window.)
     """
-    def __init__(self, Settings):
+    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, discrim_loss, Discriminator):
         self.Settings = Settings
-        
         # Set the working Directory
         if not self.Settings["workingdir"]:
             self.workingdir = os.getcwd()
+            self.Generator = Generator
+            self.Generator_optimizer = G_opt
+            self.GAN_loss = GAN_loss
+            self.pixelwise_loss = pixelwise_loss
+            self.Discriminator = Discriminator
+            self.Discriminator_loss = discrim_loss
+            self.Discriminator_optimizer = D_opt
+
+            self.Generator_loss = 0
+            self.Discriminator_loss = 0
+            self.patch = (1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4)
+
         else:
             self.workingdir = self.Settings["workingdir"]
 
@@ -123,6 +135,123 @@ class Training_Framework():
             
         os.mkdir(self.Modeldir)
 
+    def Save_Model(self, epoch):
+            if (epoch > 0) and (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
+                torch.save(self.Generator.state_dict(), str( self.Modeldir + "/" +  self.Settings["ModelName"] ))
+
+    def Generator_updater(self, real_A, real_B, fake_B, val=False):
+        self.Generator_optimizer.zero_grad()
+        
+        # Generator loss            
+        predict_fake = self.Discriminator(fake_B, real_A) # Compare fake output to original image
+        loss_GAN = self.GAN_loss(predict_fake, self.valid)
+        #Pixelwise loss
+        loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
+        
+        #Total loss
+        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel
+        
+        if not val:
+            Total_loss_Generator.backward()
+            self.Generator_optimizer.step()
+
+        return Total_loss_Generator.item()
+
+    def Discriminator_updater(self , predicted_real, predicted_fake, val=False):
+        self.Discriminator_optimizer.zero_grad()
+        
+        # Real loss 
+        loss_real = self.GAN_loss(predicted_real, self.valid)
+        
+        # Fake loss
+        loss_fake = self.GAN_loss(predicted_fake, self.fake)
+        # Total loss
+        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
+        if not val:
+            Total_loss_Discriminator.backward()
+            
+            self.Discriminator_optimizer.step()
+
+        return Total_loss_Discriminator.item()
+
+    def Discriminator_updater_real_fake_separate(self, predicted_real, predicted_fake, val=False):
+        self.Discriminator_optimizer.zero_grad()
+        
+        # Real loss 
+        loss_real = self.GAN_loss(predicted_real, self.valid)
+        
+        # Fake loss
+        loss_fake = self.GAN_loss(predicted_fake, self.fake)
+        # Total loss      
+        if not val:
+            loss_real.backward()
+            loss_fake.backward()
+            self.Discriminator_optimizer.step()
+
+        return (loss_real.item() + loss_fake.item())*0.5
+
+    def validation_run(self, val_loader):
+        for epoch in range(self.Settings["epochs"]):
+            current_GEN_loss = 0
+            current_DIS_loss = 0
+            # Training loop
+            with tqdm(val_loader, unit='batch', leave=False) as tepoch:
+                for inputs, targets in tepoch:
+                    tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
+                    if epoch > 0:
+                        tepoch.set_description(f"Epoch {epoch}/{self.Settings['epochs']} Gen_loss {current_GEN_loss[epoch-1]:.5f} Disc_loss {current_DIS_loss[epoch-1]:.5f}")
+                        
+                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
+                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
+
+                    real_A = targets.to(self.device)
+                    real_B = inputs.to(self.device)
+                    
+                    fake_B = self.Generator(real_A)
+                    current_GEN_loss = self.Generator_updater(real_A, real_B, fake_B, val=True) # To be made.
+                    predicted_real = self.Discriminator(real_B, real_A)
+                    predicted_fake = self.Discriminator(fake_B.detach(), real_A)
+                    current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake, val=True) 
+                    Discrim_acc_real = torch.sum(predicted_real < 1) / self.Settings["batch_size"]
+                    Discrim_acc_fake = torch.sum(predicted_fake > 1) / self.Settings["batch_size"]
+
+                    if epoch == 0:
+                        self.Analytics_validation("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                    else:
+                        self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+
+    def Trainer(self, train_loader, val_loader):
+        for epoch in range(self.Settings["epochs"]):
+            current_GEN_loss = 0
+            current_DIS_loss = 0
+            # Training loop
+            with tqdm(train_loader, unit='batch', leave=False) as tepoch:
+                for inputs, targets in tepoch:
+                    tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
+                    if epoch > 0:
+                        tepoch.set_description(f"Epoch {epoch}/{self.Settings['epochs']} Gen_loss {Generator_loss_train[epoch-1]:.5f} Disc_loss {Discriminator_loss_train[epoch-1]:.5f}")
+                        
+                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
+                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
+
+                    real_A = targets.to(self.device)
+                    real_B = inputs.to(self.device)
+                    
+                    fake_B = self.Generator(real_A)
+                    current_GEN_loss = self.Generator_updater(real_A, real_B, fake_B) # To be made.
+                    predicted_real = self.Discriminator(real_B, real_A)
+                    predicted_fake = self.Discriminator(fake_B.detach(), real_A)
+                    current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake) 
+                    Discrim_acc_real = torch.sum(predicted_real < 1) / self.Settings["batch_size"]
+                    Discrim_acc_fake = torch.sum(predicted_fake > 1) / self.Settings["batch_size"]
+
+                    if epoch == 0:
+                        self.Analytics_training("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                    else:
+                        self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+            self.validation_run(val_loader)
+            self.Save_Model(epoch)
+        self.Save_Analytics()
 
     def Analytics_training(self, *args):
         """
@@ -131,14 +260,16 @@ class Training_Framework():
         if args[0] == "setup":
             self.Generator_loss_train = np.zeros(self.Settings["epochs"])
             self.Discriminator_loss_train = np.zeros(self.Settings["epochs"])
-            self.Discriminator_accuracy_training = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_real_training = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_fake_training = np.zeros(self.Settings["epochs"])
 
 
         else:
             epoch = args[0]
             self.Generator_loss_train[epoch] = args[1]
             self.Discriminator_loss_train[epoch] = args[2]
-            self.Discriminator_accuracy_training[epoch] = args[3]
+            self.Discriminator_accuracy_real_training[epoch] = args[3]
+            self.Discriminator_accuracy_fake_training[epoch] = args[4]
 
 
     def Analytics_validation(self, *args):
@@ -148,31 +279,27 @@ class Training_Framework():
         if args[0] == "setup":
             self.Generator_loss_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_loss_validation = np.zeros(self.Settings["epochs"])
-            self.Discriminator_accuracy_validation = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_real_validation = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_fake_validation = np.zeros(self.Settings["epochs"])
 
         else:
             epoch = args[0]
             self.Generator_loss_validation[epoch] = args[1]
             self.Discriminator_loss_validation[epoch] = args[2]
-            self.Discriminator_accuracy_validation[epoch] = args[3]  
+            self.Discriminator_accuracy_real_validation[epoch] = args[3]  
+            self.Discriminator_accuracy_fake_validation[epoch] = args[4]  
 
 
     def Save_Analytics(self):
-        np.savez(self.Modeldir, (self.Generator_loss_validation,
+        np.savez(self.Modeldir + 'Analytics.npz', (self.Generator_loss_validation,
                                 self.Discriminator_loss_validation,
-                                self.Discriminator_accuracy_validation,
+                                self.Discriminator_accuracy_real_validation,
+                                self.Discriminator_accuracy_fake_validation,
                                 self.Generator_loss_train,
                                 self.Discriminator_loss_train,
-                                self.Discriminator_accuracy_training
+                                self.Discriminator_accuracy_real_training,
+                                self.Discriminator_accuracy_fake_training
                                 ))
-
-    def trainer(self):
-        """
-        For now will only train one model at a time, but should be remade to train batches of models. 
-        """
-
-    def Train_init(self, Generator, Discriminator):
-        pass
 
 
 
@@ -197,6 +324,9 @@ class Model_Inference():
         self.model.load_state_dict(torch.load(self.modeldir, map_location=torch.device(self.device)))
         print("Succesfully loaded", self.modelname, "model") # Make this reference the model name. 
 
+    def GAN_Dataset_1_init():
+        pass
+        # Create a routine for extracting images from the GAN_1_dataset here.
 
     def Inference_run(self, image):
         """

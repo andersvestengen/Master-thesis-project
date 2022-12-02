@@ -193,7 +193,6 @@ def main():
         # Look to add something for lowering the learning rate after a number of epochs
         # Add a try except block for more robust functionality.
         
-        mean_loss = 0
         Gen_loss_avg = 0
         Disc_loss_avg = 0
         # Training loop
