@@ -92,46 +92,39 @@ class FileSender():
 
 
 class Training_Framework():
-
     """
     Framework for training the different networks, should not inherit or mess with pytorch itself, but instead passes the model by assignment to make training more like 
     Legos and less like a novel.
-    
-
-    TODO:
-        - import the different methods of training as differing functions.
-        - then create the larger batch-training etc. functions.
-        - Bottom up architecture. 
-
-        - Function to keep track of the analytics 
-        - function to save figures of the analytics
-        - Add accuracy of the discriminator to the analytics (maybe in its own window.)
     """
-    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, discrim_loss, Discriminator):
+
+    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, Discriminator):
         self.Settings = Settings
+        self.Generator = Generator
+        self.Generator_optimizer = G_opt
+        self.GAN_loss = GAN_loss
+        self.pixelwise_loss = pixelwise_loss
+        self.Discriminator = Discriminator
+        self.Discriminator_optimizer = D_opt
+
+        self.Generator_loss = 0
+        self.Discriminator_loss = 0
+        self.patch = (1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4)
+
+        decision = input("would you like to send model to server? [y/n]: ")
+
+        if decision == "y":
+            self.transmitter = FileSender()
+
         # Set the working Directory
-        if not self.Settings["workingdir"]:
+        if not self.Settings["dataset_loc"]:
             self.workingdir = os.getcwd()
-            self.Generator = Generator
-            self.Generator_optimizer = G_opt
-            self.GAN_loss = GAN_loss
-            self.pixelwise_loss = pixelwise_loss
-            self.Discriminator = Discriminator
-            self.Discriminator_loss = discrim_loss
-            self.Discriminator_optimizer = D_opt
-
-            self.Generator_loss = 0
-            self.Discriminator_loss = 0
-            self.patch = (1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4)
-
         else:
-            self.workingdir = self.Settings["workingdir"]
+            self.workingdir = self.Settings["dataset_loc"]
 
         #Create the directory of the model (Look back at this for batch training.)
         time = str(datetime.now())
-        if Settings["ModelName"] is None:
-            stamp = time[:-16] + "_" + time[11:-7]
-            self.Modeldir = Settings["workingdir"] + "/Trained_Models/" + "GAN_Model_" + self.Settings["epochs"] + "_" + self.Settings["batch_size"] + "_" + self.Settings["lr"] + "_" + stamp
+        stamp = time[:-16] + "_" + time[11:-7]
+        self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model_" + self.Settings["epochs"] + "_" + self.Settings["batch_size"] + "_" + self.Settings["lr"] + "_" + stamp
             
         os.mkdir(self.Modeldir)
 
@@ -229,7 +222,7 @@ class Training_Framework():
                 for inputs, targets in tepoch:
                     tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0:
-                        tepoch.set_description(f"Epoch {epoch}/{self.Settings['epochs']} Gen_loss {Generator_loss_train[epoch-1]:.5f} Disc_loss {Discriminator_loss_train[epoch-1]:.5f}")
+                        tepoch.set_description(f"Epoch {epoch}/{self.Settings['epochs']} Gen_loss {current_GEN_loss[epoch-1]:.5f} Disc_loss {current_DIS_loss[epoch-1]:.5f}")
                         
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
@@ -252,6 +245,8 @@ class Training_Framework():
             self.validation_run(val_loader)
             self.Save_Model(epoch)
         self.Save_Analytics()
+        self.transmitter.send(self.Modeldir)
+        self.transmitter.close()
 
     def Analytics_training(self, *args):
         """

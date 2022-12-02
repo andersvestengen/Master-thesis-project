@@ -22,12 +22,13 @@ class GAN_dataset(Dataset):
         - update the Description
     """
 
-    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, imagefolder="/Images/", transform=None):
+    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, imagefolder="/Images/", transform=None, device="cpu"):
         super(GAN_dataset, self).__init__()
         np.random.seed(seed)
         self.training_process_name = "/processed_images.pt"
         self.preprocess_storage = preprocess_storage
         self.BoxSize = BoxSize
+        self.device = device
         self.boolean_sample = [True, False]
         if transform is not None:
             self.transform = transform
@@ -67,7 +68,7 @@ class GAN_dataset(Dataset):
             self.data = torch.load(self.Large_cache_storage)
             stop = time.time()
             print(f"Time spent loading file was: {stop - start:.2} seconds")
-            print("Number of images was:", len(self.OriginalImagesList))
+            print("Number of images was:", len(self.data.size(0) // 2))
             
         
 
@@ -124,7 +125,7 @@ class GAN_dataset(Dataset):
         print("reconstituting images into single file:")
         self.data = 0
         cache_list = sorted(glob.glob(self.preprocess_storage + "**/*.pt", recursive=True))
-        with tqdm(cache_list, unit='images') as Crepoch:
+        with tqdm(cache_list, unit='patches') as Crepoch:
             for num, cache in enumerate(Crepoch):
 
                 if num == 0:
