@@ -68,7 +68,7 @@ class GAN_dataset(Dataset):
             self.data = torch.load(self.Large_cache_storage)
             stop = time.time()
             print(f"Time spent loading file was: {stop - start:.2} seconds")
-            print("Number of images was:", len(self.data.size(0) // 2))
+            print("Number of images was:", self.data.size(0) // 2)
             
         
 
@@ -107,11 +107,11 @@ class GAN_dataset(Dataset):
                 image = self.transform(Image.open(imagedir))
                 sample = np.asarray(image).copy()
                 sample = torch.from_numpy(self.DefectGenerator(sample))
-
+                # If imagelist > 200 and num > 200
                 if (num > 0) and (num % 200 == 0):
                     torch.save(self.data, self.preprocess_storage+"/processed_images"+str(num)+".pt")
-                    self.data = 0
-                #stack them
+                    self.data = 0                  
+
                 if num == 0 or num % 200 == 0:
                     Prepoch.set_description(f"Preprocessing images for CUDA")
                     self.data = torch.stack((image, sample), dim=0)
@@ -119,12 +119,15 @@ class GAN_dataset(Dataset):
                     Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
-            if not len(self.OriginalImagesList) == self.max_training_samples:
+            print("self.data size is: ", self.data.element_size() * self.data.nelement() * 1e-6)
+            if not isinstance(self.data, int):
                 print("trying to save incomplete last cache size")
-                torch.save(self.data, self.preprocess_storage+"/processed_images"+str(len(self.OriginalImagesList))+".pt")
+                torch.save(self.data, self.preprocess_storage+"/processed_images_last.pt")
+        print("self.data size is: ", self.data.element_size() * self.data.nelement() * 1e-6)
         print("reconstituting images into single file:")
         self.data = 0
         cache_list = sorted(glob.glob(self.preprocess_storage + "**/*.pt", recursive=True))
+        print("This is the .pt list:", cache_list)
         with tqdm(cache_list, unit='patches') as Crepoch:
             for num, cache in enumerate(Crepoch):
 
@@ -134,9 +137,9 @@ class GAN_dataset(Dataset):
                 else:
                     Crepoch.set_description(f"Stacking cache for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     temp = torch.load(cache)
-                    os.remove(cache)
                     self.data = torch.cat((self.data, temp), 0)
-
+                    os.remove(cache)
+        print("self.data size is: ", self.data.element_size() * self.data.nelement() * 1e-6)
         print("Saving to file")
         start = time.time()
         torch.save(self.data, self.Large_cache_storage)
