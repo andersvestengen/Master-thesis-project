@@ -114,7 +114,7 @@ class Training_Framework():
         os.makedirs(self.Modeldir)
 
     def Save_Model(self, epoch):
-            if (epoch > 0) and (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
+            if (epoch == 0) or (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
     def Generator_updater(self, real_A, real_B, fake_B, val=False):
@@ -171,6 +171,8 @@ class Training_Framework():
     def validation_run(self, val_loader, epoch):
             current_GEN_loss = 0
             current_DIS_loss = 0
+            Discrim_acc_real = 0
+            Discrim_acc_fake = 0
             with tqdm(val_loader, unit='batch', leave=False) as tepoch:
                 for inputs, targets in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
@@ -184,22 +186,28 @@ class Training_Framework():
                     real_B = inputs.to(self.device)
                     
                     fake_B = self.Generator(real_A)
-                    current_GEN_loss = self.Generator_updater(real_A, real_B, fake_B, val=True) # To be made.
+                    current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B, val=True) / self.Settings["batch_size"]
                     predicted_real = self.Discriminator(real_B, real_A)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                    current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake, val=True) 
-                    Discrim_acc_real = torch.sum(torch.sum(predicted_real, (2,3)) < 1) / self.Settings["batch_size"]
-                    Discrim_acc_fake = torch.sum(torch.sum(predicted_fake, (2,3)) > 1) / self.Settings["batch_size"]
+                    current_DIS_loss += self.Discriminator_updater(predicted_real, predicted_fake, val=True) / self.Settings["batch_size"]
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
 
-                    if epoch == 0:
-                        self.Analytics_validation("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
-                    else:
-                        self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+            current_GEN_loss = current_GEN_loss / len(val_loader)
+            current_DIS_loss = current_DIS_loss / len(val_loader)
+            Discrim_acc_real = Discrim_acc_real / len(val_loader)
+            Discrim_acc_fake = Discrim_acc_fake / len(val_loader)
+            if epoch == 0:
+                self.Analytics_validation("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+            else:
+                self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
 
     def Trainer(self, train_loader, val_loader):
             for epoch in tqdm(range(self.Settings["epochs"]), unit="epoch", desc="Training the model on epoch {epoch}"):
                 current_GEN_loss = 0
                 current_DIS_loss = 0
+                Discrim_acc_real = 0
+                Discrim_acc_fake = 0
                 with tqdm(train_loader, unit='batch', leave=False) as tepoch:
                     for inputs, targets in tepoch:
                         tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
@@ -213,17 +221,21 @@ class Training_Framework():
                         real_B = inputs.to(self.device)
                         
                         fake_B = self.Generator(real_A)
-                        current_GEN_loss = self.Generator_updater(real_A, real_B, fake_B) # To be made.
+                        current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B) / self.Settings["batch_size"]
                         predicted_real = self.Discriminator(real_B, real_A)
                         predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                        current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake) 
-                        Discrim_acc_real = torch.sum(torch.sum(predicted_real, (2,3)) < 1) / self.Settings["batch_size"]
-                        Discrim_acc_fake = torch.sum(torch.sum(predicted_fake, (2,3)) > 1) / self.Settings["batch_size"]
+                        current_DIS_loss += self.Discriminator_updater(predicted_real, predicted_fake) / self.Settings["batch_size"]
+                        Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
+                        Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
 
-                        if epoch == 0:
-                            self.Analytics_training("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
-                        else:
-                            self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                current_GEN_loss = current_GEN_loss / len(train_loader)
+                current_DIS_loss = current_DIS_loss / len(train_loader)
+                Discrim_acc_real = Discrim_acc_real / len(train_loader)
+                Discrim_acc_fake = Discrim_acc_fake / len(train_loader)
+                if epoch == 0:
+                    self.Analytics_training("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                else:
+                    self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
             self.Save_Analytics()
@@ -282,7 +294,7 @@ class Training_Framework():
                                 ))
 
     def Create_graphs(self):
-        xaxis = np.arange(0, self.Generator_loss_validation.shape[0])
+        xaxis = np.arange(1, self.Generator_loss_validation.shape[0]+1)
         plt.plot(xaxis, self.Generator_loss_train, label="Generator loss training")
         plt.plot(xaxis, self.Generator_loss_validation, label="Generator loss validation")
         plt.plot(xaxis, self.Discriminator_loss_train, label="Discriminator loss training")    
@@ -294,10 +306,10 @@ class Training_Framework():
         plt.savefig(self.Modeldir + "/model_loss_curves.png")
         plt.clf() # clear the plot
 
-        plt.plot(xaxis, self.Discriminator_accuracy_real_training, label="Discriminator accuracy real training")
-        plt.plot(xaxis, self.Discriminator_accuracy_fake_training, label="Discriminator accuracy fake training")
-        plt.plot(xaxis, self.Discriminator_accuracy_real_validation, label="Discriminator accuracy real validation")
-        plt.plot(xaxis, self.Discriminator_accuracy_fake_validation, label="Discriminator accuracy fake validation")
+        plt.plot(xaxis, self.Discriminator_accuracy_real_training*100, label="Discriminator accuracy real training")
+        plt.plot(xaxis, self.Discriminator_accuracy_fake_training*100, label="Discriminator accuracy fake training")
+        plt.plot(xaxis, self.Discriminator_accuracy_real_validation*100, label="Discriminator accuracy real validation")
+        plt.plot(xaxis, self.Discriminator_accuracy_fake_validation*100, label="Discriminator accuracy fake validation")
         plt.xlabel("epochs")
         plt.ylabel("Percentage [%]")
         plt.title("Discriminator accuracy")

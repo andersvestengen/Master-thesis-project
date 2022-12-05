@@ -68,7 +68,15 @@ class GAN_dataset(Dataset):
             self.data = torch.load(self.Large_cache_storage)
             stop = time.time()
             print(f"Time spent loading file was: {stop - start:.2} seconds")
-            print("Number of images was:", self.data.size(0) // 2)
+            if training_samples != self.data.size(0) // 2:
+                print("images in cache_size does not equal input parameter [",(self.data.size(0) // 2),"/",training_samples,"] adjusting")
+                if training_samples < self.data.size(0) // 2:
+                    newsize = self.data.size(0) // 2 - training_samples
+                    self.data = self.data[:-newsize*2]
+                else:
+                    self.data = 0
+                    self.Preprocessor()
+            print("Number of images is:", self.data.size(0) // 2)
             
         
 
