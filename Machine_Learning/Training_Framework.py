@@ -29,13 +29,13 @@ class FileSender():
         self.ftr = self.cli.open_sftp()
         print("sftp open")
         self.local_Model_Directory = "Trained_Models"
-    
+
 
     def send(self, directory):
         dir_struct = list(os.walk(directory))
         foldername = dir_struct[0][0].split("/")[-1]
         self.ftr.mkdir(self.externaldir + "/" + foldername)
-        for filename in dir_struct[0][2]:
+        for filename in tqdm(dir_struct[0][2], unit="file", desc="Sending {foldername} to server"):
             file_external_path = self.externaldir + "/" + foldername + "/" + filename
             file_local_path = dir_struct[0][0] + "/" + filename
             self.ftr.put(file_local_path ,file_external_path)
@@ -45,7 +45,7 @@ class FileSender():
     def pull(self, directory):
         dir_struct = self.ftr.listdir(self.externaldir + "/" + directory)
         os.mkdir(self.local_Model_Directory + "/" + directory)
-        for filename in dir_struct:
+        for filename in tqdm(dir_struct, unit="file", desc="downloading folder {directory}"):
             file_external_path = self.externaldir + "/" + directory + "/" + filename
             file_local_path = self.local_Model_Directory + "/" + directory + "/" + filename
             self.ftr.get(file_external_path, file_local_path)
@@ -207,8 +207,8 @@ class Training_Framework():
                     predicted_real = self.Discriminator(real_B, real_A)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_A)
                     current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake, val=True) 
-                    Discrim_acc_real = torch.sum(predicted_real < 1) / self.Settings["batch_size"]
-                    Discrim_acc_fake = torch.sum(predicted_fake > 1) / self.Settings["batch_size"]
+                    Discrim_acc_real = torch.sum(torch.sum(predicted_real, (2,3)) < 1) / self.Settings["batch_size"]
+                    Discrim_acc_fake = torch.sum(torch.sum(predicted_fake, (2,3)) > 1) / self.Settings["batch_size"]
 
                     if epoch == 0:
                         self.Analytics_validation("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
@@ -246,6 +246,7 @@ class Training_Framework():
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
             self.Save_Analytics()
+            self.Create_graphs()
             if self.transmit:
                 print("Sending files")
                 self.transmitter.send(self.Modeldir)
@@ -299,6 +300,30 @@ class Training_Framework():
                                 self.Discriminator_accuracy_fake_training
                                 ))
 
+    def Create_graphs(self):
+        xaxis = np.arange(0, self.Generator_loss_validation.shape[0])
+        plt.plot(xaxis, self.Generator_loss_train, label="Generator loss training")
+        plt.plot(xaxis, self.Generator_loss_validation, label="Generator loss validation")
+        plt.plot(xaxis, self.Discriminator_loss_train, label="Discriminator loss training")    
+        plt.plot(xaxis, self.Discriminator_loss_validation, label="Discriminator loss validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Loss")
+        plt.title("Model loss curves")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/model_loss_curves.png")
+        plt.clf() # clear the plot
+
+        plt.plot(xaxis, self.Discriminator_accuracy_real_training, label="Discriminator accuracy real training")
+        plt.plot(xaxis, self.Discriminator_accuracy_fake_training, label="Discriminator accuracy fake training")
+        plt.plot(xaxis, self.Discriminator_accuracy_real_validation, label="Discriminator accuracy real validation")
+        plt.plot(xaxis, self.Discriminator_accuracy_fake_validation, label="Discriminator accuracy fake validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Percentage [%]")
+        plt.title("Discriminator accuracy")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/discriminator_accuracy_curves.png")
+        plt.clf()
+
 
 
 class Model_Inference():
@@ -344,38 +369,6 @@ class Model_Inference():
         if decision == "save":
             im.save(self.modelname + "defect_sample_input.jpg")
             output.save(self.modelname + "reconstructed_image.jpg")
-
-    def Create_graphs(self):
-        decision = input("show[y] or just save[n]? [y/n]: ")
-        loaded_arrays = np.load(self.modeldir + "/" + "Analytics.npz")
-        xaxis = np.arange(0, loaded_arrays['arr_0'].shape[0])
-        plt.plot(xaxis, loaded_arrays['arr_0'], label="Generator loss training")
-        plt.plot(xaxis, loaded_arrays['arr_1'], label="Generator loss validation")
-        plt.plot(xaxis, loaded_arrays['arr_2'], label="Discriminator loss training")    
-        plt.plot(xaxis, loaded_arrays['arr_3'], label="Discriminator loss validation")
-        plt.xlabel("epochs")
-        plt.ylabel("Loss")
-        plt.title("Model loss curves")
-        plt.legend()
-        if decision == "y":
-            plt.savefig(self.modeldir + "/" + "model_loss_curves.png")
-            plt.show()
-        else:
-            plt.savefig()
-
-        plt.clf() # clear the plot
-        plt.plot(xaxis, loaded_arrays['arr_4'], label="Discriminator accuracy training")
-        plt.plot(xaxis, loaded_arrays['arr_5'], label="Discriminator accuracy validation")
-        plt.xlabel("epochs")
-        plt.ylabel("Percentage [%]")
-        plt.title("Discriminator accuracy")
-        plt.legend()
-        if decision == "y":
-            plt.savefig(self.modeldir + "/" + "discriminator_accuracy_curves.png")
-            plt.show()
-        else:
-            plt.savefig()
-        plt.clf() # clear the plot
 
 if __name__ == '__main__':
     pass
