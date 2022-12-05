@@ -105,7 +105,7 @@ class Training_Framework():
         self.pixelwise_loss = pixelwise_loss
         self.Discriminator = Discriminator
         self.Discriminator_optimizer = D_opt
-
+        self.device = self.Settings["device"]
         self.Generator_loss = 0
         self.Discriminator_loss = 0
         self.patch = (1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4)
@@ -123,14 +123,17 @@ class Training_Framework():
 
         #Create the directory of the model (Look back at this for batch training.)
         time = str(datetime.now())
-        stamp = time[:-16] + "_" + time[11:-7]
-        self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model_" + self.Settings["epochs"] + "_" + self.Settings["batch_size"] + "_" + self.Settings["lr"] + "_" + stamp
+        stamp = time[:-16] + "_" + time[11:-7].replace(":", "-")
+        if self.Settings["ModelName"] is not None:
+            self.Modeldir = self.workingdir +  "/Trained_Models/" + "GAN_Model_" + self.Settings["ModelName"] + "_time-" + stamp
+        else:
+            self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + "_time-" + stamp
             
         os.mkdir(self.Modeldir)
 
     def Save_Model(self, epoch):
             if (epoch > 0) and (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
-                torch.save(self.Generator.state_dict(), str( self.Modeldir + "/" +  self.Settings["ModelName"] ))
+                torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
     def Generator_updater(self, real_A, real_B, fake_B, val=False):
         self.Generator_optimizer.zero_grad()
@@ -235,8 +238,8 @@ class Training_Framework():
                     predicted_real = self.Discriminator(real_B, real_A)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_A)
                     current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake) 
-                    Discrim_acc_real = torch.sum(predicted_real < 1) / self.Settings["batch_size"]
-                    Discrim_acc_fake = torch.sum(predicted_fake > 1) / self.Settings["batch_size"]
+                    Discrim_acc_real = torch.sum(torch.sum(predicted_real, (2,3)) < 1) / self.Settings["batch_size"]
+                    Discrim_acc_fake = torch.sum(torch.sum(predicted_fake, (2,3)) > 1) / self.Settings["batch_size"]
 
                     if epoch == 0:
                         self.Analytics_training("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)

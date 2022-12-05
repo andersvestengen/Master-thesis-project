@@ -119,15 +119,12 @@ class GAN_dataset(Dataset):
                     Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
                     self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
-            print("self.data size is: ", self.data.element_size() * self.data.nelement() * 1e-6)
             if not isinstance(self.data, int):
                 print("trying to save incomplete last cache size")
                 torch.save(self.data, self.preprocess_storage+"/processed_images_last.pt")
-        print("self.data size is: ", self.data.element_size() * self.data.nelement() * 1e-6)
         print("reconstituting images into single file:")
         self.data = 0
         cache_list = sorted(glob.glob(self.preprocess_storage + "**/*.pt", recursive=True))
-        print("This is the .pt list:", cache_list)
         with tqdm(cache_list, unit='patches') as Crepoch:
             for num, cache in enumerate(Crepoch):
 
@@ -139,7 +136,6 @@ class GAN_dataset(Dataset):
                     temp = torch.load(cache)
                     self.data = torch.cat((self.data, temp), 0)
                     os.remove(cache)
-        print("self.data size is: ", self.data.element_size() * self.data.nelement() * 1e-6)
         print("Saving to file")
         start = time.time()
         torch.save(self.data, self.Large_cache_storage)
