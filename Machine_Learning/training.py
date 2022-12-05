@@ -32,6 +32,28 @@ Settings = {
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             }
+# client side Settings
+Settings_cli = {
+            "epochs"                : 4,
+            "batch_size"            : 2,
+            "L1_loss_weight"        : 100,
+            "lr"                    : 0.0002,
+            "dataset_loc"           : Desk_dir,
+            "preprocess_storage"    : None,
+            "num_workers"           : 1,
+            "shuffle"               : True,
+            "Datasplit"             : 0.7,
+            "device"                : "cpu",
+            "ImageHW"               : 256,
+            "RestoreModel"          : False,
+            #No spaces in the model name, please use '_'
+            "ModelName"             : "First_GAN_New_Framework",
+            "Drop_incomplete_batch" : True,
+            "Num_training_samples"  : 10,
+            }
+
+#Remove this for server training
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.CenterCrop(Settings["ImageHW"]),

@@ -44,7 +44,7 @@ class FileSender():
 
     def pull(self, directory):
         dir_struct = self.ftr.listdir(self.externaldir + "/" + directory)
-        os.mkdir(self.local_Model_Directory + "/" + directory)
+        os.makedirs(self.local_Model_Directory + "/" + directory)
         for filename in tqdm(dir_struct, unit="file", desc="downloading folder {directory}"):
             file_external_path = self.externaldir + "/" + directory + "/" + filename
             file_local_path = self.local_Model_Directory + "/" + directory + "/" + filename
@@ -68,25 +68,6 @@ class FileSender():
         self.ftr.close()
         self.cli.close()
         print("SSH and SFTP closed")
-
-    def send_tester(self):
-        # Make Directories
-        print("starting test of filesending infrastructure!")
-        dirs = []
-        workingdir = self.local_Model_Directory
-        for dir in range(5):
-            dirname = workingdir + "/" "Testdir" + str(dir)
-            dirs.append(dirname)
-            os.mkdir(dirname)
-            for file in range(5):
-                filename = dirname + "/File" + str(file) + ".txt"
-                with open(filename, 'w') as f:
-                    f.write("Im a new textfile!")
-        
-        #Send those files to the server!
-        print("Starting filetransfer!")
-        for directory in dirs:
-            self.send(directory)
 
 
 
@@ -130,7 +111,7 @@ class Training_Framework():
         else:
             self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + "_time-" + stamp
             
-        os.mkdir(self.Modeldir)
+        os.makedirs(self.Modeldir)
 
     def Save_Model(self, epoch):
             if (epoch > 0) and (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
