@@ -109,10 +109,11 @@ class Training_Framework():
         self.Generator_loss = 0
         self.Discriminator_loss = 0
         self.patch = (1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4)
-
+        self.transmit = False
         decision = input("would you like to send model to server? [y/n]: ")
 
         if decision == "y":
+            self.transmit = True
             self.transmitter = FileSender()
 
         # Set the working Directory
@@ -186,17 +187,15 @@ class Training_Framework():
 
         return (loss_real.item() + loss_fake.item())*0.5
 
-    def validation_run(self, val_loader):
-        for epoch in range(self.Settings["epochs"]):
+    def validation_run(self, val_loader, epoch):
             current_GEN_loss = 0
             current_DIS_loss = 0
-            # Training loop
             with tqdm(val_loader, unit='batch', leave=False) as tepoch:
                 for inputs, targets in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0:
-                        tepoch.set_description(f"Epoch {epoch}/{self.Settings['epochs']} Gen_loss {current_GEN_loss[epoch-1]:.5f} Disc_loss {current_DIS_loss[epoch-1]:.5f}")
-                        
+                        tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_validation[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_validation[epoch-1]:.5f}")
+  
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
 
@@ -217,39 +216,40 @@ class Training_Framework():
                         self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
 
     def Trainer(self, train_loader, val_loader):
-        for epoch in range(self.Settings["epochs"]):
-            current_GEN_loss = 0
-            current_DIS_loss = 0
-            # Training loop
-            with tqdm(train_loader, unit='batch', leave=False) as tepoch:
-                for inputs, targets in tepoch:
-                    tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
-                    if epoch > 0:
-                        tepoch.set_description(f"Epoch {epoch}/{self.Settings['epochs']} Gen_loss {current_GEN_loss[epoch-1]:.5f} Disc_loss {current_DIS_loss[epoch-1]:.5f}")
+            for epoch in tqdm(range(self.Settings["epochs"]), unit="epoch", desc="Training the model on epoch {epoch}"):
+                current_GEN_loss = 0
+                current_DIS_loss = 0
+                with tqdm(train_loader, unit='batch', leave=False) as tepoch:
+                    for inputs, targets in tepoch:
+                        tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
+                        if epoch > 0:
+                            tepoch.set_description(f"Training Gen_loss {self.Generator_loss_train[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.5f}")
+                            
+                        self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
+                        self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
+
+                        real_A = targets.to(self.device)
+                        real_B = inputs.to(self.device)
                         
-                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
-                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
+                        fake_B = self.Generator(real_A)
+                        current_GEN_loss = self.Generator_updater(real_A, real_B, fake_B) # To be made.
+                        predicted_real = self.Discriminator(real_B, real_A)
+                        predicted_fake = self.Discriminator(fake_B.detach(), real_A)
+                        current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake) 
+                        Discrim_acc_real = torch.sum(torch.sum(predicted_real, (2,3)) < 1) / self.Settings["batch_size"]
+                        Discrim_acc_fake = torch.sum(torch.sum(predicted_fake, (2,3)) > 1) / self.Settings["batch_size"]
 
-                    real_A = targets.to(self.device)
-                    real_B = inputs.to(self.device)
-                    
-                    fake_B = self.Generator(real_A)
-                    current_GEN_loss = self.Generator_updater(real_A, real_B, fake_B) # To be made.
-                    predicted_real = self.Discriminator(real_B, real_A)
-                    predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                    current_DIS_loss = self.Discriminator_updater(predicted_real, predicted_fake) 
-                    Discrim_acc_real = torch.sum(torch.sum(predicted_real, (2,3)) < 1) / self.Settings["batch_size"]
-                    Discrim_acc_fake = torch.sum(torch.sum(predicted_fake, (2,3)) > 1) / self.Settings["batch_size"]
-
-                    if epoch == 0:
-                        self.Analytics_training("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
-                    else:
-                        self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
-            self.validation_run(val_loader)
-            self.Save_Model(epoch)
-        self.Save_Analytics()
-        self.transmitter.send(self.Modeldir)
-        self.transmitter.close()
+                        if epoch == 0:
+                            self.Analytics_training("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                        else:
+                            self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                self.validation_run(val_loader, epoch)
+                self.Save_Model(epoch)
+            self.Save_Analytics()
+            if self.transmit:
+                print("Sending files")
+                self.transmitter.send(self.Modeldir)
+                self.transmitter.close()
 
     def Analytics_training(self, *args):
         """
@@ -289,7 +289,7 @@ class Training_Framework():
 
 
     def Save_Analytics(self):
-        np.savez(self.Modeldir + 'Analytics.npz', (self.Generator_loss_validation,
+        np.savez(self.Modeldir + '/Analytics.npz', (self.Generator_loss_validation,
                                 self.Discriminator_loss_validation,
                                 self.Discriminator_accuracy_real_validation,
                                 self.Discriminator_accuracy_fake_validation,
