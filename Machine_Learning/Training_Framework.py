@@ -189,7 +189,7 @@ class Training_Framework():
                     current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B, val=True) / self.Settings["batch_size"]
                     predicted_real = self.Discriminator(real_B, real_A)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                    current_DIS_loss += self.Discriminator_updater(predicted_real, predicted_fake, val=True) / self.Settings["batch_size"]
+                    current_DIS_loss += self.Discriminator_updater_real_fake_separate(predicted_real, predicted_fake, val=True) / self.Settings["batch_size"]
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
 
@@ -224,7 +224,7 @@ class Training_Framework():
                         current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B) / self.Settings["batch_size"]
                         predicted_real = self.Discriminator(real_B, real_A)
                         predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                        current_DIS_loss += self.Discriminator_updater(predicted_real, predicted_fake) / self.Settings["batch_size"]
+                        current_DIS_loss += self.Discriminator_updater_real_fake_separate(predicted_real, predicted_fake) / self.Settings["batch_size"]
                         Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
                         Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
 
