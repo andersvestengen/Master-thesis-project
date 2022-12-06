@@ -28,7 +28,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "Testing_GAN_REMOVE_real_fake_separate",
+            "ModelName"             : "Testing_GAN_New_GEN_loss",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             }
