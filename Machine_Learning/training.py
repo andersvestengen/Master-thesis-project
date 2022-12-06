@@ -15,7 +15,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 200,
+            "epochs"                : 250,
             "batch_size"            : 32,
             "L1_loss_weight"        : 100,
             "lr"                    : 0.0002,
@@ -30,7 +30,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelName"             : "Testing_GAN_REMOVE_real_fake_separate",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 5000,
+            "Num_training_samples"  : 25000,
             }
 # client side Settings
 Settings_cli = {
