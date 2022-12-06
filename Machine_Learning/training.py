@@ -62,6 +62,14 @@ training_transforms = transforms.Compose([
     transforms.ToTensor()
 ])
 
+def weights_init(m): # from the pix2pix paper
+    classname = m.__class__.__name__
+    if classname.find('Conv') != -1:
+        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find('InstanceNorm2d') != -1:
+        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
+        torch.nn.init.constant_(m.bias.data, 0)
+
 if __name__ == '__main__':
     # Setup GPU (or not)
     if torch.cuda.is_available():
@@ -73,7 +81,10 @@ if __name__ == '__main__':
 
     #Load models
     Discriminator = Discriminator_1().to(device)
+    Discriminator.apply(weights_init)
     Generator = Generator_Unet1().to(device)
+    Generator.apply(weights_init)
+
 
     # Configure dataloaders
     Custom_dataset = GAN_dataset(preprocess_storage=Settings["preprocess_storage"], training_samples=Settings["Num_training_samples"], seed=67, workingdir=Settings["dataset_loc"], transform=training_transforms)
