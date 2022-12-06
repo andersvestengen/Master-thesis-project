@@ -160,26 +160,26 @@ class Training_Framework():
         
         # Fake loss
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
-        # Total loss      
+        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
         if not val:
-            loss_real.backward()
-            loss_fake.backward()
+            Total_loss_Discriminator.backward()
             self.Discriminator_optimizer.step()
 
         return (loss_real.item() + loss_fake.item())*0.5
 
 
-    def Discriminator_updater_separate_staggered(self, predicted_real, predicted_fake, epoch, val=False):
+    def Discriminator_updater_staggered(self, predicted_real, predicted_fake, epoch, val=False):
         self.Discriminator_optimizer.zero_grad()
         
         # Real loss 
         loss_real = self.GAN_loss(predicted_real, self.valid)
         
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
-        # Total loss      
-        if not val and epoch > 15:
-            loss_real.backward()
-            loss_fake.backward()
+
+        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
+        if not val and epoch > 50:
+
+            Total_loss_Discriminator.backward()
             self.Discriminator_optimizer.step()
 
         return (loss_real.item() + loss_fake.item())*0.5
@@ -190,7 +190,7 @@ class Training_Framework():
             Discrim_acc_real = 0
             Discrim_acc_fake = 0
             with tqdm(val_loader, unit='batch', leave=False) as tepoch:
-                for inputs, targets in tepoch:
+                for image, defect_images in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0:
                         tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_validation[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_validation[epoch-1]:.5f}")
@@ -198,14 +198,14 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
 
-                    real_A = targets.to(self.device)
-                    real_B = inputs.to(self.device)
+                    real_A = defect_images.to(self.device)
+                    real_B = image.to(self.device)
                     
                     fake_B = self.Generator(real_A)
                     current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B, val=True) / self.Settings["batch_size"]
                     predicted_real = self.Discriminator(real_B, real_A)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                    current_DIS_loss += self.Discriminator_updater_separate_staggered(predicted_real, predicted_fake, epoch, val=True) / self.Settings["batch_size"]
+                    current_DIS_loss += self.Discriminator_updater_staggered(predicted_real, predicted_fake, epoch, val=True) / self.Settings["batch_size"]
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
 
@@ -225,7 +225,7 @@ class Training_Framework():
                 Discrim_acc_real = 0
                 Discrim_acc_fake = 0
                 with tqdm(train_loader, unit='batch', leave=False) as tepoch:
-                    for inputs, targets in tepoch:
+                    for images, defect_images in tepoch:
                         tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                         if epoch > 0:
                             tepoch.set_description(f"Training Gen_loss {self.Generator_loss_train[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.5f}")
@@ -233,8 +233,8 @@ class Training_Framework():
                         self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
                         self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
 
-                        real_A = targets.to(self.device)
-                        real_B = inputs.to(self.device)
+                        real_A = defect_images.to(self.device)
+                        real_B = images.to(self.device)
                         
                         fake_B = self.Generator(real_A)
                         current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B) / self.Settings["batch_size"]

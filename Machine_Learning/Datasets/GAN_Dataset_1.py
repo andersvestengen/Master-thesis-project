@@ -46,6 +46,10 @@ class GAN_dataset(Dataset):
         if training_samples is not None and  (len(self.OriginalImagesList) > training_samples):
             if len(self.OriginalImagesList) > training_samples:
                 self.OriginalImagesList = self.OriginalImagesList[:training_samples]
+                
+        if training_samples is None:
+            print("training samples is none")
+            training_samples = len(self.OriginalImagesList)
         
         print("Number of training samples set to", len(self.OriginalImagesList))
         
