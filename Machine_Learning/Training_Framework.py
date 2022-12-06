@@ -135,6 +135,24 @@ class Training_Framework():
 
         return Total_loss_Generator.item()
 
+    def Generator_updater_real_B(self, real_B, fake_B, val=False):
+        self.Generator_optimizer.zero_grad()
+        
+        # Generator loss            
+        predict_fake = self.Discriminator(fake_B, real_B) # Compare fake output to original image
+        loss_GAN = self.GAN_loss(predict_fake, self.valid)
+        #Pixelwise loss
+        loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
+        
+        #Total loss
+        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel
+        
+        if not val:
+            Total_loss_Generator.backward()
+            self.Generator_optimizer.step()
+
+        return Total_loss_Generator.item()
+
     def Discriminator_updater(self , predicted_real, predicted_fake, val=False):
         self.Discriminator_optimizer.zero_grad()
         
@@ -202,7 +220,7 @@ class Training_Framework():
                     real_B = image.to(self.device)
                     
                     fake_B = self.Generator(real_A)
-                    current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B, val=True) / self.Settings["batch_size"]
+                    current_GEN_loss += self.Generator_updater_real_B(real_B, fake_B, val=True) / self.Settings["batch_size"]
                     predicted_real = self.Discriminator(real_B, real_A)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_A)
                     current_DIS_loss += self.Discriminator_updater_staggered(predicted_real, predicted_fake, epoch, val=True) / self.Settings["batch_size"]
@@ -237,7 +255,7 @@ class Training_Framework():
                         real_B = images.to(self.device)
                         
                         fake_B = self.Generator(real_A)
-                        current_GEN_loss += self.Generator_updater(real_A, real_B, fake_B) / self.Settings["batch_size"]
+                        current_GEN_loss += self.Generator_updater_real_B(real_B, fake_B) / self.Settings["batch_size"]
                         predicted_real = self.Discriminator(real_B, real_A)
                         predicted_fake = self.Discriminator(fake_B.detach(), real_A)
                         current_DIS_loss += self.Discriminator_updater_staggered(predicted_real, predicted_fake, epoch) / self.Settings["batch_size"]
