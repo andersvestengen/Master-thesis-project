@@ -45,7 +45,7 @@ class FileSender():
     def pull(self, directory):
         dir_struct = self.ftr.listdir(self.externaldir + "/" + directory)
         os.makedirs(self.local_Model_Directory + "/" + directory)
-        for filename in tqdm(dir_struct, unit="file", desc="downloading folder {directory}"):
+        for filename in tqdm(dir_struct, unit="file", desc=f"downloading folder {directory}"):
             file_external_path = self.externaldir + "/" + directory + "/" + filename
             file_local_path = self.local_Model_Directory + "/" + directory + "/" + filename
             self.ftr.get(file_external_path, file_local_path)
@@ -196,7 +196,7 @@ class Training_Framework():
         self.Discriminator.zero_grad()
         
         #Real loss
-        predicted_real = self.Discriminator(real_A, real_B) # Its supposed to be source, target?
+        predicted_real = self.Discriminator(real_A, real_B)
         
         loss_real = self.GAN_loss(predicted_real, self.valid)
 

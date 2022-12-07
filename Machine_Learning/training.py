@@ -15,7 +15,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 200,
+            "epochs"                : 100,
             "batch_size"            : 32,
             "L1_loss_weight"        : 10,
             "lr"                    : 0.0002,
