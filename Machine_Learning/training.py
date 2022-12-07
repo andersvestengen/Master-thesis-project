@@ -15,12 +15,13 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 50,
+            "epochs"                : 200,
             "batch_size"            : 32,
-            "L1_loss_weight"        : 100,
+            "L1_loss_weight"        : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
+            "seed"                  : 78, # random training seed
             "num_workers"           : 1,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -28,9 +29,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "Testing_GAN_New_GEN_loss",
+            "ModelName"             : "Testing_GAN_New_GEN_400_epoch",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 25000,
+            "Num_training_samples"  : 10000,
             }
 # client side Settings
 Settings_cli = {

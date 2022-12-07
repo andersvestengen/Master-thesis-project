@@ -79,6 +79,8 @@ class Training_Framework():
     """
 
     def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, Discriminator):
+        torch.manual_seed(Settings["seed"])
+        np.random.seed(Settings["seed"])
         self.Settings = Settings
         self.Generator = Generator
         self.Generator_optimizer = G_opt
@@ -112,6 +114,9 @@ class Training_Framework():
             self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + "_time-" + stamp
             
         os.makedirs(self.Modeldir)
+        
+        self.Analytics_training("setup")
+        self.Analytics_validation("Setup")
 
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
@@ -135,10 +140,11 @@ class Training_Framework():
 
         return Total_loss_Generator.item()
 
-    def Generator_updater_real_B(self, real_B, fake_B, val=False):
-        self.Generator_optimizer.zero_grad()
+    def Generator_updater_alt(self, real_A, real_B, val=False):
+        self.Generator.zero_grad()
         
-        # Generator loss            
+        # Generator loss
+        fake_B = self.Generator(real_A)         
         predict_fake = self.Discriminator(fake_B, real_B) # Compare fake output to original image
         loss_GAN = self.GAN_loss(predict_fake, self.valid)
         #Pixelwise loss
@@ -186,19 +192,20 @@ class Training_Framework():
         return (loss_real.item() + loss_fake.item())*0.5
 
 
-    def Discriminator_updater_staggered(self, predicted_real, predicted_fake, epoch, val=False):
-        self.Discriminator_optimizer.zero_grad()
+    def Discriminator_updater_alt(self, real_A, real_B, val=False):
+        self.Discriminator.zero_grad()
         
-        # Real loss 
+        #Real loss
+        predicted_real = self.Discriminator(real_A, real_B) # Its supposed to be source, target?
+        
         loss_real = self.GAN_loss(predicted_real, self.valid)
-        
+        if not val: loss_real.backward() # backward run
+        #Fake loss
+        fake_B = self.Generator(real_A)
+        predicted_fake = self.Discriminator(fake_B, real_B)
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
-
-        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
-        if not val and epoch > 50:
-
-            Total_loss_Discriminator.backward()
-            self.Discriminator_optimizer.step()
+        if not val: loss_fake.backward() # backward run        
+        if not val: self.Discriminator_optimizer.step() # step
 
         return (loss_real.item() + loss_fake.item())*0.5
 
@@ -219,11 +226,11 @@ class Training_Framework():
                     real_A = defect_images.to(self.device)
                     real_B = image.to(self.device)
                     
+                    current_DIS_loss += self.Discriminator_updater_alt(real_A, real_B, val=True) / self.Settings["batch_size"]                    
+                    current_GEN_loss += self.Generator_updater_alt(real_A, real_B, val=True) / self.Settings["batch_size"]                   
+                    predicted_real = self.Discriminator(real_A, real_B)
                     fake_B = self.Generator(real_A)
-                    current_GEN_loss += self.Generator_updater_real_B(real_B, fake_B, val=True) / self.Settings["batch_size"]
-                    predicted_real = self.Discriminator(real_B, real_A)
-                    predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                    current_DIS_loss += self.Discriminator_updater(predicted_real, predicted_fake, val=True) / self.Settings["batch_size"]
+                    predicted_fake = self.Discriminator(fake_B.detach(), real_B)
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
 
@@ -231,10 +238,7 @@ class Training_Framework():
             current_DIS_loss = current_DIS_loss / len(val_loader)
             Discrim_acc_real = Discrim_acc_real / len(val_loader)
             Discrim_acc_fake = Discrim_acc_fake / len(val_loader)
-            if epoch == 0:
-                self.Analytics_validation("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
-            else:
-                self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
 
     def Trainer(self, train_loader, val_loader):
             for epoch in tqdm(range(self.Settings["epochs"]), unit="epoch", desc="Training the model on epoch {epoch}"):
@@ -253,12 +257,12 @@ class Training_Framework():
 
                         real_A = defect_images.to(self.device)
                         real_B = images.to(self.device)
-                        
+
+                        current_DIS_loss += self.Discriminator_updater_alt(predicted_real, predicted_fake) / self.Settings["batch_size"]
+                        current_GEN_loss += self.Generator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
+                        predicted_real = self.Discriminator(real_A, real_B)
                         fake_B = self.Generator(real_A)
-                        current_GEN_loss += self.Generator_updater_real_B(real_B, fake_B) / self.Settings["batch_size"]
-                        predicted_real = self.Discriminator(real_B, real_A)
-                        predicted_fake = self.Discriminator(fake_B.detach(), real_A)
-                        current_DIS_loss += self.Discriminator_updater(predicted_real, predicted_fake) / self.Settings["batch_size"]
+                        predicted_fake = self.Discriminator(fake_B.detach(), real_B)
                         Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
                         Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
 
@@ -266,10 +270,7 @@ class Training_Framework():
                 current_DIS_loss = current_DIS_loss / len(train_loader)
                 Discrim_acc_real = Discrim_acc_real / len(train_loader)
                 Discrim_acc_fake = Discrim_acc_fake / len(train_loader)
-                if epoch == 0:
-                    self.Analytics_training("setup", current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
-                else:
-                    self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
             self.Save_Analytics()
