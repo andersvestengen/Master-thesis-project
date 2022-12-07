@@ -289,8 +289,6 @@ class Training_Framework():
             self.Discriminator_loss_train = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_training = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_training = np.zeros(self.Settings["epochs"])
-
-
         else:
             epoch = args[0]
             self.Generator_loss_train[epoch] = args[1]
@@ -308,7 +306,6 @@ class Training_Framework():
             self.Discriminator_loss_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_validation = np.zeros(self.Settings["epochs"])
-
         else:
             epoch = args[0]
             self.Generator_loss_validation[epoch] = args[1]
