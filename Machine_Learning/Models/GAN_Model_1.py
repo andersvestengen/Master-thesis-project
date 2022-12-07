@@ -5,8 +5,6 @@
 #from xdrlib import ConversionError
 import torch
 from torch import nn
-
-
 """
 Dev notes:
     - After the first successfull training iteration, add a local loss.
@@ -25,6 +23,7 @@ class UnetEncoderLayer(nn.Module):
         if dropout:
             layers.append(nn.Dropout(dropout))
         self.model = nn.Sequential(*layers)       
+        
         
     def forward(self, input):
         output = self.model(input)

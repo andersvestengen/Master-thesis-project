@@ -119,7 +119,7 @@ class Training_Framework():
         self.Analytics_validation("setup")
 
     def Save_Model(self, epoch):
-            if (epoch == 0) or (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
+            if (epoch == 0) or (self.Generator_loss_validation[epoch] < torch.min(self.Generator_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
     def Generator_updater(self, real_A, real_B, fake_B, val=False):
