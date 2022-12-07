@@ -116,7 +116,7 @@ class Training_Framework():
         os.makedirs(self.Modeldir)
         
         self.Analytics_training("setup")
-        self.Analytics_validation("Setup")
+        self.Analytics_validation("setup")
 
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < self.Generator_loss_validation[epoch-1]):
