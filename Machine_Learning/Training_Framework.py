@@ -35,7 +35,7 @@ class FileSender():
         dir_struct = list(os.walk(directory))
         foldername = dir_struct[0][0].split("/")[-1]
         self.ftr.mkdir(self.externaldir + "/" + foldername)
-        for filename in tqdm(dir_struct[0][2], unit="file", desc="Sending {foldername} to server"):
+        for filename in tqdm(dir_struct[0][2], unit="file", desc=f"Sending {foldername} to server storage"):
             file_external_path = self.externaldir + "/" + foldername + "/" + filename
             file_local_path = dir_struct[0][0] + "/" + filename
             self.ftr.put(file_local_path ,file_external_path)
@@ -43,9 +43,10 @@ class FileSender():
 
 
     def pull(self, directory):
-        dir_struct = self.ftr.listdir(self.externaldir + "/" + directory)
+        dir_struct = tqdm(self.ftr.listdir(self.externaldir + "/" + directory), unit="file")
         os.makedirs(self.local_Model_Directory + "/" + directory)
-        for filename in tqdm(dir_struct, unit="file", desc=f"downloading folder {directory}"):
+        for filename in dir_struct:
+            dir_struct.set_description(f"downloading folder {directory}/{filename}")
             file_external_path = self.externaldir + "/" + directory + "/" + filename
             file_local_path = self.local_Model_Directory + "/" + directory + "/" + filename
             self.ftr.get(file_external_path, file_local_path)
