@@ -21,7 +21,7 @@ Settings = {
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
-            "seed"                  : 78, # random training seed
+            "seed"                  : 155, # random training seed
             "num_workers"           : 1,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -29,9 +29,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "Testing_GAN_New_GEN_400_epoch",
+            "ModelName"             : "Testing_GAN_New_loss_handling",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 10000,
+            "Num_training_samples"  : 5000,
             }
 # client side Settings
 Settings_cli = {

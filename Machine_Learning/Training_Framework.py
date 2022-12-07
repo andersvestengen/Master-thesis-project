@@ -199,15 +199,17 @@ class Training_Framework():
         predicted_real = self.Discriminator(real_A, real_B) # Its supposed to be source, target?
         
         loss_real = self.GAN_loss(predicted_real, self.valid)
-        if not val: loss_real.backward() # backward run
+
         #Fake loss
         fake_B = self.Generator(real_A)
         predicted_fake = self.Discriminator(fake_B, real_B)
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
-        if not val: loss_fake.backward() # backward run        
-        if not val: self.Discriminator_optimizer.step() # step
+        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
+        if not val: 
+            Total_loss_Discriminator.backward() # backward run        
+            self.Discriminator_optimizer.step() # step
 
-        return (loss_real.item() + loss_fake.item())*0.5
+        return Total_loss_Discriminator.item()
 
     def validation_run(self, val_loader, epoch):
             current_GEN_loss = 0
