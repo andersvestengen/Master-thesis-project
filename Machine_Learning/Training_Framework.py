@@ -258,7 +258,7 @@ class Training_Framework():
                         real_A = defect_images.to(self.device)
                         real_B = images.to(self.device)
 
-                        current_DIS_loss += self.Discriminator_updater_alt(predicted_real, predicted_fake) / self.Settings["batch_size"]
+                        current_DIS_loss += self.Discriminator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
                         current_GEN_loss += self.Generator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
                         predicted_real = self.Discriminator(real_A, real_B)
                         fake_B = self.Generator(real_A)
