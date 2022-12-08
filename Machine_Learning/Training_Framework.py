@@ -213,6 +213,7 @@ class Training_Framework():
         return Total_loss_Discriminator.item()
 
     def validation_run(self, val_loader, epoch):
+        with torch.no_grad():
             current_GEN_loss = 0
             current_DIS_loss = 0
             Discrim_acc_real = 0
@@ -238,10 +239,10 @@ class Training_Framework():
                     fake_B = self.Generator(real_A)
                     pixelloss += self.pixelwise_loss(fake_B, real_B)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
-                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
-                    Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3)) /self.patch[1]) / self.Settings["batch_size"]
-                    Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3)) /self.patch[1]) / self.Settings["batch_size"]
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
+                    Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3)) /self.patch[1]) / self.Settings["batch_size"]
+                    Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3)) /self.patch[1]) / self.Settings["batch_size"]
 
             current_GEN_loss = current_GEN_loss / len(val_loader)
             current_DIS_loss = current_DIS_loss / len(val_loader)
@@ -279,12 +280,12 @@ class Training_Framework():
                         current_GEN_loss += self.Generator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
                         predicted_real = self.Discriminator(real_A, real_B)
                         fake_B = self.Generator(real_A)
-                        pixelloss += self.pixelwise_loss(fake_B, real_B)
+                        pixelloss += self.pixelwise_loss(fake_B, real_B).detach()
                         predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-                        Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
-                        Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
-                        Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3))/self.patch[1] ) / self.Settings["batch_size"]
-                        Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3))/self.patch[1] )/ self.Settings["batch_size"]
+                        Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
+                        Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
+                        Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3))/self.patch[1] ) / self.Settings["batch_size"]
+                        Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] )/ self.Settings["batch_size"]
 
                 current_GEN_loss = current_GEN_loss / len(train_loader)
                 current_DIS_loss = current_DIS_loss / len(train_loader)
