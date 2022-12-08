@@ -263,29 +263,32 @@ class Training_Framework():
                 Discrim_acc_fake = 0
                 pixelloss = 0
                 Discrim_acc_real_raw = 0
-                Discrim_acc_fake_raw = 0                
-                with tqdm(train_loader, unit='batch', leave=False) as tepoch:
-                    for images, defect_images in tepoch:
-                        tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
-                        if epoch > 0:
-                            tepoch.set_description(f"Training Gen_loss {self.Generator_loss_train[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.5f}")
-                            
-                        self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
-                        self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
+                Discrim_acc_fake_raw = 0
+                if self.Settings["batch_size"] == 1:
+                    tepoch = tqdm(train_loader, unit='image[s]', leave=False)
+                else:
+                    tepoch = tqdm(train_loader, unit='batche[s]', leave=False)                            
+                for images, defect_images in tepoch:
+                    tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
+                    if epoch > 0:
+                        tepoch.set_description(f"Training Gen_loss {self.Generator_loss_train[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.5f}")
+                        
+                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
+                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
 
-                        real_A = defect_images.to(self.device)
-                        real_B = images.to(self.device)
+                    real_A = defect_images.to(self.device)
+                    real_B = images.to(self.device)
 
-                        current_DIS_loss += self.Discriminator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
-                        current_GEN_loss += self.Generator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
-                        predicted_real = self.Discriminator(real_A, real_B)
-                        fake_B = self.Generator(real_A)
-                        pixelloss += self.pixelwise_loss(fake_B, real_B).detach()
-                        predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-                        Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
-                        Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
-                        Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3))/self.patch[1] ) / self.Settings["batch_size"]
-                        Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] )/ self.Settings["batch_size"]
+                    current_DIS_loss += self.Discriminator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
+                    current_GEN_loss += self.Generator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
+                    predicted_real = self.Discriminator(real_A, real_B)
+                    fake_B = self.Generator(real_A)
+                    pixelloss += self.pixelwise_loss(fake_B, real_B).detach()
+                    predicted_fake = self.Discriminator(fake_B.detach(), real_B)
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
+                    Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3))/self.patch[1] ) / self.Settings["batch_size"]
+                    Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] )/ self.Settings["batch_size"]
 
                 current_GEN_loss = current_GEN_loss / len(train_loader)
                 current_DIS_loss = current_DIS_loss / len(train_loader)
