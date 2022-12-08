@@ -1,4 +1,5 @@
-from Models.GAN_Model_1 import Generator_Unet1, Discriminator_1
+from Models.GAN_Model_1 import Discriminator_1
+from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Datasets.GAN_Dataset_1 import GAN_dataset
 import torch
 from torch.utils.data import DataLoader
@@ -29,7 +30,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "Testing_GAN_New_Analytics",
+            "ModelName"             : "GAN_HEMIN_RESNET34",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 10000,
             }
@@ -49,7 +50,7 @@ Settings_cli = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "Testing_local_DELETE",
+            "ModelName"             : "LOCALTESTDELETEME",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 40,
             }
@@ -66,7 +67,7 @@ training_transforms = transforms.Compose([
 
 def weights_init(m): # from the pix2pix paper
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if classname.find("Conv") != -1:
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
 
 if __name__ == '__main__':
@@ -81,8 +82,8 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    Generator = Generator_Unet1().to(device)
-    Generator.apply(weights_init)
+    Generator = UNet_ResNet34().to(device)
+    #Generator.apply(weights_init)
 
 
     # Configure dataloaders

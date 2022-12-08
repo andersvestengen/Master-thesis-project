@@ -424,40 +424,50 @@ class Model_Inference():
         - Modelref: This is the vanilla model class itself, from the Models/ dir
         - Modeldir: This is the location of the trained model.pt file.
     """
-    def __init__(self, modelref, modeldir, device="cpu"):
+    def __init__(self, modelref, dataloader, device="cpu"):
         self.model = modelref
         self.device = device
         self.transform = transforms.ToPILImage()
-        self.modeldir = modeldir
-        self.modelname = self.modeldir.split("/")[-2]
+        self.dataloader = dataloader
+        self.models_loc = "Trained_Models"
+        self.Inference_dir = "Inference_Run"
+        models = os.listdir(self.models_loc)
 
+        for num, model in enumerate(models):
+            choice = "[" + str(num) + "]    " + model
+            print(choice)
+
+        choice  = int(input("please input modelnum: "))
+
+        self.modeldir = self.models_loc + "/"  + models[choice] + "/model.pt"
+        self.modelname = models[choice]
+        self.run_dir = self.Inference_dir + "/" + self.modelname
+        os.makedirs(self.run_dir)
+        os.makedirs(self.run_dir + "/original")
+        os.makedirs(self.run_dir + "/reconstruction")
+        self.RestoreModel()
+        self.Inference_run()
 
     def RestoreModel(self):
         self.model.load_state_dict(torch.load(self.modeldir, map_location=torch.device(self.device)))
-        print("Succesfully loaded", self.modelname, "model") # Make this reference the model name. 
+        print("Succesfully loaded", self.modelname, "model")
 
-    def GAN_Dataset_1_init():
-        pass
-        # Create a routine for extracting images from the GAN_1_dataset here.
-
-    def Inference_run(self, image):
+    def Inference_run(self, runs=3):
         """
-        Does an inference run on the Model for a single image, requires an image from the Dataset.
+        Does an inference run on the Model for three images
         """
-        print("Would you like to save or view images?")
-        decision = input("type save/view: ")
         self.model.eval()
-        Generated_output_image = self.model(image)
-        im = self.transform(image.squeeze(0))
-        output = self.transforms(Generated_output_image.squeeze(0))
-        if decision == "view":
-            f, (ax1,ax2) = plt.subplot(1,2)
-            ax1.imshow(np.asarray(im))
-            ax2.imshow(np.asarray(output))
-            plt.show()
-        if decision == "save":
-            im.save(self.modelname + "defect_sample_input.jpg")
-            output.save(self.modelname + "reconstructed_image.jpg")
-
+        loader = tqdm(range(runs))
+        for run in loader:
+            loader.set_description(f"Running {run}/{runs} images completed")
+            _ , image = next(iter(self.dataloader))
+            Generated_output_image = self.model(image)
+            im = self.transform(image.squeeze(0))
+            output = self.transform(Generated_output_image.squeeze(0))
+            im.save(self.run_dir + "/original/original_image" + str(run) + ".jpg")
+            output.save(self.run_dir + "/reconstruction/reconstructed_image" + str(run) + ".jpg")
+        print("Done!")
+        print("All results saved to:")
+        print(self.run_dir)
 if __name__ == '__main__':
     pass
