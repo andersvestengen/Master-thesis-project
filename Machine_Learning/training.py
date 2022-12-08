@@ -15,7 +15,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 100,
+            "epochs"                : 60,
             "batch_size"            : 1,
             "L1_loss_weight"        : 10,
             "lr"                    : 0.0002,
@@ -29,9 +29,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "Testing_GAN_New_loss_handling",
+            "ModelName"             : "Testing_GAN_New_Analytics",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 5000,
+            "Num_training_samples"  : 10000,
             }
 # client side Settings
 Settings_cli = {
@@ -55,7 +55,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-Settings = Settings_cli
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.CenterCrop(Settings["ImageHW"]),
