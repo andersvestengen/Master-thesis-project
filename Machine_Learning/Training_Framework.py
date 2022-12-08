@@ -110,9 +110,9 @@ class Training_Framework():
         time = str(datetime.now())
         stamp = time[:-16] + "_" + time[11:-7].replace(":", "-")
         if self.Settings["ModelName"] is not None:
-            self.Modeldir = self.workingdir +  "/Trained_Models/" + "GAN_Model_" + self.Settings["ModelName"] + "_time-" + stamp
+            self.Modeldir = self.workingdir +  "/Trained_Models/" + "GAN_Model_" + self.Settings["ModelName"] + " " + stamp
         else:
-            self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + "_time-" + stamp
+            self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + " " + stamp
             
         os.makedirs(self.Modeldir)
         
@@ -120,7 +120,7 @@ class Training_Framework():
         self.Analytics_validation("setup")
 
     def Save_Model(self, epoch):
-            if (epoch == 0) or (self.Generator_loss_validation[epoch] < torch.min(self.Generator_loss_validation[:epoch])):
+            if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
     def Generator_updater(self, real_A, real_B, fake_B, val=False):
@@ -217,6 +217,9 @@ class Training_Framework():
             current_DIS_loss = 0
             Discrim_acc_real = 0
             Discrim_acc_fake = 0
+            pixelloss = 0
+            Discrim_acc_real_raw = 0
+            Discrim_acc_fake_raw = 0
             with tqdm(val_loader, unit='batch', leave=False) as tepoch:
                 for image, defect_images in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
@@ -233,22 +236,33 @@ class Training_Framework():
                     current_GEN_loss += self.Generator_updater_alt(real_A, real_B, val=True) / self.Settings["batch_size"]                   
                     predicted_real = self.Discriminator(real_A, real_B)
                     fake_B = self.Generator(real_A)
+                    pixelloss += self.pixelwise_loss(fake_B, real_B)
                     predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
-                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
+                    Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3)) /self.patch[1]) / self.Settings["batch_size"]
+                    Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3)) /self.patch[1]) / self.Settings["batch_size"]
 
             current_GEN_loss = current_GEN_loss / len(val_loader)
             current_DIS_loss = current_DIS_loss / len(val_loader)
-            Discrim_acc_real = Discrim_acc_real / len(val_loader)
-            Discrim_acc_fake = Discrim_acc_fake / len(val_loader)
-            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+            Discrim_acc_real = Discrim_acc_real.item() / len(val_loader)
+            Discrim_acc_fake = Discrim_acc_fake.item() / len(val_loader)
+            Discrim_acc_real_raw = Discrim_acc_real_raw.item() / len(val_loader)
+            Discrim_acc_fake_raw = Discrim_acc_fake_raw.item() / len(val_loader) 
+            pixelloss = pixelloss.item() / len(val_loader)     
+            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
 
     def Trainer(self, train_loader, val_loader):
-            for epoch in tqdm(range(self.Settings["epochs"]), unit="epoch", desc="Training the model on epoch {epoch}"):
+            epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
+            for epoch in epochs:
+                epochs.set_description(f"Training the model on epoch {epoch}")
                 current_GEN_loss = 0
                 current_DIS_loss = 0
                 Discrim_acc_real = 0
                 Discrim_acc_fake = 0
+                pixelloss = 0
+                Discrim_acc_real_raw = 0
+                Discrim_acc_fake_raw = 0                
                 with tqdm(train_loader, unit='batch', leave=False) as tepoch:
                     for images, defect_images in tepoch:
                         tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
@@ -265,15 +279,21 @@ class Training_Framework():
                         current_GEN_loss += self.Generator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
                         predicted_real = self.Discriminator(real_A, real_B)
                         fake_B = self.Generator(real_A)
+                        pixelloss += self.pixelwise_loss(fake_B, real_B)
                         predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-                        Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 1) / self.Settings["batch_size"]
-                        Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 1) / self.Settings["batch_size"]
+                        Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
+                        Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
+                        Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3))/self.patch[1] ) / self.Settings["batch_size"]
+                        Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3))/self.patch[1] )/ self.Settings["batch_size"]
 
                 current_GEN_loss = current_GEN_loss / len(train_loader)
                 current_DIS_loss = current_DIS_loss / len(train_loader)
-                Discrim_acc_real = Discrim_acc_real / len(train_loader)
-                Discrim_acc_fake = Discrim_acc_fake / len(train_loader)
-                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake)
+                Discrim_acc_real = Discrim_acc_real.item() / len(train_loader)
+                Discrim_acc_fake = Discrim_acc_fake.item() / len(train_loader)
+                Discrim_acc_real_raw = Discrim_acc_real_raw.item() / len(train_loader)
+                Discrim_acc_fake_raw = Discrim_acc_fake_raw.item() / len(train_loader)
+                pixelloss = pixelloss.item() / len(train_loader)
+                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
             self.Save_Analytics()
@@ -381,8 +401,8 @@ class Training_Framework():
         plt.savefig(self.Modeldir + "/discriminator_accuracy_raw_curves.png")
         plt.clf()
         #Implement this in analytics
-        plt.plot(xaxis, self.Generator_pixel_loss_training*100, label="Discriminator accuracy real training")
-        plt.plot(xaxis, self.Generator_pixel_loss_validation*100, label="Discriminator accuracy fake training")
+        plt.plot(xaxis, self.Generator_pixel_loss_training*100, label="Training")
+        plt.plot(xaxis, self.Generator_pixel_loss_validation*100, label="Validation")
         plt.xlabel("epochs")
         plt.ylabel("Percentage [%]")
         plt.title("Generator pixel loss")

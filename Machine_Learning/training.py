@@ -41,6 +41,7 @@ Settings_cli = {
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,
+            "seed"                  : 155, # random training seed
             "num_workers"           : 1,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
