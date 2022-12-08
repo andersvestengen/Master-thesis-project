@@ -16,7 +16,7 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
             "epochs"                : 100,
-            "batch_size"            : 32,
+            "batch_size"            : 1,
             "L1_loss_weight"        : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
@@ -35,9 +35,9 @@ Settings = {
             }
 # client side Settings
 Settings_cli = {
-            "epochs"                : 2,
+            "epochs"                : 4,
             "batch_size"            : 1,
-            "L1_loss_weight"        : 100,
+            "L1_loss_weight"        : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,
@@ -48,13 +48,13 @@ Settings_cli = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "First_GAN_New_Framework",
+            "ModelName"             : "Testing_local_DELETE",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 23,
+            "Num_training_samples"  : 40,
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.CenterCrop(Settings["ImageHW"]),

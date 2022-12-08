@@ -292,13 +292,19 @@ class Training_Framework():
             self.Discriminator_loss_train = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_training = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_training = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_real_training_raw = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_fake_training_raw = np.zeros(self.Settings["epochs"])
+            self.Generator_pixel_loss_training = np.zeros(self.Settings["epochs"])
+
         else:
             epoch = args[0]
             self.Generator_loss_train[epoch] = args[1]
             self.Discriminator_loss_train[epoch] = args[2]
             self.Discriminator_accuracy_real_training[epoch] = args[3]
             self.Discriminator_accuracy_fake_training[epoch] = args[4]
-
+            self.Discriminator_accuracy_real_training_raw[epoch] = args[5]
+            self.Discriminator_accuracy_fake_training_raw[epoch] = args[6]
+            self.Generator_pixel_loss_training[epoch] = args[7]
 
     def Analytics_validation(self, *args):
         """
@@ -309,24 +315,36 @@ class Training_Framework():
             self.Discriminator_loss_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_validation = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_real_validation_raw = np.zeros(self.Settings["epochs"])
+            self.Discriminator_accuracy_fake_validation_raw = np.zeros(self.Settings["epochs"])    
+            self.Generator_pixel_loss_validation = np.zeros(self.Settings["epochs"])    
         else:
             epoch = args[0]
             self.Generator_loss_validation[epoch] = args[1]
             self.Discriminator_loss_validation[epoch] = args[2]
             self.Discriminator_accuracy_real_validation[epoch] = args[3]  
             self.Discriminator_accuracy_fake_validation[epoch] = args[4]  
-
-
+            self.Discriminator_accuracy_real_validation_raw[epoch] = args[5]
+            self.Discriminator_accuracy_fake_validation_raw[epoch] = args[6]
+            self.Generator_pixel_loss_validation[epoch] = args[7]
     def Save_Analytics(self):
         np.savez(self.Modeldir + '/Analytics.npz', (self.Generator_loss_validation,
                                 self.Discriminator_loss_validation,
                                 self.Discriminator_accuracy_real_validation,
                                 self.Discriminator_accuracy_fake_validation,
+                                self.Discriminator_accuracy_real_validation_raw,
+                                self.Discriminator_accuracy_fake_validation_raw,
+                                self.Generator_pixel_loss_validation,
                                 self.Generator_loss_train,
+                                self.Generator_pixel_loss_training,
                                 self.Discriminator_loss_train,
                                 self.Discriminator_accuracy_real_training,
-                                self.Discriminator_accuracy_fake_training
+                                self.Discriminator_accuracy_fake_training,
+                                self.Discriminator_accuracy_real_training_raw,
+                                self.Discriminator_accuracy_fake_training_raw
                                 ))
+
+
 
     def Create_graphs(self):
         xaxis = np.arange(1, self.Generator_loss_validation.shape[0]+1)
@@ -351,7 +369,26 @@ class Training_Framework():
         plt.legend()
         plt.savefig(self.Modeldir + "/discriminator_accuracy_curves.png")
         plt.clf()
-
+        #Implement this in analytics
+        plt.plot(xaxis, self.Discriminator_accuracy_real_training_raw*100, label="Discriminator accuracy real training")
+        plt.plot(xaxis, self.Discriminator_accuracy_fake_training_raw*100, label="Discriminator accuracy fake training")
+        plt.plot(xaxis, self.Discriminator_accuracy_real_validation_raw*100, label="Discriminator accuracy real validation")
+        plt.plot(xaxis, self.Discriminator_accuracy_fake_validation_raw*100, label="Discriminator accuracy fake validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Percentage [%]")
+        plt.title("Discriminator accuracy raw data")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/discriminator_accuracy_raw_curves.png")
+        plt.clf()
+        #Implement this in analytics
+        plt.plot(xaxis, self.Generator_pixel_loss_training*100, label="Discriminator accuracy real training")
+        plt.plot(xaxis, self.Generator_pixel_loss_validation*100, label="Discriminator accuracy fake training")
+        plt.xlabel("epochs")
+        plt.ylabel("Percentage [%]")
+        plt.title("Generator pixel loss")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/generator_pixel_loss.png")
+        plt.clf()
 
 
 class Model_Inference():
