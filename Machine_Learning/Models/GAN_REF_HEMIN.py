@@ -63,7 +63,7 @@ class UNet_ResNet34(nn.Module):
 
         self.pool = nn.MaxPool2d(2, 2)
 
-        self.encoder = resnet34(weights=ResNet34_Weights.DEFAULT)
+        self.encoder = resnet34(pretrained=True)
 
         self.relu = nn.ReLU(inplace=True)
 
