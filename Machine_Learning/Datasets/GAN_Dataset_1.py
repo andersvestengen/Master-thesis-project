@@ -43,6 +43,7 @@ class GAN_dataset(Dataset):
         self.OriginalImagePathglob = self.workingdir + imagefolder + "**/*.jpg"
         
         self.OriginalImagesList = sorted(glob.glob(self.OriginalImagePathglob, recursive=True))
+         
         if training_samples is not None and  (len(self.OriginalImagesList) > training_samples):
             if len(self.OriginalImagesList) > training_samples:
                 self.OriginalImagesList = self.OriginalImagesList[:training_samples]
@@ -61,6 +62,8 @@ class GAN_dataset(Dataset):
             self.Large_cache_storage = self.Small_cache_storage
         
         if not os.path.isfile(self.Large_cache_storage):
+            if len(self.OriginalImagesList) == 0:
+                raise Exception(f"Found no local training images at {self.workingdir + imagefolder} ! \n And no preprocess file at {self.Large_cache_storage} !")            
             print("No file detected at:")
             print(self.Large_cache_storage)
             print("Starting image processing")
