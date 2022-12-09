@@ -18,10 +18,9 @@ class FileSender():
     def __init__(self):
         self.externaldir = "Master_Thesis_Model_Directory"
         print("setting up ssh and sftp")
-        self.username = input("input username: ")
         self.server = "login.uio.no"
-        self.password = input("input password: ")
-        
+
+        self.GetCredentials()
         self.cli = paramiko.SSHClient()
         self.cli.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.cli.connect(hostname=self.server, port=22, username=self.username, password=self.password)
@@ -30,6 +29,19 @@ class FileSender():
         print("sftp open")
         self.local_Model_Directory = "Trained_Models"
 
+
+    def GetCredentials(self):
+        localpassdir = [
+            "C:/Users/ander/Documents/Master-thesis-project/local_UiO_Password.txt",
+        ]
+        for path in localpassdir:
+            if os.path.isfile(path):
+                with open(path, 'r') as f:
+                    self.username = f.readline().strip()
+                    self.password = f.readline().strip()
+                    return
+        self.username = input("input username: ")
+        self.password = input("input password: ")     
 
     def send(self, directory):
         dir_struct = list(os.walk(directory))
