@@ -3,7 +3,7 @@ import torch
 from torchvision import models
 import torchvision
 from torch.nn import functional as F
-from torchvision.models import resnet34, ResNet34_Weights
+from torchvision.models import resnet34
 
 def conv3x3(in_, out):
     return nn.Conv2d(in_, out, 3, padding=1)
