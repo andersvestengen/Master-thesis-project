@@ -47,7 +47,7 @@ class UNet_ResNet34(nn.Module):
         Proposed by Alexander Buslaev: https://www.linkedin.com/in/al-buslaev/
         """
 
-    def __init__(self, num_classes=1, num_filters=32, output_channels=3, is_deconv=False):
+    def __init__(self, num_classes=3, num_filters=3, is_deconv=False):
         """
         :param num_classes:
         :param num_filters:
@@ -87,14 +87,19 @@ class UNet_ResNet34(nn.Module):
         self.dec3 = DecoderBlock(128 + num_filters * 8, num_filters * 4 * 2, num_filters * 2, is_deconv)
         self.dec2 = DecoderBlock(64 + num_filters * 2, num_filters * 2 * 2, num_filters * 2 * 2, is_deconv)
         self.dec1 = DecoderBlock(num_filters * 2 * 2, num_filters * 2 * 2, num_filters, is_deconv)
-
+        self.dec0 = ConvRelu(num_filters, num_filters)
+        self.final = nn.Conv2d(num_filters, num_classes, kernel_size=1)
+        self.finaly = nn.Sequential(
+            nn.Tanh(),
+        )
+        """     
         self.final_decoder_layer = nn.Sequential(
             nn.Upsample(scale_factor=2),
             nn.ZeroPad2d((1, 0 , 1, 0)),
             nn.Conv2d(num_filters, output_channels, 4, padding=1),
             nn.Tanh(),
         )
-
+        """
     def forward(self, x):
         conv1 = self.conv1(x)
         conv2 = self.conv2(conv1)
@@ -110,6 +115,13 @@ class UNet_ResNet34(nn.Module):
         dec3 = self.dec3(torch.cat([dec4, conv3], 1))
         dec2 = self.dec2(torch.cat([dec3, conv2], 1))
         dec1 = self.dec1(dec2)
+        dec0 = self.dec0(dec1)
 
-
-        return self.final_decoder_layer(dec1)
+        if self.num_classes > 1:
+            x_out = self.final(dec0)
+            x_out = self.finaly(x_out)
+        else:
+            logits = self.final(dec0)
+            x_out  = self.finaly(logits)
+            
+        return x_out
