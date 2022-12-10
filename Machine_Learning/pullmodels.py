@@ -2,8 +2,9 @@
 
 from Training_Framework import FileSender
 
-fmg = FileSender()
+if __name__ == '__main__':
+    fmg = FileSender()
 
-fmg.get_remote_models()
+    fmg.get_remote_models()
 
-fmg.close()
+    fmg.close()
