@@ -33,6 +33,7 @@ class FileSender():
     def GetCredentials(self):
         localpassdir = [
             "C:/Users/ander/Documents/Master-thesis-project/local_UiO_Password.txt",
+            "G:/Master-thesis-project/local_UiO_Password.txt",
         ]
         for path in localpassdir:
             if os.path.isfile(path):
