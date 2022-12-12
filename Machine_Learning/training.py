@@ -35,7 +35,7 @@ Settings = {
             "ModelName"             : "GAN_Staggered_V2_60_epochs",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 10000,
-            "Pin_memory"            : True
+            "Pin_memory"            : False
             }
 # client side Settings
 Settings_cli = {
