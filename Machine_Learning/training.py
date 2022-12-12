@@ -33,6 +33,7 @@ Settings = {
             "ModelName"             : "GAN_V2",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 5000,
+            "Pin_memory"            : True
             }
 # client side Settings
 Settings_cli = {
@@ -97,16 +98,19 @@ if __name__ == '__main__':
     train_set, val_set = torch.utils.data.random_split(Custom_dataset, [train_split, val_split])
 
     train_loader = DataLoader(train_set,
-                                    num_workers = Settings["num_workers"],
-                                    batch_size = Settings["batch_size"], 
-                                    shuffle = Settings["shuffle"],
-                                    drop_last=Settings["Drop_incomplete_batch"])
+                            num_workers     = Settings["num_workers"],
+                            batch_size      = Settings["batch_size"], 
+                            shuffle         = Settings["shuffle"],
+                            drop_last       = Settings["Drop_incomplete_batch"],
+                            pin_memory      = Settings["Pin_memory"])
+
 
     val_loader = DataLoader(val_set,
                                     num_workers = Settings["num_workers"],
                                     batch_size = Settings["batch_size"], 
                                     shuffle = Settings["shuffle"],
-                                    drop_last=Settings["Drop_incomplete_batch"])
+                                    drop_last=Settings["Drop_incomplete_batch"],
+                                    pin_memory      = Settings["Pin_memory"])
     # Loss functions
     GAN_loss        = torch.nn.MSELoss().to(Settings["device"])
     pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"])
