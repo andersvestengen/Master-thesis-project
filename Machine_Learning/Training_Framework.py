@@ -153,7 +153,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
         print("operand types")
-        print(type(Total_loss_Generator), type(loss_pixel))
+        print(type(Total_loss_Generator.item()), type(loss_pixel.item()))
         return Total_loss_Generator.item(), loss_pixel.item()
 
     def Discriminator_updater(self, real_A, real_B, val=False):
