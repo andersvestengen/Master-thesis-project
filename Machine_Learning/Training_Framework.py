@@ -141,8 +141,9 @@ class Training_Framework():
         
         # Generator loss
         fake_B = self.Generator(real_A)         
-        predict_fake = self.Discriminator(fake_B, real_A) # Compare fake output to original image
-        loss_GAN = self.GAN_loss(predict_fake, self.valid)
+        predicted_fake = self.Discriminator(fake_B, real_A) # Compare fake output to original image
+        predicted_real = self.Discriminator(real_B, real_A)
+        loss_GAN = self.GAN_loss(predicted_fake, self.valid)
         #Pixelwise loss
         loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
         
@@ -153,7 +154,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
         print("operand types")
-        return Total_loss_Generator.item(), loss_pixel.item()
+        return Total_loss_Generator.item(), loss_pixel.item(), predicted_real.item(), predicted_fake.item()
 
     def Discriminator_updater(self, real_A, real_B, val=False):
         self.Discriminator.zero_grad()
@@ -166,13 +167,14 @@ class Training_Framework():
         #Fake loss
         fake_B = self.Generator(real_A)
         predicted_fake = self.Discriminator(fake_B.detach(), real_B)
+        loss_pixel = self.pixelwise_loss(fake_B, real_B)
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
         Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
         if not val: 
             Total_loss_Discriminator.backward() # backward run        
             self.Discriminator_optimizer.step() # step
 
-        return Total_loss_Discriminator.item(), predicted_real.item(), predicted_fake.item()
+        return Total_loss_Discriminator.item(), loss_pixel.item(), predicted_real.item(), predicted_fake.item()
         
 
     def validation_run(self, val_loader, epoch):
@@ -207,10 +209,10 @@ class Training_Framework():
                         Turn = not Turn      
 
                     if Turn:
-                        GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, val=True)
+                        GEN_loss, loss_pixel, predicted_real, predicted_fake = self.Generator_updater(real_A, real_B, val=True)
                         current_GEN_loss += GEN_loss
                     else:
-                        DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
+                        DIS_loss, loss_pixel, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
                         current_DIS_loss += DIS_loss  
 
                     #Analytics            
@@ -275,10 +277,10 @@ class Training_Framework():
                         Turn = not Turn
 
                     if Turn:
-                        GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B)
+                        GEN_loss, loss_pixel, predicted_real, predicted_fake = self.Generator_updater(real_A, real_B)
                         current_GEN_loss += GEN_loss
                     else:
-                        DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
+                        DIS_loss, loss_pixel, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
                         current_DIS_loss += DIS_loss
 
                     #Analytics
