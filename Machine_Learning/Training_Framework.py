@@ -189,8 +189,8 @@ class Training_Framework():
                     if epoch > 0:
                         tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_validation[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_validation[epoch-1]:.5f}")
   
-                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
-                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
+                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
+                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
                     real_A = defect_images.to(self.device)
                     real_B = image.to(self.device)
@@ -235,8 +235,8 @@ class Training_Framework():
                     if epoch > 0:
                         tepoch.set_description(f"Training Gen_loss {self.Generator_loss_train[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.5f}")
                         
-                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
-                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
+                    self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
+                    self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
                     real_A = defect_images.to(self.device) #Defect
                     real_B = images.to(self.device) #Target
