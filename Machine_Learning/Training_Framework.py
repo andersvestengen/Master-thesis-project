@@ -152,7 +152,8 @@ class Training_Framework():
         if not val:
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
-
+        print("operand types")
+        print(type(Total_loss_Generator), type(loss_pixel))
         return Total_loss_Generator.item(), loss_pixel.item()
 
     def Discriminator_updater(self, real_A, real_B, val=False):
@@ -201,8 +202,11 @@ class Training_Framework():
                     else:
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target
-                    
+             
                     #Training
+                    if (epoch % switch) == 0 and epoch != 0:
+                        Turn = not Turn      
+
                     if Turn:
                         GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]
                         current_GEN_loss += GEN_loss
