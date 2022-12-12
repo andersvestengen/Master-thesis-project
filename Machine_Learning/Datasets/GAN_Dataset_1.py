@@ -22,25 +22,29 @@ class GAN_dataset(Dataset):
         - update the Description
     """
 
-    def __init__(self, preprocess_storage=None, training_samples=None, seed=0, BoxSize=5, workingdir=None, imagefolder="/Images/", transform=None, device="cpu"):
+    def __init__(self, Settings, transform=None):
         super(GAN_dataset, self).__init__()
-        np.random.seed(seed)
+        self.Settings = Settings
+        np.random.seed(self.Settings["seed"])
         self.training_process_name = "/processed_images.pt"
-        self.preprocess_storage = preprocess_storage
-        self.BoxSize = BoxSize
-        self.device = device
+        self.preprocess_storage = self.Settings["preprocess_storage"]
+        self.BoxSize = self.Settings["BoxSize"]
+        self.device = self.Settings["device"]
+        self.imagefolder="/Images/"
         self.boolean_sample = [True, False]
         if transform is not None:
             self.transform = transform
         else:
             self.transform = def_transform          
+        training_samples = self.Settings["Num_training_samples"]
         self.max_training_samples = training_samples
+        
         #Setting up the directories
-        self.workingdir = os.getcwd() if workingdir == None else workingdir
+        self.workingdir = os.getcwd() if self.Settings["dataset_loc"] == None else self.Settings["dataset_loc"]
         self.Small_cache_storage = self.workingdir + self.training_process_name
-        #self.samplecoordinates= []
+        
         # Setting up special paths and creating the glob directory-lists here
-        self.OriginalImagePathglob = self.workingdir + imagefolder + "**/*.jpg"
+        self.OriginalImagePathglob = self.workingdir + self.imagefolder + "**/*.jpg"
         
         self.OriginalImagesList = sorted(glob.glob(self.OriginalImagePathglob, recursive=True))
          
@@ -63,7 +67,7 @@ class GAN_dataset(Dataset):
         
         if not os.path.isfile(self.Large_cache_storage):
             if len(self.OriginalImagesList) == 0:
-                raise Exception(f"Found no local training images at {self.workingdir + imagefolder} ! \n And no preprocess file at {self.Large_cache_storage} !")            
+                raise Exception(f"Found no local training images at {self.workingdir + self.imagefolder} ! \n And no preprocess file at {self.Large_cache_storage} !")            
             print("No file detected at:")
             print(self.Large_cache_storage)
             print("Starting image processing")
@@ -72,7 +76,7 @@ class GAN_dataset(Dataset):
         else:
             print("Processed image file found, loading...")
             start = time.time()
-            self.data = torch.load(self.Large_cache_storage)
+            self.data = torch.load(self.Large_cache_storage, map_location=torch.device(self.device))
             stop = time.time()
             print(f"Time spent loading file was: {stop - start:.2} seconds")
             if training_samples != self.data.size(0) // 2:
@@ -156,6 +160,8 @@ class GAN_dataset(Dataset):
         torch.save(self.data, self.Large_cache_storage)
         stop = time.time()
         print(f"Done, time taken was: {stop - start:.0f} seconds")
+        print("Loading to device")
+        self.data.to(self.device) # Move to GPU if available
 
                     
 

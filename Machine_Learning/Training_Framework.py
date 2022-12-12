@@ -123,7 +123,7 @@ class Training_Framework():
         time = str(datetime.now())
         stamp = time[:-16] + "_" + time[11:-7].replace(":", "-")
         if self.Settings["ModelName"] is not None:
-            self.Modeldir = self.workingdir +  "/Trained_Models/" + "GAN_Model_" + self.Settings["ModelName"] + " (" + stamp +")"
+            self.Modeldir = self.workingdir +  "/Trained_Models/" + self.Settings["ModelName"] + " (" + stamp +")"
         else:
             self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + " " + stamp
             
@@ -184,7 +184,7 @@ class Training_Framework():
             Discrim_acc_real_raw = 0
             Discrim_acc_fake_raw = 0
             with tqdm(val_loader, unit='batch', leave=False) as tepoch:
-                for image, defect_images in tepoch:
+                for images, defect_images in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0:
                         tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_validation[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_validation[epoch-1]:.5f}")
@@ -192,8 +192,12 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
-                    real_A = defect_images.to(self.device)
-                    real_B = image.to(self.device)
+                    if self.Settings["device"] == "cuda":
+                        real_A = defect_images #Defect
+                        real_B = images #Target
+                    else:
+                        real_A = defect_images.to(self.device) #Defect
+                        real_B = images.to(self.device) #Target
                     
                     #Training
                     current_DIS_loss += self.Discriminator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]                    
@@ -249,8 +253,12 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
-                    real_A = defect_images.to(self.device) #Defect
-                    real_B = images.to(self.device) #Target
+                    if self.Settings["device"] == "cuda":
+                        real_A = defect_images #Defect
+                        real_B = images #Target
+                    else:
+                        real_A = defect_images.to(self.device) #Defect
+                        real_B = images.to(self.device) #Target
 
                     #Training
                     current_DIS_loss += self.Discriminator_updater(real_A, real_B) / self.Settings["batch_size"]

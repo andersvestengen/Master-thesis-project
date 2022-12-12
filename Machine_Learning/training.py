@@ -19,11 +19,12 @@ Settings = {
             "epochs"                : 30,
             "batch_size"            : 1,
             "L1_loss_weight"        : 10,
+            "BoxSize"               : 5,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 589, # random training seed
-            "num_workers"           : 8,
+            "num_workers"           : 4,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cuda",
@@ -40,10 +41,11 @@ Settings_cli = {
             "epochs"                : 4,
             "batch_size"            : 1,
             "L1_loss_weight"        : 10,
+            "BoxSize"               : 5,
             "lr"                    : 0.0002,
-            "dataset_loc"           : Desk_dir,
-            "preprocess_storage"    : None,
-            "seed"                  : 155, # random training seed
+            "dataset_loc"           : Server_dir,
+            "preprocess_storage"    : Preprocess_dir,
+            "seed"                  : 589, # random training seed
             "num_workers"           : 1,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -51,9 +53,10 @@ Settings_cli = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "LOCALTESTDELETEME",
+            "ModelName"             : "LOCAL_TEST_DELETE_ME",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 40,
+            "Pin_memory"            : False
             }
 
 #Remove this for server training
@@ -88,7 +91,7 @@ if __name__ == '__main__':
 
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(preprocess_storage=Settings["preprocess_storage"], training_samples=Settings["Num_training_samples"], seed=67, workingdir=Settings["dataset_loc"], transform=training_transforms)
+    Custom_dataset = GAN_dataset(Settings, transform=training_transforms)
 
     dataset_len = len(Custom_dataset)
 
