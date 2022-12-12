@@ -113,6 +113,7 @@ class Training_Framework():
         self.GAN_loss = GAN_loss
         self.pixelwise_loss = pixelwise_loss
         self.Discriminator = Discriminator
+        self.image_transform = transforms.ToPILImage()
         self.Discriminator_optimizer = D_opt
         self.device = self.Settings["device"]
         self.Generator_loss = 0
@@ -223,7 +224,7 @@ class Training_Framework():
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target
              
-                    #Training
+                    #Validation
                     if (epoch % switch) == 0 and epoch != 0:
                         Turn = not Turn      
 
@@ -234,6 +235,14 @@ class Training_Framework():
                         DIS_loss, loss_pixel, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
                         current_DIS_loss += DIS_loss  
 
+                    #Snapping image from generator
+                    if (epoch % 10) == 0:
+                        self.Generator.eval()
+                        with torch.no_grad():
+                            fake_B = self.Generator(real_A)
+                            im = self.image_transform(fake_B.squeeze(0))
+                            im.save(self.modeltraining_output + "/" + "Generator_output_image_epoch_" + str(epoch) + ".jpg")
+                        self.Generator.train()
                     #Analytics            
                     pixelloss += loss_pixel
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5).item()
