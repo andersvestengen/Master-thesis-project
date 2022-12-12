@@ -24,7 +24,7 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 589, # random training seed
-            "num_workers"           : 4,
+            "num_workers"           : 0,
             "shuffle"               : True,
             "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
             "Datasplit"             : 0.7,
@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_V2",
+            "ModelName"             : "GAN_V2_staggered",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 5000,
             "Pin_memory"            : True
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # Setup GPU (or not)
     if torch.cuda.is_available():
         Settings["device"] = "cuda"
-        decision = input(f"GPU detected, pre-load all training data to GPU (estim:{1.57*Settings['Num_training_samples']*1E-3} GB) [y/n]? ")
+        decision = input(f"GPU detected, pre-load all training data to GPU (estim:{1.57*Settings['Num_training_samples']*1E-3:.2f} GB) [y/n]? ")
         if decision == "y":
             Settings["Datahost"] = "cuda"
         else:
