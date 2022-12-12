@@ -153,7 +153,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return Total_loss_Generator.item()
+        return Total_loss_Generator.item(), loss_pixel.item()
 
     def Discriminator_updater(self, real_A, real_B, val=False):
         self.Discriminator.zero_grad()
@@ -172,9 +172,12 @@ class Training_Framework():
             Total_loss_Discriminator.backward() # backward run        
             self.Discriminator_optimizer.step() # step
 
-        return Total_loss_Discriminator.item()
+        return Total_loss_Discriminator.item(), predicted_real, predicted_fake, fake_B
+        
 
     def validation_run(self, val_loader, epoch):
+        switch = 3
+        Turn = True
         with torch.no_grad():
             current_GEN_loss = 0
             current_DIS_loss = 0
@@ -200,14 +203,18 @@ class Training_Framework():
                         real_B = images.to(self.device) #Target
                     
                     #Training
-                    current_DIS_loss += self.Discriminator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]                    
-                    current_GEN_loss += self.Generator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]       
+                    if Turn:
+                        GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]
+                        current_GEN_loss += GEN_loss
+                    else:
+                        DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]
+                        current_DIS_loss += DIS_loss  
 
                     #Analytics            
-                    predicted_real = self.Discriminator(real_A, real_B)
-                    fake_B = self.Generator(real_A)
-                    pixelloss += self.pixelwise_loss(fake_B, real_B)
-                    predicted_fake = self.Discriminator(fake_B.detach(), real_B)
+                    #predicted_real = self.Discriminator(real_A, real_B)
+                    #fake_B = self.Generator(real_A)
+                    pixelloss += loss_pixel
+                    #predicted_fake = self.Discriminator(fake_B.detach(), real_B)
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
                     Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3)) /self.patch[1]) / self.Settings["batch_size"]
@@ -223,6 +230,8 @@ class Training_Framework():
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
 
     def Trainer(self, train_loader, val_loader):
+            switch = 3
+            Turn = True
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
@@ -237,14 +246,15 @@ class Training_Framework():
                     tepoch = tqdm(train_loader, unit='image[s]', leave=False)
                 else:
                     tepoch = tqdm(train_loader, unit='batche[s]', leave=False)
-
+                # We're gonna wait to include this
+                """
                 if epoch == 10: # Change learning rate 
                     for g in self.Generator_optimizer.param_groups:
                         g['lr'] = self.Settings["lr"]/10
 
                     for g in self.Discriminator_optimizer.param_groups:
                         g['lr'] = self.Settings["lr"]/10
-           
+                """
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0:
@@ -260,15 +270,24 @@ class Training_Framework():
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target
 
-                    #Training
-                    current_DIS_loss += self.Discriminator_updater(real_A, real_B) / self.Settings["batch_size"]
-                    current_GEN_loss += self.Generator_updater(real_A, real_B) / self.Settings["batch_size"]
+                    #Training staggered approach
+                    if (epoch % switch) == 0 and epoch != 0:
+                        Turn = not Turn
+
+                    if Turn:
+
+                        GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B) / self.Settings["batch_size"]
+                        current_GEN_loss += GEN_loss
+                    else:
+                        DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B) / self.Settings["batch_size"]
+                        current_DIS_loss += DIS_loss
 
                     #Analytics
-                    predicted_real = self.Discriminator(real_A, real_B)
-                    fake_B = self.Generator(real_A)
-                    pixelloss += self.pixelwise_loss(fake_B, real_B).detach()
-                    predicted_fake = self.Discriminator(fake_B.detach(), real_B)
+                    #predicted_real = self.Discriminator(real_A, real_B)
+                    #fake_B = self.Generator(real_A)
+
+                    #predicted_fake = self.Discriminator(fake_B.detach(), real_B)
+                    pixelloss += loss_pixel                    
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
                     Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3))/self.patch[1] ) / self.Settings["batch_size"]
