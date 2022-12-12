@@ -57,7 +57,9 @@ class FileSender():
     """
 
     def send(self, directory):
-        for root, dirs, files in tqdm(os.walk(directory), unit="file", desc=f"Sending {foldername} to server storage"):
+        walker = tqdm(os.walk(directory), unit="file")
+        for root, dirs, files in walker:
+            walker.set_description(f"Sending {os.path.basename(root)} to server storage")
             foldername = os.path.basename(root)
             self.ftr.mkdir(self.externaldir + "/" + foldername)
             for filename in files:
