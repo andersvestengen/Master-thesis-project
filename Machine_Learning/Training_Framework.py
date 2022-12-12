@@ -235,7 +235,7 @@ class Training_Framework():
                         DIS_loss, loss_pixel, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
                         current_DIS_loss += DIS_loss  
 
-                    #Snapping image from generator
+                    #Snapping image from generator during validation
                     if (epoch % 10) == 0:
                         self.Generator.eval()
                         with torch.no_grad():
