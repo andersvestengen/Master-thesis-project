@@ -172,7 +172,7 @@ class Training_Framework():
             Total_loss_Discriminator.backward() # backward run        
             self.Discriminator_optimizer.step() # step
 
-        return Total_loss_Discriminator.item(), predicted_real, predicted_fake, fake_B
+        return Total_loss_Discriminator.item(), predicted_real.item(), predicted_fake.item()
         
 
     def validation_run(self, val_loader, epoch):
@@ -215,18 +215,18 @@ class Training_Framework():
                     #fake_B = self.Generator(real_A)
                     pixelloss += loss_pixel
                     #predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-                    Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
-                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
-                    Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3)) /self.patch[1]) / self.Settings["batch_size"]
-                    Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3)) /self.patch[1]) / self.Settings["batch_size"]
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
+                    Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3)) /self.patch[1]) / self.Settings["batch_size"]
+                    Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3)) /self.patch[1]) / self.Settings["batch_size"]
             #Save per epoch
             current_GEN_loss = current_GEN_loss / len(val_loader)
             current_DIS_loss = current_DIS_loss / len(val_loader)
-            Discrim_acc_real = Discrim_acc_real.item() / len(val_loader)
-            Discrim_acc_fake = Discrim_acc_fake.item() / len(val_loader)
-            Discrim_acc_real_raw = Discrim_acc_real_raw.item() / len(val_loader)
-            Discrim_acc_fake_raw = Discrim_acc_fake_raw.item() / len(val_loader) 
-            pixelloss = pixelloss.item() / len(val_loader)     
+            Discrim_acc_real = Discrim_acc_real / len(val_loader)
+            Discrim_acc_fake = Discrim_acc_fake / len(val_loader)
+            Discrim_acc_real_raw = Discrim_acc_real_raw / len(val_loader)
+            Discrim_acc_fake_raw = Discrim_acc_fake_raw / len(val_loader) 
+            pixelloss = pixelloss / len(val_loader)     
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
 
     def Trainer(self, train_loader, val_loader):
@@ -287,10 +287,10 @@ class Training_Framework():
 
                     #predicted_fake = self.Discriminator(fake_B.detach(), real_B)
                     pixelloss += loss_pixel                    
-                    Discrim_acc_real += torch.sum(torch.sum(predicted_real.detach(), (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
-                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
-                    Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3))/self.patch[1] ) / self.Settings["batch_size"]
-                    Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] )/ self.Settings["batch_size"]
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5) / self.Settings["batch_size"]
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
+                    Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3))/self.patch[1] ) / self.Settings["batch_size"]
+                    Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3))/self.patch[1] )/ self.Settings["batch_size"]
                 
                 #Save per epoch
                 current_GEN_loss = current_GEN_loss / len(train_loader)
@@ -299,7 +299,7 @@ class Training_Framework():
                 Discrim_acc_fake = Discrim_acc_fake.item() / len(train_loader)
                 Discrim_acc_real_raw = Discrim_acc_real_raw.item() / len(train_loader)
                 Discrim_acc_fake_raw = Discrim_acc_fake_raw.item() / len(train_loader)
-                pixelloss = pixelloss.item() / len(train_loader)
+                pixelloss = pixelloss / len(train_loader)
                 self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
