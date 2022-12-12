@@ -1,4 +1,4 @@
-from Models.GAN_Model_1 import Discriminator_1
+from Models.GAN_Model_1 import Discriminator_1, Generator_Unet1
 from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Datasets.GAN_Dataset_1 import GAN_dataset
 import torch
@@ -16,23 +16,23 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 50,
+            "epochs"                : 30,
             "batch_size"            : 1,
             "L1_loss_weight"        : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
-            "seed"                  : 155, # random training seed
-            "num_workers"           : 1,
+            "seed"                  : 589, # random training seed
+            "num_workers"           : 8,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_HEMIN_RESNET34",
+            "ModelName"             : "GAN_V2",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 25000,
+            "Num_training_samples"  : 5000,
             }
 # client side Settings
 Settings_cli = {
@@ -82,8 +82,8 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    Generator = UNet_ResNet34().to(device)
-    #Generator.apply(weights_init)
+    Generator = Generator_Unet1().to(device)
+    Generator.apply(weights_init)
 
 
     # Configure dataloaders

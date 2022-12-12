@@ -195,8 +195,11 @@ class Training_Framework():
                     real_A = defect_images.to(self.device)
                     real_B = image.to(self.device)
                     
+                    #Training
                     current_DIS_loss += self.Discriminator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]                    
-                    current_GEN_loss += self.Generator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]                   
+                    current_GEN_loss += self.Generator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]       
+
+                    #Analytics            
                     predicted_real = self.Discriminator(real_A, real_B)
                     fake_B = self.Generator(real_A)
                     pixelloss += self.pixelwise_loss(fake_B, real_B)
@@ -205,7 +208,7 @@ class Training_Framework():
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
                     Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3)) /self.patch[1]) / self.Settings["batch_size"]
                     Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3)) /self.patch[1]) / self.Settings["batch_size"]
-
+            #Save per epoch
             current_GEN_loss = current_GEN_loss / len(val_loader)
             current_DIS_loss = current_DIS_loss / len(val_loader)
             Discrim_acc_real = Discrim_acc_real.item() / len(val_loader)
@@ -229,7 +232,15 @@ class Training_Framework():
                 if self.Settings["batch_size"] == 1:
                     tepoch = tqdm(train_loader, unit='image[s]', leave=False)
                 else:
-                    tepoch = tqdm(train_loader, unit='batche[s]', leave=False)                            
+                    tepoch = tqdm(train_loader, unit='batche[s]', leave=False)
+
+                if epoch == 10: # Change learning rate 
+                    for g in self.Generator_optimizer.param_groups:
+                        g['lr'] = self.Settings["lr"]/10
+
+                    for g in self.Discriminator_optimizer.param_groups:
+                        g['lr'] = self.Settings["lr"]/10
+           
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0:
@@ -241,8 +252,11 @@ class Training_Framework():
                     real_A = defect_images.to(self.device) #Defect
                     real_B = images.to(self.device) #Target
 
+                    #Training
                     current_DIS_loss += self.Discriminator_updater(real_A, real_B) / self.Settings["batch_size"]
                     current_GEN_loss += self.Generator_updater(real_A, real_B) / self.Settings["batch_size"]
+
+                    #Analytics
                     predicted_real = self.Discriminator(real_A, real_B)
                     fake_B = self.Generator(real_A)
                     pixelloss += self.pixelwise_loss(fake_B, real_B).detach()
@@ -251,7 +265,8 @@ class Training_Framework():
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] < 5) / self.Settings["batch_size"]
                     Discrim_acc_real_raw += (torch.sum(predicted_real.detach(), (2,3))/self.patch[1] ) / self.Settings["batch_size"]
                     Discrim_acc_fake_raw += (torch.sum(predicted_fake.detach(), (2,3))/self.patch[1] )/ self.Settings["batch_size"]
-
+                
+                #Save per epoch
                 current_GEN_loss = current_GEN_loss / len(train_loader)
                 current_DIS_loss = current_DIS_loss / len(train_loader)
                 Discrim_acc_real = Discrim_acc_real.item() / len(train_loader)
@@ -262,9 +277,10 @@ class Training_Framework():
                 self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
+            #Save Analytics to file and create images from analytics    
             self.Save_Analytics()
             self.Create_graphs()
-            if self.transmit:
+            if self.transmit: # Send finished model to server storage
                 print("Sending files")
                 self.transmitter.send(self.Modeldir)
                 self.transmitter.close()
