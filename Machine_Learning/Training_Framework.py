@@ -57,16 +57,22 @@ class FileSender():
     """
 
     def send(self, directory):
+        num = 0
+        odir = None
         walker = tqdm(os.walk(directory), unit="file")
         for root, dirs, files in walker:
             walker.set_description(f"Sending {os.path.basename(root)} to server storage")
             foldername = os.path.basename(root)
+            if num > 0 :
+                foldername = odir + "/" + foldername
+            odir = foldername
             self.ftr.mkdir(self.externaldir + "/" + foldername)
             for filename in files:
                 file_external_path = self.externaldir + "/" + foldername + "/" + filename
                 file_local_path = root + "/" + filename
                 self.ftr.put(file_local_path ,file_external_path)
             print("finished sending directory", foldername)
+            num += 1
 
     #Needs and update to support directories, but doesnt work for 2FA yet either.
     def pull(self, directory):
