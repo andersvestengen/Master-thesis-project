@@ -187,7 +187,11 @@ class Training_Framework():
             pixelloss = 0
             Discrim_acc_real_raw = 0
             Discrim_acc_fake_raw = 0
-            with tqdm(val_loader, unit='batch', leave=False) as tepoch:
+            if self.Settings["batch_size"] == 1:
+                val_unit = "image(s)"
+            else:
+                val_unit = "batch(s)"
+            with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0:
@@ -244,9 +248,9 @@ class Training_Framework():
                 Discrim_acc_real_raw = 0
                 Discrim_acc_fake_raw = 0
                 if self.Settings["batch_size"] == 1:
-                    tepoch = tqdm(train_loader, unit='image[s]', leave=False)
+                    tepoch = tqdm(train_loader, unit='image(s)', leave=False)
                 else:
-                    tepoch = tqdm(train_loader, unit='batche[s]', leave=False)
+                    tepoch = tqdm(train_loader, unit='batche(s)', leave=False)
                 # We're gonna wait to include this
                 """
                 if epoch == 10: # Change learning rate 
