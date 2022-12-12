@@ -194,9 +194,10 @@ class Training_Framework():
             with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
-                    if epoch > 0:
-                        tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_validation[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_validation[epoch-1]:.5f}")
-  
+                    if epoch > 0 and Turn:
+                        tepoch.set_description(f"Validation Gen_loss {current_GEN_loss:.5f}")
+                    elif epoch > 0 and not Turn:
+                        tepoch.set_description(f"Validation Disc_loss {current_DIS_loss:.5f}")
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
@@ -262,8 +263,10 @@ class Training_Framework():
                 """
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
-                    if epoch > 0:
-                        tepoch.set_description(f"Training Gen_loss {self.Generator_loss_train[epoch-1]:.5f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.5f}")
+                    if epoch > 0 and Turn:
+                        tepoch.set_description(f"Training Gen_loss {current_GEN_loss:.5f}")
+                    elif epoch > 0 and not Turn:
+                        tepoch.set_description(f"Training Disc_loss {current_DIS_loss:.5f}")
                         
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
