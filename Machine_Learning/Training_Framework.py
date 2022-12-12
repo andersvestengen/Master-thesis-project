@@ -153,7 +153,6 @@ class Training_Framework():
         if not val:
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
-        print("operand types")
         return Total_loss_Generator.item(), loss_pixel.item(), predicted_real, predicted_fake
 
     def Discriminator_updater(self, real_A, real_B, val=False):
