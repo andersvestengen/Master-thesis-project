@@ -42,8 +42,9 @@ class FileSender():
                     self.password = f.readline().strip()
                     return
         self.username = input("input username: ")
-        self.password = input("input password: ")     
+        self.password = input("input password: ")  
 
+    """ # Old
     def send(self, directory):
         dir_struct = list(os.walk(directory))
         foldername = dir_struct[0][0].split("/")[-1]
@@ -53,8 +54,19 @@ class FileSender():
             file_local_path = dir_struct[0][0] + "/" + filename
             self.ftr.put(file_local_path ,file_external_path)
         print("finished sending directory", foldername)
+    """
 
+    def send(self, directory):
+        for root, dirs, files in tqdm(os.walk(directory), unit="file", desc=f"Sending {foldername} to server storage"):
+            foldername = os.path.basename(root)
+            self.ftr.mkdir(self.externaldir + "/" + foldername)
+            for filename in files:
+                file_external_path = self.externaldir + "/" + foldername + "/" + filename
+                file_local_path = root + "/" + filename
+                self.ftr.put(file_local_path ,file_external_path)
+            print("finished sending directory", foldername)
 
+    #Needs and update to support directories, but doesnt work for 2FA yet either.
     def pull(self, directory):
         dir_struct = tqdm(self.ftr.listdir(self.externaldir + "/" + directory), unit="file")
         os.makedirs(self.local_Model_Directory + "/" + directory)
@@ -128,6 +140,9 @@ class Training_Framework():
             self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + " " + stamp
             
         os.makedirs(self.Modeldir)
+
+        self.modeltraining_output = self.Modeldir + "/training_output"
+        os.makedirs(self.modeltraining_output)
         
         self.Analytics_training("setup")
         self.Analytics_validation("setup")
