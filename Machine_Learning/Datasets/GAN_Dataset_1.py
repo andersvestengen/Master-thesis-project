@@ -29,7 +29,7 @@ class GAN_dataset(Dataset):
         self.training_process_name = "/processed_images.pt"
         self.preprocess_storage = self.Settings["preprocess_storage"]
         self.BoxSize = self.Settings["BoxSize"]
-        self.device = self.Settings["device"]
+        self.device = self.Settings["Datahost"]
         self.imagefolder="/Images/"
         self.boolean_sample = [True, False]
         if transform is not None:
@@ -59,8 +59,8 @@ class GAN_dataset(Dataset):
         print("Number of training samples set to", len(self.OriginalImagesList))
         
         #replace storage string if no serverside storage is set
-        if preprocess_storage:
-            self.Large_cache_storage = preprocess_storage + self.training_process_name  
+        if self.preprocess_storage:
+            self.Large_cache_storage = self.preprocess_storage + self.training_process_name  
         else:
             self.preprocess_storage = self.workingdir
             self.Large_cache_storage = self.Small_cache_storage
@@ -160,8 +160,9 @@ class GAN_dataset(Dataset):
         torch.save(self.data, self.Large_cache_storage)
         stop = time.time()
         print(f"Done, time taken was: {stop - start:.0f} seconds")
-        print("Loading to device")
-        self.data.to(self.device) # Move to GPU if available
+        if self.Settings["Datahost"] == "cuda": # Move to GPU if available
+            print("Loading to device")
+            self.data.to(self.device)
 
                     
 

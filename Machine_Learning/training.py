@@ -26,6 +26,7 @@ Settings = {
             "seed"                  : 589, # random training seed
             "num_workers"           : 4,
             "shuffle"               : True,
+            "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
             "Datasplit"             : 0.7,
             "device"                : "cuda",
             "ImageHW"               : 256,
@@ -47,6 +48,7 @@ Settings_cli = {
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 589, # random training seed
             "num_workers"           : 1,
+            "Datahost"              : "cpu", #Should the data be located on the GPU or CPU during training?
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cpu",
@@ -78,8 +80,15 @@ if __name__ == '__main__':
     # Setup GPU (or not)
     if torch.cuda.is_available():
         Settings["device"] = "cuda"
+        decision = input(f"GPU detected, pre-load all training data to GPU (estim:{1.57*Settings['Num_training_samples']*1E-3} GB) [y/n]? ")
+        if decision == "y":
+            Settings["Datahost"] = "cuda"
+        else:
+            Settings["Datahost"] = "cpu"
     else:
         Settings["device"] = "cpu"
+        Settings["Datahost"] = "cpu"
+    
 
     device = Settings["device"]
 
