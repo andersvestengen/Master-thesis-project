@@ -16,7 +16,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 3,
+            "epochs"                : 60,
             "batch_size"            : 1,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
@@ -32,10 +32,10 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "Testing_send_module_DELETEME",
+            "ModelName"             : "GAN_Staggered_V2_60_epochs",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 100,
-            "Pin_memory"            : False
+            "Num_training_samples"  : 10000,
+            "Pin_memory"            : True
             }
 # client side Settings
 Settings_cli = {
