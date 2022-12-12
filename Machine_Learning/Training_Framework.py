@@ -123,7 +123,7 @@ class Training_Framework():
         time = str(datetime.now())
         stamp = time[:-16] + "_" + time[11:-7].replace(":", "-")
         if self.Settings["ModelName"] is not None:
-            self.Modeldir = self.workingdir +  "/Trained_Models/" + "GAN_Model_" + self.Settings["ModelName"] + " " + stamp
+            self.Modeldir = self.workingdir +  "/Trained_Models/" + "GAN_Model_" + self.Settings["ModelName"] + " (" + stamp +")"
         else:
             self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + " " + stamp
             
@@ -136,10 +136,11 @@ class Training_Framework():
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
-    def Generator_updater(self, real_A, real_B, fake_B, val=False):
-        self.Generator_optimizer.zero_grad()
+    def Generator_updater(self, real_A, real_B, val=False):
+        self.Generator.zero_grad()
         
-        # Generator loss            
+        # Generator loss
+        fake_B = self.Generator(real_A)         
         predict_fake = self.Discriminator(fake_B, real_A) # Compare fake output to original image
         loss_GAN = self.GAN_loss(predict_fake, self.valid)
         #Pixelwise loss
@@ -154,69 +155,17 @@ class Training_Framework():
 
         return Total_loss_Generator.item()
 
-    def Generator_updater_alt(self, real_A, real_B, val=False):
-        self.Generator.zero_grad()
-        
-        # Generator loss
-        fake_B = self.Generator(real_A)         
-        predict_fake = self.Discriminator(fake_B, real_B) # Compare fake output to original image
-        loss_GAN = self.GAN_loss(predict_fake, self.valid)
-        #Pixelwise loss
-        loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
-        
-        #Total loss
-        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel
-        
-        if not val:
-            Total_loss_Generator.backward()
-            self.Generator_optimizer.step()
-
-        return Total_loss_Generator.item()
-
-    def Discriminator_updater(self , predicted_real, predicted_fake, val=False):
-        self.Discriminator_optimizer.zero_grad()
-        
-        # Real loss 
-        loss_real = self.GAN_loss(predicted_real, self.valid)
-        
-        # Fake loss
-        loss_fake = self.GAN_loss(predicted_fake, self.fake)
-        # Total loss
-        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
-        if not val:
-            Total_loss_Discriminator.backward()
-            
-            self.Discriminator_optimizer.step()
-
-        return Total_loss_Discriminator.item()
-
-    def Discriminator_updater_real_fake_separate(self, predicted_real, predicted_fake, val=False):
-        self.Discriminator_optimizer.zero_grad()
-        
-        # Real loss 
-        loss_real = self.GAN_loss(predicted_real, self.valid)
-        
-        # Fake loss
-        loss_fake = self.GAN_loss(predicted_fake, self.fake)
-        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
-        if not val:
-            Total_loss_Discriminator.backward()
-            self.Discriminator_optimizer.step()
-
-        return (loss_real.item() + loss_fake.item())*0.5
-
-
-    def Discriminator_updater_alt(self, real_A, real_B, val=False):
+    def Discriminator_updater(self, real_A, real_B, val=False):
         self.Discriminator.zero_grad()
         
         #Real loss
-        predicted_real = self.Discriminator(real_A, real_B)
+        predicted_real = self.Discriminator(real_B, real_A)
         
         loss_real = self.GAN_loss(predicted_real, self.valid)
 
         #Fake loss
         fake_B = self.Generator(real_A)
-        predicted_fake = self.Discriminator(fake_B, real_B)
+        predicted_fake = self.Discriminator(fake_B.detach(), real_B)
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
         Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
         if not val: 
@@ -246,8 +195,8 @@ class Training_Framework():
                     real_A = defect_images.to(self.device)
                     real_B = image.to(self.device)
                     
-                    current_DIS_loss += self.Discriminator_updater_alt(real_A, real_B, val=True) / self.Settings["batch_size"]                    
-                    current_GEN_loss += self.Generator_updater_alt(real_A, real_B, val=True) / self.Settings["batch_size"]                   
+                    current_DIS_loss += self.Discriminator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]                    
+                    current_GEN_loss += self.Generator_updater(real_A, real_B, val=True) / self.Settings["batch_size"]                   
                     predicted_real = self.Discriminator(real_A, real_B)
                     fake_B = self.Generator(real_A)
                     pixelloss += self.pixelwise_loss(fake_B, real_B)
@@ -289,11 +238,11 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch)).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch)).to(self.device)
 
-                    real_A = defect_images.to(self.device)
-                    real_B = images.to(self.device)
+                    real_A = defect_images.to(self.device) #Defect
+                    real_B = images.to(self.device) #Target
 
-                    current_DIS_loss += self.Discriminator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
-                    current_GEN_loss += self.Generator_updater_alt(real_A, real_B) / self.Settings["batch_size"]
+                    current_DIS_loss += self.Discriminator_updater(real_A, real_B) / self.Settings["batch_size"]
+                    current_GEN_loss += self.Generator_updater(real_A, real_B) / self.Settings["batch_size"]
                     predicted_real = self.Discriminator(real_A, real_B)
                     fake_B = self.Generator(real_A)
                     pixelloss += self.pixelwise_loss(fake_B, real_B).detach()
