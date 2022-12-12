@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # Setup GPU (or not)
     if torch.cuda.is_available():
         Settings["device"] = "cuda"
-        decision = input(f"GPU detected, pre-load all training data to GPU (estim:{1.57*Settings['Num_training_samples']*1E-3:.2f} GB) [y/n]? ")
+        decision = input(f"GPU detected, pre-load all training data to GPU (estim: {1.57*Settings['Num_training_samples']*1E-3:.2f} GB) [y/n]? ")
         if decision == "y":
             Settings["Datahost"] = "cuda"
         else:

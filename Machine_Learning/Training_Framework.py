@@ -275,7 +275,6 @@ class Training_Framework():
                         Turn = not Turn
 
                     if Turn:
-
                         GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B) / self.Settings["batch_size"]
                         current_GEN_loss += GEN_loss
                     else:
