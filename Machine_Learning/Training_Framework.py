@@ -211,8 +211,6 @@ class Training_Framework():
         self.Generator.train()
 
     def validation_run(self, val_loader, epoch):
-        switch = 3
-        Turn = True
         with torch.no_grad():
             current_GEN_loss = 0
             current_DIS_loss = 0
@@ -233,7 +231,7 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
-                    if self.Settings["device"] == "cuda":
+                    if self.Settings["Datahost"] == "cuda":
                         real_A = defect_images #Defect
                         real_B = images #Target
                     else:
@@ -284,7 +282,7 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
-                    if self.Settings["device"] == "cuda":
+                    if self.Settings["Datahost"] == "cuda":
                         real_A = defect_images #Defect
                         real_B = images #Target
                     else:
