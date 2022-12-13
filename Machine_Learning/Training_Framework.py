@@ -44,18 +44,6 @@ class FileSender():
         self.username = input("input username: ")
         self.password = input("input password: ")  
 
-    """ # Old
-    def send(self, directory):
-        dir_struct = list(os.walk(directory))
-        foldername = dir_struct[0][0].split("/")[-1]
-        self.ftr.mkdir(self.externaldir + "/" + foldername)
-        for filename in tqdm(dir_struct[0][2], unit="file", desc=f"Sending {foldername} to server storage"):
-            file_external_path = self.externaldir + "/" + foldername + "/" + filename
-            file_local_path = dir_struct[0][0] + "/" + filename
-            self.ftr.put(file_local_path ,file_external_path)
-        print("finished sending directory", foldername)
-    """
-
     def send(self, directory):
         num = 0
         odir = None
@@ -150,9 +138,14 @@ class Training_Framework():
             
         os.makedirs(self.Modeldir)
 
-        self.modeltraining_output = self.Modeldir + "/training_output"
+        #Creating folders for image output during training.
+        self.modeltraining_output               = self.Modeldir + "/training_output"
+        self.modeltraining_output_images        = self.modeltraining_output + "/originals"
+        self.modeltraining_output_corrections   = self.modeltraining_output + "/corrections"
         os.makedirs(self.modeltraining_output)
-        
+        os.makedirs(self.modeltraining_output_images)
+        os.makedirs(self.modeltraining_output_corrections)
+
         self.Analytics_training("setup")
         self.Analytics_validation("setup")
 
@@ -165,8 +158,8 @@ class Training_Framework():
         
         # Generator loss
         fake_B = self.Generator(real_A)         
-        predicted_fake = self.Discriminator(fake_B, real_A) # Compare fake output to original image
-        predicted_real = self.Discriminator(real_B, real_A)
+        predicted_fake = self.Discriminator(fake_B, real_B) # Compare fake output to original image
+        predicted_real = self.Discriminator(real_A, real_B)
         loss_GAN = self.GAN_loss(predicted_fake, self.valid)
         #Pixelwise loss
         loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
@@ -183,7 +176,7 @@ class Training_Framework():
         self.Discriminator.zero_grad()
         
         #Real loss
-        predicted_real = self.Discriminator(real_B, real_A)
+        predicted_real = self.Discriminator(real_A, real_B)
         
         loss_real = self.GAN_loss(predicted_real, self.valid)
 
@@ -199,6 +192,16 @@ class Training_Framework():
 
         return Total_loss_Discriminator.item(), loss_pixel.item(), predicted_real, predicted_fake
         
+    def Generate_validation_images(self, epoch, real_A):
+        self.Generator.eval()
+        with torch.no_grad():
+            fake_B = self.Generator(real_A)
+            im = self.image_transform(fake_B.squeeze(0))
+            im.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".png", "PNG")
+
+            co = self.image_transform(real_A.squeeze(0))
+            co.save(self.modeltraining_output_corrections + "/" + "Generator_output_image_epoch_" + str(epoch) + ".png", "PNG")
+        self.Generator.train()
 
     def validation_run(self, val_loader, epoch):
         switch = 3
@@ -245,12 +248,8 @@ class Training_Framework():
 
                     #Snapping image from generator during validation
                     if (epoch % 10) == 0:
-                        self.Generator.eval()
-                        with torch.no_grad():
-                            fake_B = self.Generator(real_A)
-                            im = self.image_transform(fake_B.squeeze(0))
-                            im.save(self.modeltraining_output + "/" + "Generator_output_image_epoch_" + str(epoch) + ".jpg")
-                        self.Generator.train()
+                        self.Generate_validation_images(epoch, real_A)
+
                     #Analytics            
                     pixelloss += loss_pixel
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5).item()
@@ -284,15 +283,7 @@ class Training_Framework():
                     tepoch = tqdm(train_loader, unit='image(s)', leave=False)
                 else:
                     tepoch = tqdm(train_loader, unit='batche(s)', leave=False)
-                # We're gonna wait to include this
-                """
-                if epoch == 10: # Change learning rate 
-                    for g in self.Generator_optimizer.param_groups:
-                        g['lr'] = self.Settings["lr"]/10
 
-                    for g in self.Discriminator_optimizer.param_groups:
-                        g['lr'] = self.Settings["lr"]/10
-                """
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                     if epoch > 0 and Turn:
@@ -322,10 +313,6 @@ class Training_Framework():
                         current_DIS_loss += DIS_loss
 
                     #Analytics
-                    #predicted_real = self.Discriminator(real_A, real_B)
-                    #fake_B = self.Generator(real_A)
-
-                    #predicted_fake = self.Discriminator(fake_B.detach(), real_B)
                     pixelloss += loss_pixel                    
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5).item() 
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5).item() 

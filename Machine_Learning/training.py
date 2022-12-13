@@ -23,7 +23,7 @@ Settings = {
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
-            "seed"                  : 589, # random training seed
+            "seed"                  : 266, # random training seed
             "num_workers"           : 0,
             "shuffle"               : True,
             "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_Staggered_V2_60_epochs",
+            "ModelName"             : "GAN_Staggered_V2_30_epochs_25k",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 10000,
             "Pin_memory"            : False
