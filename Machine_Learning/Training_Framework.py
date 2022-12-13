@@ -159,7 +159,6 @@ class Training_Framework():
         # Generator loss
         fake_B = self.Generator(real_A)         
         predicted_fake = self.Discriminator(fake_B, real_B) # Compare fake output to original image
-        predicted_real = self.Discriminator(real_A, real_B)
         loss_GAN = self.GAN_loss(predicted_fake, self.valid)
         #Pixelwise loss
         loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
@@ -170,7 +169,8 @@ class Training_Framework():
         if not val:
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
-        return Total_loss_Generator.item(), loss_pixel.item(), predicted_real, predicted_fake
+
+        return Total_loss_Generator.item(), loss_pixel.item()
 
     def Discriminator_updater(self, real_A, real_B, val=False):
         self.Discriminator.zero_grad()
@@ -183,14 +183,13 @@ class Training_Framework():
         #Fake loss
         fake_B = self.Generator(real_A)
         predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-        loss_pixel = self.pixelwise_loss(fake_B, real_B)
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
         Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
         if not val: 
             Total_loss_Discriminator.backward() # backward run        
             self.Discriminator_optimizer.step() # step
 
-        return Total_loss_Discriminator.item(), loss_pixel.item(), predicted_real, predicted_fake
+        return Total_loss_Discriminator.item(), predicted_real, predicted_fake
         
     def Generate_validation_images(self, epoch, real_A):
         self.Generator.eval()
@@ -223,10 +222,8 @@ class Training_Framework():
             with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
-                    if epoch > 0 and Turn:
-                        tepoch.set_description(f"Validation Gen_loss {current_GEN_loss:.5f}")
-                    elif epoch > 0 and not Turn:
-                        tepoch.set_description(f"Validation Disc_loss {current_DIS_loss:.5f}")
+                    if epoch > 0:
+                        tepoch.set_description(f"Validation Gen_loss {current_GEN_loss:.5f} Disc_loss {current_DIS_loss:.5f}")
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
@@ -235,24 +232,18 @@ class Training_Framework():
                         real_B = images #Target
                     else:
                         real_A = defect_images.to(self.device) #Defect
-                        real_B = images.to(self.device) #Target
-             
-                    #Validation
-                    if (epoch % switch) == 0 and epoch != 0:
-                        Turn = not Turn      
+                        real_B = images.to(self.device) #Target 
 
-                    if Turn:
-                        GEN_loss, loss_pixel, predicted_real, predicted_fake = self.Generator_updater(real_A, real_B, val=True)
-                        current_GEN_loss += GEN_loss
-                    else:
-                        DIS_loss, loss_pixel, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
-                        current_DIS_loss += DIS_loss  
+                    GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, val=True)
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
 
                     #Snapping image from generator during validation
                     if (epoch % 10) == 0:
                         self.Generate_validation_images(epoch, real_A)
 
                     #Analytics            
+                    current_DIS_loss += DIS_loss  
+                    current_GEN_loss += GEN_loss
                     pixelloss += loss_pixel
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5).item()
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5).item()
@@ -263,8 +254,6 @@ class Training_Framework():
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(val_loader))
 
     def Trainer(self, train_loader, val_loader):
-            switch = 3
-            Turn = True
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
@@ -283,10 +272,8 @@ class Training_Framework():
 
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
-                    if epoch > 0 and Turn:
-                        tepoch.set_description(f"Training Gen_loss {current_GEN_loss:.5f}")
-                    elif epoch > 0 and not Turn:
-                        tepoch.set_description(f"Training Disc_loss {current_DIS_loss:.5f}")
+                    if epoch > 0:
+                        tepoch.set_description(f"Training Gen_loss {current_GEN_loss:.5f} Disc_loss {current_DIS_loss:.5f} Discrim junction {real_fake_treshold}")
                         
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
@@ -298,18 +285,12 @@ class Training_Framework():
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target
 
-                    #Training staggered approach
-                    if (epoch % switch) == 0 and epoch != 0:
-                        Turn = not Turn
-
-                    if Turn:
-                        GEN_loss, loss_pixel, predicted_real, predicted_fake = self.Generator_updater(real_A, real_B)
-                        current_GEN_loss += GEN_loss
-                    else:
-                        DIS_loss, loss_pixel, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
-                        current_DIS_loss += DIS_loss
+                    GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B)
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
 
                     #Analytics
+                    current_GEN_loss += GEN_loss
+                    current_DIS_loss += DIS_loss
                     pixelloss += loss_pixel                    
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > real_fake_treshold).item() 
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < real_fake_treshold).item() 
