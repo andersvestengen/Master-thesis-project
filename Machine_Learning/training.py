@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_batch_32_V2_40_epochs_25k",
+            "ModelName"             : "GAN_ORIG_batch_32_V2_40_epochs_25k",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : True
