@@ -17,7 +17,7 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
             "epochs"                : 40,
-            "batch_size"            : 1,
+            "batch_size"            : 32,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_Staggered_V2_40_epochs_25k",
+            "ModelName"             : "GAN_batch_32_V2_40_epochs_25k",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : False
@@ -62,7 +62,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-Settings = Settings_cli
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.CenterCrop(Settings["ImageHW"]),
