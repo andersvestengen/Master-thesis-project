@@ -24,7 +24,7 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 266, # random training seed
-            "num_workers"           : 0,
+            "num_workers"           : 4,
             "shuffle"               : True,
             "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
             "Datasplit"             : 0.7,
