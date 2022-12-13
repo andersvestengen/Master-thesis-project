@@ -35,7 +35,7 @@ Settings = {
             "ModelName"             : "GAN_batch_32_V2_40_epochs_25k",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
-            "Pin_memory"            : False
+            "Pin_memory"            : True
             }
 # client side Settings
 Settings_cli = {
