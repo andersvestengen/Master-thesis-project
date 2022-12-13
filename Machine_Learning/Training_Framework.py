@@ -193,10 +193,16 @@ class Training_Framework():
         
     def Generate_validation_images(self, epoch, real_A):
         self.Generator.eval()
-        with torch.no_grad():
-            fake_B = self.Generator(real_A)
 
-            co = self.image_transform(real_A.squeeze(0))
+        if real_A.size(0) > 1:
+            real_im = real_A[0,:,:,:].clone()
+        else:
+            real_im = real_A.clone()
+
+        with torch.no_grad():
+            fake_B = self.Generator(real_im.unsqueeze(0))
+
+            co = self.image_transform(real_im)
             co.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".png", "PNG")
 
             im = self.image_transform(fake_B.squeeze(0))
@@ -247,8 +253,8 @@ class Training_Framework():
                     pixelloss += loss_pixel
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5).item()
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5).item()
-                    Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3)) /self.patch[1]).item()
-                    Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3)) /self.patch[1]).item()
+                    Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3)) /self.patch[1], 0).item()
+                    Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3)) /self.patch[1], 0).item()
 
 
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(val_loader))
@@ -268,7 +274,7 @@ class Training_Framework():
                 if self.Settings["batch_size"] == 1:
                     tepoch = tqdm(train_loader, unit='image(s)', leave=False)
                 else:
-                    tepoch = tqdm(train_loader, unit='batche(s)', leave=False)
+                    tepoch = tqdm(train_loader, unit='batch(s)', leave=False)
 
                 for images, defect_images in tepoch:
                     tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
@@ -294,8 +300,8 @@ class Training_Framework():
                     pixelloss += loss_pixel                    
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > real_fake_treshold).item() 
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < real_fake_treshold).item() 
-                    Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3))/self.patch[1] ).item() 
-                    Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3))/self.patch[1] ).item()
+                    Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1], 0).item() 
+                    Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1], 0).item()
                 
                 #Adjusting Discriminator fake/real determination. Maybe remove this if it turns out to be a bad idea
                 real_fake_treshold = (Discrim_acc_real_raw + Discrim_acc_fake_raw) * 0.5

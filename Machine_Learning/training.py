@@ -40,7 +40,7 @@ Settings = {
 # client side Settings
 Settings_cli = {
             "epochs"                : 4,
-            "batch_size"            : 1,
+            "batch_size"            : 4,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
@@ -57,12 +57,12 @@ Settings_cli = {
             #No spaces in the model name, please use '_'
             "ModelName"             : "LOCAL_TEST_DELETE_ME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 40,
+            "Num_training_samples"  : 14,
             "Pin_memory"            : False
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.CenterCrop(Settings["ImageHW"]),
