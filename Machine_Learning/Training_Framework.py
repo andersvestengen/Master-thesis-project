@@ -146,8 +146,8 @@ class Training_Framework():
         os.makedirs(self.modeltraining_output_images)
         os.makedirs(self.modeltraining_output_corrections)
 
-        self.Analytics_training("setup", 0, 0, 0, 0, 0, 0, 0, 0, 0)
-        self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.Analytics_training("setup", 0, 0, 0, 0, 0, 0, 0, 0)
+        self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0, 0, 0)
 
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
@@ -196,11 +196,13 @@ class Training_Framework():
         self.Generator.eval()
         with torch.no_grad():
             fake_B = self.Generator(real_A)
-            im = self.image_transform(fake_B.squeeze(0))
-            im.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".png", "PNG")
 
             co = self.image_transform(real_A.squeeze(0))
-            co.save(self.modeltraining_output_corrections + "/" + "Generator_output_image_epoch_" + str(epoch) + ".png", "PNG")
+            co.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".png", "PNG")
+
+            im = self.image_transform(fake_B.squeeze(0))
+            im.save(self.modeltraining_output_corrections + "/" + "Generator_output_image_epoch_" + str(epoch) + ".png", "PNG")
+
         self.Generator.train()
 
     def validation_run(self, val_loader, epoch):

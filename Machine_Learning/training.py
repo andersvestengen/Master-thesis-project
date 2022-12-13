@@ -44,10 +44,10 @@ Settings_cli = {
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
-            "dataset_loc"           : Server_dir,
-            "preprocess_storage"    : Preprocess_dir,
+            "dataset_loc"           : Desk_dir,
+            "preprocess_storage"    : None,
             "seed"                  : 589, # random training seed
-            "num_workers"           : 1,
+            "num_workers"           : 0,
             "Datahost"              : "cpu", #Should the data be located on the GPU or CPU during training?
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -62,7 +62,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.CenterCrop(Settings["ImageHW"]),
