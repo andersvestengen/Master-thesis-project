@@ -146,8 +146,8 @@ class Training_Framework():
         os.makedirs(self.modeltraining_output_images)
         os.makedirs(self.modeltraining_output_corrections)
 
-        self.Analytics_training("setup")
-        self.Analytics_validation("setup")
+        self.Analytics_training("setup", 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
@@ -256,15 +256,9 @@ class Training_Framework():
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5).item()
                     Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3)) /self.patch[1]).item()
                     Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3)) /self.patch[1]).item()
-            #Save per epoch
-            current_GEN_loss = current_GEN_loss / (len(val_loader) * self.Settings["batch_size"])
-            current_DIS_loss = current_DIS_loss / (len(val_loader) * self.Settings["batch_size"])
-            Discrim_acc_real = Discrim_acc_real / (len(val_loader) * self.Settings["batch_size"])
-            Discrim_acc_fake = Discrim_acc_fake / (len(val_loader) * self.Settings["batch_size"])
-            Discrim_acc_real_raw = Discrim_acc_real_raw / (len(val_loader) * self.Settings["batch_size"])
-            Discrim_acc_fake_raw = Discrim_acc_fake_raw / (len(val_loader) * self.Settings["batch_size"]) 
-            pixelloss = pixelloss / (len(val_loader) * self.Settings["batch_size"])     
-            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
+
+
+            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(val_loader))
 
     def Trainer(self, train_loader, val_loader):
             switch = 3
@@ -279,6 +273,7 @@ class Training_Framework():
                 pixelloss = 0
                 Discrim_acc_real_raw = 0
                 Discrim_acc_fake_raw = 0
+                real_fake_treshold = 5
                 if self.Settings["batch_size"] == 1:
                     tepoch = tqdm(train_loader, unit='image(s)', leave=False)
                 else:
@@ -314,20 +309,15 @@ class Training_Framework():
 
                     #Analytics
                     pixelloss += loss_pixel                    
-                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > 5).item() 
-                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < 5).item() 
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > real_fake_treshold).item() 
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < real_fake_treshold).item() 
                     Discrim_acc_real_raw += (torch.sum(predicted_real, (2,3))/self.patch[1] ).item() 
                     Discrim_acc_fake_raw += (torch.sum(predicted_fake, (2,3))/self.patch[1] ).item()
                 
+                #Adjusting Discriminator fake/real determination. Maybe remove this if it turns out to be a bad idea
+                real_fake_treshold = (Discrim_acc_real_raw + Discrim_acc_fake_raw) * 0.5
                 #Save per epoch
-                current_GEN_loss = current_GEN_loss / (len(train_loader) * self.Settings["batch_size"])
-                current_DIS_loss = current_DIS_loss / (len(train_loader) * self.Settings["batch_size"])
-                Discrim_acc_real = Discrim_acc_real / (len(train_loader) * self.Settings["batch_size"])
-                Discrim_acc_fake = Discrim_acc_fake / (len(train_loader) * self.Settings["batch_size"])
-                Discrim_acc_real_raw = Discrim_acc_real_raw / (len(train_loader) * self.Settings["batch_size"])
-                Discrim_acc_fake_raw = Discrim_acc_fake_raw / (len(train_loader) * self.Settings["batch_size"])
-                pixelloss = pixelloss / (len(train_loader) * self.Settings["batch_size"])
-                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
+                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(train_loader))
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
             #Save Analytics to file and create images from analytics    
@@ -338,11 +328,11 @@ class Training_Framework():
                 self.transmitter.send(self.Modeldir)
                 self.transmitter.close()
 
-    def Analytics_training(self, *args):
+    def Analytics_training(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, length):
         """
         current epoch needs to be the first argument, except when setting up training.  
         """
-        if args[0] == "setup":
+        if epoch == "setup":
             self.Generator_loss_train = np.zeros(self.Settings["epochs"])
             self.Discriminator_loss_train = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_training = np.zeros(self.Settings["epochs"])
@@ -352,20 +342,29 @@ class Training_Framework():
             self.Generator_pixel_loss_training = np.zeros(self.Settings["epochs"])
 
         else:
-            epoch = args[0]
-            self.Generator_loss_train[epoch] = args[1]
-            self.Discriminator_loss_train[epoch] = args[2]
-            self.Discriminator_accuracy_real_training[epoch] = args[3]
-            self.Discriminator_accuracy_fake_training[epoch] = args[4]
-            self.Discriminator_accuracy_real_training_raw[epoch] = args[5]
-            self.Discriminator_accuracy_fake_training_raw[epoch] = args[6]
-            self.Generator_pixel_loss_training[epoch] = args[7]
 
-    def Analytics_validation(self, *args):
+            #Save per epoch
+            current_GEN_loss = current_GEN_loss / length * self.Settings["batch_size"]
+            current_DIS_loss = current_DIS_loss / length * self.Settings["batch_size"]
+            Discrim_acc_real = Discrim_acc_real / length * self.Settings["batch_size"]
+            Discrim_acc_fake = Discrim_acc_fake / length * self.Settings["batch_size"]
+            Discrim_acc_real_raw = Discrim_acc_real_raw / length * self.Settings["batch_size"]
+            Discrim_acc_fake_raw = Discrim_acc_fake_raw / length * self.Settings["batch_size"]
+            pixelloss = pixelloss / length * self.Settings["batch_size"]
+
+            self.Generator_loss_train[epoch] = current_GEN_loss
+            self.Discriminator_loss_train[epoch] = current_DIS_loss
+            self.Discriminator_accuracy_real_training[epoch] = Discrim_acc_real
+            self.Discriminator_accuracy_fake_training[epoch] = Discrim_acc_fake
+            self.Discriminator_accuracy_real_training_raw[epoch] = Discrim_acc_real_raw
+            self.Discriminator_accuracy_fake_training_raw[epoch] = Discrim_acc_fake_raw
+            self.Generator_pixel_loss_training[epoch] = pixelloss
+
+    def Analytics_validation(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, length):
         """
         current epoch needs to be the first argument, except when setting up training. 
         """
-        if args[0] == "setup":
+        if epoch == "setup":
             self.Generator_loss_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_loss_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_validation = np.zeros(self.Settings["epochs"])
@@ -373,15 +372,24 @@ class Training_Framework():
             self.Discriminator_accuracy_real_validation_raw = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_validation_raw = np.zeros(self.Settings["epochs"])    
             self.Generator_pixel_loss_validation = np.zeros(self.Settings["epochs"])    
+
         else:
-            epoch = args[0]
-            self.Generator_loss_validation[epoch] = args[1]
-            self.Discriminator_loss_validation[epoch] = args[2]
-            self.Discriminator_accuracy_real_validation[epoch] = args[3]  
-            self.Discriminator_accuracy_fake_validation[epoch] = args[4]  
-            self.Discriminator_accuracy_real_validation_raw[epoch] = args[5]
-            self.Discriminator_accuracy_fake_validation_raw[epoch] = args[6]
-            self.Generator_pixel_loss_validation[epoch] = args[7]
+            current_GEN_loss = current_GEN_loss / length * self.Settings["batch_size"]
+            current_DIS_loss = current_DIS_loss / length * self.Settings["batch_size"]
+            Discrim_acc_real = Discrim_acc_real / length * self.Settings["batch_size"]
+            Discrim_acc_fake = Discrim_acc_fake / length * self.Settings["batch_size"]
+            Discrim_acc_real_raw = Discrim_acc_real_raw / length * self.Settings["batch_size"]
+            Discrim_acc_fake_raw = Discrim_acc_fake_raw / length * self.Settings["batch_size"]
+            pixelloss = pixelloss / length * self.Settings["batch_size"]
+
+            self.Generator_loss_validation[epoch] = current_GEN_loss
+            self.Discriminator_loss_validation[epoch] = current_DIS_loss
+            self.Discriminator_accuracy_real_validation[epoch] = Discrim_acc_real 
+            self.Discriminator_accuracy_fake_validation[epoch] = Discrim_acc_fake
+            self.Discriminator_accuracy_real_validation_raw[epoch] = Discrim_acc_real_raw
+            self.Discriminator_accuracy_fake_validation_raw[epoch] = Discrim_acc_real_raw
+            self.Generator_pixel_loss_validation[epoch] = pixelloss
+
     def Save_Analytics(self):
         np.savez(self.Modeldir + '/Analytics.npz', (self.Generator_loss_validation,
                                 self.Discriminator_loss_validation,
