@@ -3,7 +3,7 @@ import torch
 from torchvision import models
 import torchvision
 from torch.nn import functional as F
-from torchvision.models import resnet34
+from torchvision.models import resnet34, ResNet34_Weights
 
 def conv3x3(in_, out):
     return nn.Conv2d(in_, out, 3, padding=1)
@@ -63,7 +63,7 @@ class UNet_ResNet34(nn.Module):
 
         self.pool = nn.MaxPool2d(2, 2)
 
-        self.encoder = resnet34(pretrained=True)
+        self.encoder = resnet34(weights=ResNet34_Weights.DEFAULT)
 
         self.relu = nn.ReLU(inplace=True)
 
