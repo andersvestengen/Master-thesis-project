@@ -283,8 +283,8 @@ class Training_Framework():
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target 
 
-                    GEN_loss, loss_pixel = self.Generator_updater_orig(real_A, real_B, val=True)
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater_orig(real_A, real_B, val=True)
+                    GEN_loss, loss_pixel = self.Generator_updater_orig(real_A, real_B, val=True)
 
                     #Snapping image from generator during validation
                     if (epoch % 10) == 0:
@@ -334,8 +334,8 @@ class Training_Framework():
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target
 
-                    GEN_loss, loss_pixel, = self.Generator_updater_orig(real_A, real_B)
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater_orig(real_A, real_B)
+                    GEN_loss, loss_pixel, = self.Generator_updater_orig(real_A, real_B)
 
                     #Analytics
                     current_GEN_loss += GEN_loss
