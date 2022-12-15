@@ -24,7 +24,7 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 266, # random training seed
-            "num_workers"           : 14,
+            "num_workers"           : 0,
             "shuffle"               : True,
             "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
             "Datasplit"             : 0.7,
@@ -35,7 +35,7 @@ Settings = {
             "ModelName"             : "GAN_ORIG_batch_1_40_epochs_25k_",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 15000,
-            "Pin_memory"            : True
+            "Pin_memory"            : False
             }
 # client side Settings
 Settings_cli = {
