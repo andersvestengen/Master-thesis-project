@@ -16,11 +16,11 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 20,
-            "batch_size"            : 1,
+            "epochs"                : 40,
+            "batch_size"            : 32,
             "L1_loss_weight"        : 100,
-            "BoxSize"               : 5,
-            "lr"                    : 0.0001,
+            "BoxSize"               : 20,
+            "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 266, # random training seed
@@ -32,9 +32,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_ORIG_batch_1_40_epochs_25k_",
+            "ModelName"             : "GAN_V3_Box_30",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 15000,
+            "Num_training_samples"  : 25000,
             "Pin_memory"            : False
             }
 # client side Settings
@@ -42,7 +42,7 @@ Settings_cli = {
             "epochs"                : 4,
             "batch_size"            : 1,
             "L1_loss_weight"        : 10,
-            "BoxSize"               : 5,
+            "BoxSize"               : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,

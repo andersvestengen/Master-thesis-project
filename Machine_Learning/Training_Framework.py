@@ -153,26 +153,8 @@ class Training_Framework():
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
-    def Generator_updater(self, real_A, real_B, val=False):
-        self.Generator.zero_grad()
         
-        # Generator loss
-        fake_B = self.Generator(real_A)         
-        predicted_fake = self.Discriminator(fake_B, real_B) # Compare fake output to original image
-        loss_GAN = self.GAN_loss(predicted_fake, self.valid)
-        #Pixelwise loss
-        loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
-        
-        #Total loss
-        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel
-        
-        if not val:
-            Total_loss_Generator.backward()
-            self.Generator_optimizer.step()
-
-        return Total_loss_Generator.item(), loss_pixel.item()
-        
-    def Generator_updater_orig(self, real_A, real_B, val=False):       
+    def Generator_updater(self, real_A, real_B, val=False):       
         self.Discriminator.requires_grad=False
 
         self.Generator.zero_grad()
@@ -193,7 +175,7 @@ class Training_Framework():
 
         return Total_loss_Generator.item(), loss_pixel.item()
 
-    def Discriminator_updater_orig(self, real_A, real_B, val=False):
+    def Discriminator_updater(self, real_A, real_B, val=False):
         self.Discriminator.requires_grad=True
         
         self.Discriminator.zero_grad()
@@ -209,25 +191,6 @@ class Training_Framework():
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
 
         #Total loss and backprop
-        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
-        if not val: 
-            Total_loss_Discriminator.backward() # backward run        
-            self.Discriminator_optimizer.step() # step
-
-        return Total_loss_Discriminator.item(), predicted_real, predicted_fake
-
-    def Discriminator_updater(self, real_A, real_B, val=False):
-        self.Discriminator.zero_grad()
-        
-        #Real loss
-        predicted_real = self.Discriminator(real_A, real_B)
-        
-        loss_real = self.GAN_loss(predicted_real, self.valid)
-
-        #Fake loss
-        fake_B = self.Generator(real_A)
-        predicted_fake = self.Discriminator(fake_B.detach(), real_B)
-        loss_fake = self.GAN_loss(predicted_fake, self.fake)
         Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
         if not val: 
             Total_loss_Discriminator.backward() # backward run        
@@ -288,8 +251,8 @@ class Training_Framework():
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target 
 
-                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater_orig(real_A, real_B, val=True)
-                    GEN_loss, loss_pixel = self.Generator_updater_orig(real_A, real_B, val=True)
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
+                    GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, val=True)
 
                     #Snapping image from generator during validation
                     if (epoch % 10) == 0:
@@ -344,8 +307,8 @@ class Training_Framework():
                         real_A = defect_images.to(self.device) #Defect
                         real_B = images.to(self.device) #Target
 
-                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater_orig(real_A, real_B)
-                    GEN_loss, loss_pixel, = self.Generator_updater_orig(real_A, real_B)
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
+                    GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B)
 
                     #Analytics
                     current_GEN_loss += GEN_loss
