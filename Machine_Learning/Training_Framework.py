@@ -298,8 +298,8 @@ class Training_Framework():
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/(self.patch[1]*2) > real_fake_treshold).item()
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/(self.patch[1]*2) < real_fake_treshold).item()
                     if self.Settings["batch_size"] == 1:
-                        Discrim_acc_real_raw += torch.sum(predicted_real, (2,3)) /(self.patch[1]*2).item()
-                        Discrim_acc_fake_raw += torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2).item()
+                        Discrim_acc_real_raw += torch.sum(predicted_real, (2,3) /(self.patch[1]*2)).item()
+                        Discrim_acc_fake_raw += torch.sum(predicted_fake, (2,3) /(self.patch[1]*2)).item()
                     else:
                         Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3)) /(self.patch[1]*2), 0).item()
                         Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2), 0).item()
@@ -350,8 +350,8 @@ class Training_Framework():
                     Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/(self.patch[1]*2) > real_fake_treshold).item() 
                     Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/(self.patch[1]*2) < real_fake_treshold).item() 
                     if self.Settings["batch_size"] == 1:
-                        Discrim_acc_real_raw += torch.sum(predicted_real, (2,3)) /(self.patch[1]*2).item()
-                        Discrim_acc_fake_raw += torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2).item()
+                        Discrim_acc_real_raw += torch.sum(predicted_real, (2,3) /(self.patch[1]*2)).item()
+                        Discrim_acc_fake_raw += torch.sum(predicted_fake, (2,3) /(self.patch[1]*2)).item()
                     else:
                         Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3)) /(self.patch[1]*2), 0).item()
                         Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2), 0).item()
