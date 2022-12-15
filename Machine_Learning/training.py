@@ -20,7 +20,7 @@ Settings = {
             "batch_size"            : 1,
             "L1_loss_weight"        : 100,
             "BoxSize"               : 5,
-            "lr"                    : 0.0002,
+            "lr"                    : 0.0001,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 266, # random training seed
