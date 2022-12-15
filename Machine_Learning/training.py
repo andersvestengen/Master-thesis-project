@@ -17,14 +17,14 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
             "epochs"                : 40,
-            "batch_size"            : 1,
+            "batch_size"            : 8,
             "L1_loss_weight"        : 100,
             "BoxSize"               : 5,
             "lr"                    : 0.0001,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 266, # random training seed
-            "num_workers"           : 1,
+            "num_workers"           : 14,
             "shuffle"               : True,
             "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
             "Datasplit"             : 0.7,
@@ -35,7 +35,7 @@ Settings = {
             "ModelName"             : "GAN_ORIG_100L1_batch_1_40_epochs_25k",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
-            "Pin_memory"            : False
+            "Pin_memory"            : True
             }
 # client side Settings
 Settings_cli = {
