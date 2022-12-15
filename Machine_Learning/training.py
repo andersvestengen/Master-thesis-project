@@ -16,9 +16,9 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 350,
+            "epochs"                : 30,
             "batch_size"            : 32,
-            "L1_loss_weight"        : 10,
+            "L1_loss_weight"        : 100,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_ORIG_batch_32_V2_40_epochs_25k",
+            "ModelName"             : "GAN_ORIG_100l1_batch_32_30_epochs_25k",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : True
