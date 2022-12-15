@@ -244,12 +244,16 @@ class Training_Framework():
             real_im = real_A.clone()
 
         with torch.no_grad():
-            fake_B = self.Generator(real_im.unsqueeze(0))
+            if real_A.size(0) > 1:
+                fake_B = self.Generator(real_im.unsqueeze(0))
+                im = self.image_transform(fake_B.squeeze(0))
+                co = self.image_transform(real_im)
+            else:
+                fake_B = self.Generator(real_im)
+                im = self.image_transform(fake_B.squeeze(0))
+                co = self.image_transform(real_im.squeeze(0))
 
-            co = self.image_transform(real_im)
             co.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".png", "PNG")
-
-            im = self.image_transform(fake_B.squeeze(0))
             im.save(self.modeltraining_output_corrections + "/" + "Generator_output_image_epoch_" + str(epoch) + ".png", "PNG")
 
         self.Generator.train()
