@@ -16,7 +16,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 40,
+            "epochs"                : 20,
             "batch_size"            : 1,
             "L1_loss_weight"        : 100,
             "BoxSize"               : 5,
@@ -34,7 +34,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelName"             : "GAN_ORIG_batch_1_40_epochs_25k_",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 25000,
+            "Num_training_samples"  : 15000,
             "Pin_memory"            : True
             }
 # client side Settings
