@@ -174,7 +174,6 @@ class Training_Framework():
         
     def Generator_updater_orig(self, real_A, real_B, val=False):       
         self.Discriminator.requires_grad=False
-        self.Generator.requires_grad=True
 
         self.Generator.zero_grad()
         
@@ -196,7 +195,6 @@ class Training_Framework():
 
     def Discriminator_updater_orig(self, real_A, real_B, val=False):
         self.Discriminator.requires_grad=True
-        self.Generator.requires_grad=False
         
         self.Discriminator.zero_grad()
         
