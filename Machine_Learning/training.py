@@ -95,7 +95,7 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    Generator = Generator_Unet1.to(device)
+    Generator = Generator_Unet1().to(device)
     Generator.apply(weights_init)
 
 
