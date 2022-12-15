@@ -172,12 +172,15 @@ class Training_Framework():
 
         return Total_loss_Generator.item(), loss_pixel.item()
         
-    def Generator_updater_orig(self, real_A, real_B, val=False):
+    def Generator_updater_orig(self, real_A, real_B, val=False):       
+        self.set_requires_grad(self.Discriminator, False)
+        self.set_requires_grad(self.Generator, True)
+
         self.Generator.zero_grad()
         
         # Generator loss
         fake_B = self.Generator(real_A)         
-        predicted_fake = self.Discriminator(fake_B, real_A) # Compare fake output to original image
+        predicted_fake = self.Discriminator(real_A, fake_B) # Compare fake output to original image
         loss_GAN = self.GAN_loss(predicted_fake, self.valid)
         #Pixelwise loss
         loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
@@ -192,16 +195,19 @@ class Training_Framework():
         return Total_loss_Generator.item(), loss_pixel.item()
 
     def Discriminator_updater_orig(self, real_A, real_B, val=False):
+        self.set_requires_grad(self.Discriminator, True)
+        self.set_requires_grad(self.Generator, False)
+        
         self.Discriminator.zero_grad()
         
         #Real loss
-        predicted_real = self.Discriminator(real_B, real_A)
+        predicted_real = self.Discriminator(real_A, real_B)
         
         loss_real = self.GAN_loss(predicted_real, self.valid)
 
         #Fake loss
         fake_B = self.Generator(real_A)
-        predicted_fake = self.Discriminator(fake_B.detach(), real_A)
+        predicted_fake = self.Discriminator(real_A, fake_B.detach())
         loss_fake = self.GAN_loss(predicted_fake, self.fake)
 
         #Total loss and backprop
