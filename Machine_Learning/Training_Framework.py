@@ -273,7 +273,7 @@ class Training_Framework():
                     if epoch == 0:
                         tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
-                        tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_train[epoch-1]:.4f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.4f}")
+                        tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_validation[epoch-1]:.4f} Disc_loss {self.Discriminator_loss_validation[epoch-1]:.4f}")
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
