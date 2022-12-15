@@ -295,10 +295,10 @@ class Training_Framework():
                     current_DIS_loss += DIS_loss  
                     current_GEN_loss += GEN_loss
                     pixelloss += loss_pixel
-                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > real_fake_treshold).item()
-                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < real_fake_treshold).item()
-                    Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3)) /self.patch[1], 0).item()
-                    Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3)) /self.patch[1], 0).item()
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/(self.patch[1]*2) > real_fake_treshold).item()
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/(self.patch[1]*2) < real_fake_treshold).item()
+                    Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3)) /(self.patch[1]*2), 0).item()
+                    Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2), 0).item()
 
 
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(val_loader))
@@ -343,10 +343,10 @@ class Training_Framework():
                     current_GEN_loss += GEN_loss
                     current_DIS_loss += DIS_loss
                     pixelloss += loss_pixel                    
-                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1] > real_fake_treshold).item() 
-                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1] < real_fake_treshold).item() 
-                    Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3))/self.patch[1], 0).item() 
-                    Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3))/self.patch[1], 0).item()
+                    Discrim_acc_real += torch.sum(torch.sum(predicted_real, (2,3))/(self.patch[1]*2) > real_fake_treshold).item() 
+                    Discrim_acc_fake += torch.sum(torch.sum(predicted_fake, (2,3))/(self.patch[1]*2) < real_fake_treshold).item() 
+                    Discrim_acc_real_raw += torch.sum(torch.sum(predicted_real, (2,3))/(self.patch[1]*2), 0).item() 
+                    Discrim_acc_fake_raw += torch.sum(torch.sum(predicted_fake, (2,3))/(self.patch[1]*2), 0).item()
                 
                 #Save per epoch
                 self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(train_loader))
