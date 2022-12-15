@@ -173,8 +173,8 @@ class Training_Framework():
         return Total_loss_Generator.item(), loss_pixel.item()
         
     def Generator_updater_orig(self, real_A, real_B, val=False):       
-        self.set_requires_grad(self.Discriminator, False)
-        self.set_requires_grad(self.Generator, True)
+        self.Discriminator.requires_grad(False)
+        self.Generator.requires_grad(True)
 
         self.Generator.zero_grad()
         
@@ -195,8 +195,8 @@ class Training_Framework():
         return Total_loss_Generator.item(), loss_pixel.item()
 
     def Discriminator_updater_orig(self, real_A, real_B, val=False):
-        self.set_requires_grad(self.Discriminator, True)
-        self.set_requires_grad(self.Generator, False)
+        self.Discriminator.requires_grad(True)
+        self.Generator.requires_grad(False)
         
         self.Discriminator.zero_grad()
         
