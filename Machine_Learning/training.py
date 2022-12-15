@@ -17,7 +17,7 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
             "epochs"                : 40,
-            "batch_size"            : 8,
+            "batch_size"            : 1,
             "L1_loss_weight"        : 100,
             "BoxSize"               : 5,
             "lr"                    : 0.0001,
@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_ORIG_100L1_batch_1_40_epochs_25k",
+            "ModelName"             : "GAN_ORIG_batch_1_40_epochs_25k_",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : True
