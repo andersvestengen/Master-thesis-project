@@ -16,8 +16,8 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 50,
-            "batch_size"            : 32,
+            "epochs"                : 40,
+            "batch_size"            : 1,
             "L1_loss_weight"        : 100,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
@@ -95,8 +95,8 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    Generator = UNet_ResNet34().to(device)
-    #Generator.apply(weights_init)
+    Generator = Generator_Unet1.to(device)
+    Generator.apply(weights_init)
 
 
     # Configure dataloaders
