@@ -26,22 +26,45 @@ class GAN_dataset(Dataset):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
         np.random.seed(self.Settings["seed"])
-        self.training_process_name = "/processed_images.pt"
+        #self.training_process_name = "/processed_images.pt"
         self.preprocess_storage = self.Settings["preprocess_storage"]
         self.BoxSize = self.Settings["BoxSize"]
         self.device = self.Settings["Datahost"]
         self.imagefolder="/Images/"
+
+        #Create folders for outputs
+        if self.Settings["preprocess_storage"] is None:
+            if not os.exists("/Processed_Images"):
+                os.makedirs("/Processed_Images")
+                os.makedirs("/Processed_Images/Targets")
+                os.makedirs("/Processed_Images/Defects")
+
+            self.OutputFolder = "/Processed_Images"
+            self.OutputFolderTargets = self.OutputFolder + "/Targets"
+            self.OutputFolderDefects = self.OutputFolder + "/Defects"
+        
+        else:
+            if not os.exists(self.Settings["preprocess_storage"] + "/Processed_Images"):
+                os.makedirs(self.Settings["preprocess_storage"] + "/Processed_Images")
+                os.makedirs(self.Settings["preprocess_storage"] + "/Processed_Images/Targets")
+                os.makedirs(self.Settings["preprocess_storage"] + "/Processed_Images/Defects")
+
+            self.OutputFolder = self.Settings["preprocess_storage"] + "/Processed_Images"
+            self.OutputFolderTargets = self.Settings["preprocess_storage"] + self.OutputFolder + "/Targets"
+            self.OutputFolderDefects = self.Settings["preprocess_storage"] + self.OutputFolder + "/Defects"            
+
         self.boolean_sample = [True, False]
         if transform is not None:
             self.transform = transform
         else:
-            self.transform = def_transform          
+            self.transform = def_transform    
+
         training_samples = self.Settings["Num_training_samples"]
         self.max_training_samples = training_samples
         
         #Setting up the directories
         self.workingdir = os.getcwd() if self.Settings["dataset_loc"] == None else self.Settings["dataset_loc"]
-        self.Small_cache_storage = self.workingdir + self.training_process_name
+        #self.Small_cache_storage = self.workingdir + self.training_process_name
         
         # Setting up special paths and creating the glob directory-lists here
         self.OriginalImagePathglob = self.workingdir + self.imagefolder + "**/*.jpg"
@@ -49,8 +72,7 @@ class GAN_dataset(Dataset):
         self.OriginalImagesList = sorted(glob.glob(self.OriginalImagePathglob, recursive=True))
          
         if training_samples is not None and  (len(self.OriginalImagesList) > training_samples):
-            if len(self.OriginalImagesList) > training_samples:
-                self.OriginalImagesList = self.OriginalImagesList[:training_samples]
+            self.OriginalImagesList = self.OriginalImagesList[:training_samples]
                 
         if training_samples is None:
             print("training samples is none")
@@ -59,35 +81,36 @@ class GAN_dataset(Dataset):
         print("Number of training samples set to", len(self.OriginalImagesList))
         
         #replace storage string if no serverside storage is set
+        """        
         if self.preprocess_storage:
             self.Large_cache_storage = self.preprocess_storage + self.training_process_name  
         else:
             self.preprocess_storage = self.workingdir
             self.Large_cache_storage = self.Small_cache_storage
-        
-        if not os.path.isfile(self.Large_cache_storage):
+        """
+        self.targetglob = self.OutputFolderTargets + "**/*.jpg"
+        self.targetlist = sorted(glob.glob(self.targetglob, recursive=True))
+
+        self.defectglob = self.OutputFolderDefects + "**/*.jpg"
+        self.defectlist = sorted(glob.glob(self.defectglob, recursive=True))
+
+        if len(self.targetlist) == 0:
             if len(self.OriginalImagesList) == 0:
-                raise Exception(f"Found no local training images at {self.workingdir + self.imagefolder} ! \n And no preprocess file at {self.Large_cache_storage} !")            
-            print("No file detected at:")
+                raise Exception(f"Found no local training images at {self.workingdir + self.imagefolder} ! \n And no preprocess files at {self.OutputFolder} !")            
+            print("No files detected at:")
             print(self.Large_cache_storage)
             print("Starting image processing")
-            self.data = 0
             self.Preprocessor()
         else:
             print("Processed image file found, loading...")
-            start = time.time()
-            self.data = torch.load(self.Large_cache_storage, map_location=torch.device(self.device))
-            stop = time.time()
-            print(f"Time spent loading file was: {stop - start:.2} seconds")
-            if training_samples != self.data.size(0) // 2:
-                print("images in cache_size does not equal input parameter [",(self.data.size(0) // 2),"/",training_samples,"] adjusting")
-                if training_samples < self.data.size(0) // 2:
-                    newsize = self.data.size(0) // 2 - training_samples
-                    self.data = self.data[:-newsize*2]
+            if training_samples != len(self.targetlist):
+                print("images in cache_size does not equal input parameter [",(len(self.targetlist)),"/",training_samples,"] adjusting")
+                if training_samples < len(self.targetlist):
+                    newsize = len(self.targetlist) - training_samples
+                    self.data = self.data[:-newsize]
                 else:
-                    self.data = 0
                     self.Preprocessor()
-            print("Number of images is:", self.data.size(0) // 2)
+            print("Number of images is:", len(self.targetlist))
             
         
 
@@ -119,58 +142,29 @@ class GAN_dataset(Dataset):
         return imageMatrix#, defect_region       
     
     def __len__(self):
-            return self.data.size(0) // 2
+            return len(self.targetlist)
 
     def Preprocessor(self):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
             for num, imagedir in enumerate(Prepoch):
                 # Transform image and add 
-                image = self.transform(Image.open(imagedir))
-                sample = np.asarray(image).copy()
-                sample = torch.from_numpy(self.DefectGenerator(sample))
-
-                if (num > 0) and (num % 200 == 0):
-                    torch.save(self.data, self.preprocess_storage+"/processed_images"+str(num)+".pt")
-                    self.data = 0                  
-
-                if num == 0 or num % 200 == 0:
-                    Prepoch.set_description(f"Preprocessing images for CUDA")
-                    self.data = torch.stack((image, sample), dim=0)
-                else:
-                    Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
-                    self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
-                    self.data = torch.cat((self.data, sample.unsqueeze(0)), 0)
-            if not isinstance(self.data, int):
-                print("trying to save incomplete last cache size")
-                torch.save(self.data, self.preprocess_storage+"/processed_images_last.pt")
-        print("reconstituting images into single file:")
-        self.data = 0
-        cache_list = sorted(glob.glob(self.preprocess_storage + "**/*.pt", recursive=True))
-        with tqdm(cache_list, unit='patches') as Crepoch:
-            for num, cache in enumerate(Crepoch):
-
-                if num == 0:
-                    self.data = torch.load(cache)
-                    os.remove(cache)
-                else:
-                    Crepoch.set_description(f"Stacking cache for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
-                    temp = torch.load(cache)
-                    self.data = torch.cat((self.data, temp), 0)
-                    os.remove(cache)
-        print("Saving to file")
-        start = time.time()
-        torch.save(self.data, self.Large_cache_storage)
-        stop = time.time()
-        print(f"Done, time taken was: {stop - start:.0f} seconds")
-        if self.Settings["Datahost"] == "cuda": # Move to GPU if available
-            print("Loading to device")
-            self.data.to(self.device)
-
-                    
-
+                Prepoch.set_description(f"Preprocessing images for Model training")
+                target = Image.open(imagedir)
+                target.save(self.OutputFolderTargets + "/" + str(num), "JPG")
+                defect = Image.fromarray(np.asarray(target).copy())
+                defect.save(self.OutputFolderDefects + "/" + str(num), "JPG")
 
     def __getitem__(self, index):
-            return self.data[index*2,:], self.data[index*2+1,:] # retrieving indexes this way has been tested (in limited scope.)
+        #Add transform here
+        target = Image.open(self.targetlist[index])
+        defect = Image.open(self.defectlist[index])
+
+        cat_transform = torch.cat((target.unsqueeze(0), defect.unsqueeze(0)),0)
+        
+        # Apply the transformations to both images simultaneously:
+        transformed_images = self.transform(cat_transform)
+
+        return transformed_images[0], transformed_images[0]
 
   
 
