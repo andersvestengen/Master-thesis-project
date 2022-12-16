@@ -153,7 +153,14 @@ class Training_Framework():
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
-        
+
+    def SaveState(self):
+        PSettings = list(self.Settings)
+        stateloc = self.Modeldir + "/Savestate.txt"
+        with open(stateloc, 'w') as f:
+            for param in PSettings:
+                f.write(param +  ": " + str(self.Settings[param]) + "\n")
+
     def Generator_updater(self, real_A, real_B, val=False):       
         self.Discriminator.requires_grad=False
 
@@ -330,6 +337,7 @@ class Training_Framework():
             #Save Analytics to file and create images from analytics    
             self.Save_Analytics()
             self.Create_graphs()
+            self.SaveState()
             if self.transmit: # Send finished model to server storage
                 print("Sending files")
                 self.transmitter.send(self.Modeldir)

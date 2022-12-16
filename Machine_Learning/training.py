@@ -24,7 +24,7 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 266, # random training seed
-            "num_workers"           : 0,
+            "num_workers"           : 14,
             "shuffle"               : True,
             "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
             "Datasplit"             : 0.7,
@@ -35,8 +35,9 @@ Settings = {
             "ModelName"             : "GAN_V3_Box_30",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
-            "Pin_memory"            : False
+            "Pin_memory"            : True
             }
+
 # client side Settings
 Settings_cli = {
             "epochs"                : 4,
@@ -62,7 +63,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.CenterCrop(Settings["ImageHW"]),
