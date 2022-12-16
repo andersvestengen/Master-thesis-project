@@ -151,20 +151,6 @@ class GAN_dataset(Dataset):
     def __len__(self):
             return len(self.targetlist)
 
-    def CenterCrop(self, image, value): # Only for PIL images
-        height, width = image.shape[1:]
-        if height < value:
-            top = ceil((height - value)/2)
-            bottom = ceil((height + value)/2)
-
-
-        left = ceil((width - value)/2)
-        top = ceil((height - value)/2)
-        right = ceil((width + value)/2)
-        bottom = ceil((height + value)/2)
-        image = image[:,top:bottom, left:right]
-        return image
-
 
     def Preprocessor(self):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
@@ -173,7 +159,7 @@ class GAN_dataset(Dataset):
                 Prepoch.set_description(f"Preprocessing images for Model training")
 
                 target = self.totensorcrop(Image.open(imagedir))
-                defect = self.toPIL(np.moveaxis(self.DefectGenerator(np.asarray(target.clone())), 0, -1))
+                defect = self.toPIL(torch.from_numpy(self.DefectGenerator(np.asarray(target.clone()))))
                 target = self.toPIL(target)
                 target.save(self.OutputFolderTargets + "/" + str(num) + ".jpg", "JPEG")
                 defect.save(self.OutputFolderDefects + "/" + str(num) + ".jpg", "JPEG")
