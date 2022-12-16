@@ -109,7 +109,7 @@ class GAN_dataset(Dataset):
         SampleH = self.getSample(ImageHeight)
         SampleW = self.getSample(ImageWidth)
         intSample = imageMatrix[:,SampleH:SampleH + self.BoxSize,SampleW:SampleW + self.BoxSize] 
-        mask = np.random.choice(self.boolean_sample, p=[1, 0], size=(intSample.shape[1:]))
+        mask = np.random.choice(self.boolean_sample, p=[0.5, 0.5], size=(intSample.shape[1:]))
         #mask = np.ones(intSample.shape[1:])
         r = np.full((intSample.shape), 0)
         intSample[:,mask] = r[:,mask] 
