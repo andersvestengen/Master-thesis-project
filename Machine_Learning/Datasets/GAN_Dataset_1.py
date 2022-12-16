@@ -31,6 +31,13 @@ class GAN_dataset(Dataset):
         self.imagefolder="/Images/"
         self.totensor = transforms.ToTensor()
 
+        self.totensorcrop = transforms.Compose([
+                        transforms.ToTensor(),
+                        transforms.CenterCrop(self.Settings["ImageHW"]),
+                        ])
+
+        self.toPIL = transforms.ToPILImage()
+
         #Create folders for outputs
         if self.Settings["preprocess_storage"] is None:
             if not os.path.exists(self.Settings["dataset_loc"] + "/Processed_Images"):
@@ -132,7 +139,7 @@ class GAN_dataset(Dataset):
         SampleH = self.getSample(ImageHeight)
         SampleW = self.getSample(ImageWidth)
         intSample = imageMatrix[:,SampleH:SampleH + self.BoxSize,SampleW:SampleW + self.BoxSize] 
-        mask = np.random.choice(self.boolean_sample, p=[0.5, 0.5], size=(intSample.shape[1:]))
+        mask = np.random.choice(self.boolean_sample, p=[0.7, 0.3], size=(intSample.shape[1:]))
         #mask = np.ones(intSample.shape[1:])
         r = np.full((intSample.shape), 0)
         intSample[:,mask] = r[:,mask] 
@@ -145,29 +152,31 @@ class GAN_dataset(Dataset):
             return len(self.targetlist)
 
     def CenterCrop(self, image, value): # Only for PIL images
-        width, height = image.size
+        height, width = image.shape[1:]
+        if height < value:
+            top = ceil((height - value)/2)
+            bottom = ceil((height + value)/2)
+
 
         left = ceil((width - value)/2)
         top = ceil((height - value)/2)
         right = ceil((width + value)/2)
         bottom = ceil((height + value)/2)
-
-        return image.crop((left, top, right, bottom))
+        image = image[:,top:bottom, left:right]
+        return image
 
 
     def Preprocessor(self):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
             for num, imagedir in enumerate(Prepoch):
-                # Transform image and add 
+
                 Prepoch.set_description(f"Preprocessing images for Model training")
-                target = Image.open(imagedir)
-                target = self.CenterCrop(target, 256)
-                target.show()
+
+                target = self.totensorcrop(Image.open(imagedir))
+                defect = self.toPIL(np.moveaxis(self.DefectGenerator(np.asarray(target.clone())), 0, -1))
+                target = self.toPIL(target)
                 target.save(self.OutputFolderTargets + "/" + str(num) + ".jpg", "JPEG")
-                defect = Image.fromarray(self.DefectGenerator(np.asarray(target).copy()))     
-                defect.show()
                 defect.save(self.OutputFolderDefects + "/" + str(num) + ".jpg", "JPEG")
-                break
 
         self.targetglob = self.OutputFolderTargets + "**/*.jpg"
         self.targetlist = sorted(glob.glob(self.targetglob, recursive=True))
