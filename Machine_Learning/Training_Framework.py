@@ -251,12 +251,8 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
-                    if self.Settings["Datahost"] == "cuda":
-                        real_A = defect_images #Defect
-                        real_B = images #Target
-                    else:
-                        real_A = defect_images.to(self.device) #Defect
-                        real_B = images.to(self.device) #Target 
+                    real_A = defect_images.to(self.device) #Defect
+                    real_B = images.to(self.device) #Target 
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
                     GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, val=True)
@@ -307,12 +303,9 @@ class Training_Framework():
                     self.valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
                     self.fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
 
-                    if self.Settings["Datahost"] == "cuda":
-                        real_A = defect_images #Defect
-                        real_B = images #Target
-                    else:
-                        real_A = defect_images.to(self.device) #Defect
-                        real_B = images.to(self.device) #Target
+
+                    real_A = defect_images.to(self.device) #Defect
+                    real_B = images.to(self.device) #Target
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
                     GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B)

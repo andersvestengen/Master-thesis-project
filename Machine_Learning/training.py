@@ -19,7 +19,7 @@ Settings = {
             "epochs"                : 40,
             "batch_size"            : 32,
             "L1_loss_weight"        : 100,
-            "BoxSize"               : 20,
+            "BoxSize"               : 5,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_V3_Box_30",
+            "ModelName"             : "GAN_V4_New_Dataloader",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : True
@@ -41,9 +41,9 @@ Settings = {
 # client side Settings
 Settings_cli = {
             "epochs"                : 4,
-            "batch_size"            : 1,
+            "batch_size"            : 4,
             "L1_loss_weight"        : 10,
-            "BoxSize"               : 10,
+            "BoxSize"               : 5,
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,
@@ -58,18 +58,16 @@ Settings_cli = {
             #No spaces in the model name, please use '_'
             "ModelName"             : "LOCAL_TEST_DELETE_ME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 14,
+            "Num_training_samples"  : 50,
             "Pin_memory"            : False
             }
 
 #Remove this for server training
-Settings = Settings_cli
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
-    transforms.CenterCrop(Settings["ImageHW"]),
     transforms.RandomHorizontalFlip(),
     transforms.RandomVerticalFlip(),
-    transforms.ToTensor()
 ])
 
 def weights_init(m): # from the pix2pix paper
@@ -81,14 +79,8 @@ if __name__ == '__main__':
     # Setup GPU (or not)
     if torch.cuda.is_available():
         Settings["device"] = "cuda"
-        decision = input(f"GPU detected, pre-load all training data to GPU (estim: {1.57*Settings['Num_training_samples']*1E-3:.2f} GB) [y/n]? ")
-        if decision == "y":
-            Settings["Datahost"] = "cuda"
-        else:
-            Settings["Datahost"] = "cpu"
     else:
         Settings["device"] = "cpu"
-        Settings["Datahost"] = "cpu"
     
 
     device = Settings["device"]
@@ -119,11 +111,11 @@ if __name__ == '__main__':
 
 
     val_loader = DataLoader(val_set,
-                                    num_workers = Settings["num_workers"],
-                                    batch_size = Settings["batch_size"], 
-                                    shuffle = Settings["shuffle"],
-                                    drop_last=Settings["Drop_incomplete_batch"],
-                                    pin_memory      = Settings["Pin_memory"])
+                            num_workers     = Settings["num_workers"],
+                            batch_size      = Settings["batch_size"], 
+                            shuffle         = Settings["shuffle"],
+                            drop_last       = Settings["Drop_incomplete_batch"],
+                            pin_memory      = Settings["Pin_memory"])
     # Loss functions
     GAN_loss        = torch.nn.MSELoss().to(Settings["device"])
     pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"])
