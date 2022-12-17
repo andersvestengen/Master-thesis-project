@@ -65,6 +65,7 @@ class Generator_Unet1(nn.Module):
     def __init__(self, input_channels=3, output_channels=3):
         super(Generator_Unet1, self).__init__()
         #Encoder structure
+        self.name = "Generator_Unet1"
         self.encode_layer_1 = UnetEncoderLayer(input_channels, 64, normalize=False)
         self.encode_layer_2 = UnetEncoderLayer(64, 128)
         self.encode_layer_3 = UnetEncoderLayer(128, 256)
@@ -129,7 +130,7 @@ def Discriminator_block(input_filters, output_filters, normalization=True):
 class Discriminator_1(nn.Module):
     def __init__(self, input_channels=3):
         super(Discriminator_1, self).__init__()
-        
+        self.name = "Discriminator_1"
         self.model = nn.Sequential(
             *Discriminator_block(input_channels * 2, 64, normalization=False),
             *Discriminator_block(64, 128),

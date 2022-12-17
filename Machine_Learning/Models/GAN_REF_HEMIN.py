@@ -59,6 +59,7 @@ class UNet_ResNet34(nn.Module):
             True: deconvolution is used in decoder
         """
         super(UNet_ResNet34, self).__init__()
+        self.name = "UNet_ResNet34"
         self.num_classes = num_classes
 
         self.pool = nn.MaxPool2d(2, 2)

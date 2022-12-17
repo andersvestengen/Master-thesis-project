@@ -30,6 +30,7 @@ class GAN_dataset(Dataset):
         self.device = self.Settings["Datahost"]
         self.imagefolder="/Images/"
         self.totensor = transforms.ToTensor()
+        self.name = "GAN_Dataset_1_GAN_dataset_from_folders"
 
         self.totensorcrop = transforms.Compose([
                         transforms.ToTensor(),
@@ -114,7 +115,8 @@ class GAN_dataset(Dataset):
                 print("images in cache_size does not equal input parameter [",(len(self.targetlist)),"/",training_samples,"] adjusting")
                 if training_samples < len(self.targetlist):
                     newsize = len(self.targetlist) - training_samples
-                    self.data = self.data[:-newsize]
+                    self.targetlist = self.targetlist[:-newsize]
+                    self.defectlist = self.defectlist[:-newsize]
                 else:
                     self.Preprocessor()
             print("Number of images is:", len(self.targetlist))

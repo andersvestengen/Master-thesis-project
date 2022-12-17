@@ -131,8 +131,8 @@ class Training_Framework():
         #Create the directory of the model (Look back at this for batch training.)
         time = str(datetime.now())
         stamp = time[:-16] + "_" + time[11:-7].replace(":", "-")
-        if self.Settings["ModelName"] is not None:
-            self.Modeldir = self.workingdir +  "/Trained_Models/" + self.Settings["ModelName"] + " (" + stamp +")"
+        if self.Settings["ModelTrainingName"] is not None:
+            self.Modeldir = self.workingdir +  "/Trained_Models/" + self.Settings["ModelTrainingName"] + " (" + stamp +")"
         else:
             self.Modeldir = self.workingdir + "/Trained_Models/" + "GAN_Model" + " " + stamp
             
@@ -160,7 +160,8 @@ class Training_Framework():
         with open(stateloc, 'w') as f:
             for param in PSettings:
                 f.write(param +  ": " + str(self.Settings[param]) + "\n")
-
+            f.write("Generator model: " + self.Generator.name + "\n")
+            f.write("Discriminator model: " + self.Discriminator.name + "\n")
     def Generator_updater(self, real_A, real_B, val=False):       
         self.Discriminator.requires_grad=False
 

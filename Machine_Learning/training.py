@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "GAN_V4_New_Dataloader",
+            "ModelTrainingName"     : "GAN_V4_New_Dataloader",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : True
@@ -41,7 +41,7 @@ Settings = {
 # client side Settings
 Settings_cli = {
             "epochs"                : 4,
-            "batch_size"            : 4,
+            "batch_size"            : 1,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
@@ -56,14 +56,14 @@ Settings_cli = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelName"             : "LOCAL_TEST_DELETE_ME",
+            "ModelTrainingName"     : "LOCAL_TEST_DELETE_ME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 50,
+            "Num_training_samples"  : 14,
             "Pin_memory"            : False
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
@@ -94,6 +94,8 @@ if __name__ == '__main__':
 
     # Configure dataloaders
     Custom_dataset = GAN_dataset(Settings, transform=training_transforms)
+
+    Settings["Dataset_name"] = Custom_dataset.name 
 
     dataset_len = len(Custom_dataset)
 
