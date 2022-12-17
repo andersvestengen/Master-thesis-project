@@ -7,7 +7,7 @@ import glob
 import numpy as np
 import torch
 from tqdm import tqdm
-from math import ceil
+import cv2
 
 def_transform = transforms.Compose([
     transforms.CenterCrop(256),
@@ -172,18 +172,21 @@ class GAN_dataset(Dataset):
         self.defectglob = self.OutputFolderDefects + "**/*.jpg"
         self.defectlist = sorted(glob.glob(self.defectglob, recursive=True))
 
-    def __getitem__(self, index):
-        #Add transform here    
-        target = self.totensor(Image.open(self.targetlist[index]))
-        defect = self.totensor(Image.open(self.defectlist[index]))
+    def load_image(self, path):
+        image = cv2.imread(str(path))
+        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)/255
+
+    def totensortorch(self, image):
+        return torch.from_numpy(np.moveaxis(image, -1, 0)).float()
+
+    def __getitem__(self, idx):
+        target = totensortorch(load_image(self.targetlist[idx]))
+        defect = totensortorch(load_image(self.defectlist[idx]))
+
+        return target, defect
 
 
-        cat_transform = torch.cat((target.unsqueeze(0), defect.unsqueeze(0)),0)
-        
-        # Apply the transformations to both images simultaneously:
-        transformed_images = self.transform(cat_transform)
 
-        return transformed_images[0].squeeze(0), transformed_images[1].squeeze(0)
 
   
 
