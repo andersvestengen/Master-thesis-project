@@ -6,6 +6,7 @@ import torch
 from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+from PIL import Image
 
 class FileSender():
     """
@@ -162,6 +163,7 @@ class Training_Framework():
                 f.write(param +  ": " + str(self.Settings[param]) + "\n")
             f.write("Generator model: " + self.Generator.name + "\n")
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
+
     def Generator_updater(self, real_A, real_B, val=False):       
         self.Discriminator.requires_grad=False
 
@@ -205,7 +207,12 @@ class Training_Framework():
             self.Discriminator_optimizer.step() # step
 
         return Total_loss_Discriminator.item(), predicted_real, predicted_fake
-        
+
+    
+    def FromTorchTraining(self, image):
+        return image.mul(255).add_(0.5).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+
+
     def Generate_validation_images(self, epoch, real_A):
         self.Generator.eval()
 
@@ -217,15 +224,15 @@ class Training_Framework():
         with torch.no_grad():
             if real_A.size(0) > 1:
                 fake_B = self.Generator(real_im.unsqueeze(0))
-                im = self.image_transform(fake_B.squeeze(0))
-                co = self.image_transform(real_im)
+                im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
+                co = Image.fromarray(self.FromTorchTraining(real_im))
             else:
                 fake_B = self.Generator(real_im)
-                im = self.image_transform(fake_B.squeeze(0))
-                co = self.image_transform(real_im.squeeze(0))
+                im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
+                co = Image.fromarray(self.FromTorchTraining(real_im.squeeze(0)))
 
-            co.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".png", "PNG")
-            im.save(self.modeltraining_output_corrections + "/" + "Generator_output_image_epoch_" + str(epoch) + ".png", "PNG")
+            co.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".jpg", "JPEG")
+            im.save(self.modeltraining_output_corrections + "/" + "Generator_output_image_epoch_" + str(epoch) + ".jpg", "JPEG")
 
         self.Generator.train()
 

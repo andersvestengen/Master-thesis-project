@@ -24,7 +24,7 @@ class GAN_dataset(Dataset):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
         np.random.seed(self.Settings["seed"])
-        #self.training_process_name = "/processed_images.pt"
+
         self.preprocess_storage = self.Settings["preprocess_storage"]
         self.BoxSize = self.Settings["BoxSize"]
         self.device = self.Settings["Datahost"]
@@ -120,7 +120,7 @@ class GAN_dataset(Dataset):
                 else:
                     self.Preprocessor()
             print("Number of images is:", len(self.targetlist))
-            
+
         
 
 
@@ -136,36 +136,45 @@ class GAN_dataset(Dataset):
         Takes a matrix-converted image and returns a training sample of that image with a randomly degraded [Boxsize * Boxsize] square, and coordinates for loss function.
         
         """
-        ImageHeight = imageMatrix.shape[1]
-        ImageWidth = imageMatrix.shape[2]
+        ImageHeight = imageMatrix.shape[0]
+        ImageWidth = imageMatrix.shape[1]
         SampleH = self.getSample(ImageHeight)
         SampleW = self.getSample(ImageWidth)
-        intSample = imageMatrix[:,SampleH:SampleH + self.BoxSize,SampleW:SampleW + self.BoxSize] 
-        mask = np.random.choice(self.boolean_sample, p=[0.7, 0.3], size=(intSample.shape[1:]))
-        #mask = np.ones(intSample.shape[1:])
+        intSample = imageMatrix[SampleH:SampleH + self.BoxSize,SampleW:SampleW + self.BoxSize,:] 
+        mask = np.random.choice(self.boolean_sample, p=[0.7, 0.3], size=(intSample.shape[:-1]))
         r = np.full((intSample.shape), 0)
-        intSample[:,mask] = r[:,mask] 
-        imageMatrix[:, SampleH:SampleH+self.BoxSize,SampleW:SampleW+self.BoxSize] = intSample
-        #defect_region = np.asarray([SampleH, SampleW, self.BoxSize])
+        intSample[mask,:] = r[mask,:] 
+        imageMatrix[SampleH:SampleH+self.BoxSize,SampleW:SampleW+self.BoxSize,:] = intSample
        
-        return imageMatrix#, defect_region       
+        return imageMatrix    
     
     def __len__(self):
             return len(self.targetlist)
 
+    def resize_im(self, image):
+        sizes = [256, 256]
+        return cv2.resize(image, sizes, interpolation= cv2.INTER_LINEAR)
+
+    def CenterCrop(self, image, val=256):
+        center = image.shape
+        if center[0] < 256 or center[1] < 256:
+            image = self.resize_im(image)
+            center = image.shape
+
+        x = np.around((center[1]*0.5 - val*0.5), 0).astype(np.int8)
+        y = np.around((center[0]*0.5 - val*0.5),0).astype(np.int8)
+        return image[y:y+val, x:x+val]
 
     def Preprocessor(self):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
             for num, imagedir in enumerate(Prepoch):
-
                 Prepoch.set_description(f"Preprocessing images for Model training")
-
-                target = self.totensorcrop(Image.open(imagedir))
-                defect = self.toPIL(torch.from_numpy(self.DefectGenerator(np.asarray(target.clone()))))
-                target = self.toPIL(target)
+                target = self.CenterCrop(cv2.imread(imagedir))
+                target = cv2.cvtColor(target, cv2.COLOR_BGR2RGB)
+                defect = Image.fromarray(self.DefectGenerator(target.copy()))
+                target = Image.fromarray(target)
                 target.save(self.OutputFolderTargets + "/" + str(num) + ".jpg", "JPEG")
                 defect.save(self.OutputFolderDefects + "/" + str(num) + ".jpg", "JPEG")
-
         self.targetglob = self.OutputFolderTargets + "**/*.jpg"
         self.targetlist = sorted(glob.glob(self.targetglob, recursive=True))
 
@@ -180,10 +189,13 @@ class GAN_dataset(Dataset):
         return torch.from_numpy(np.moveaxis(image, -1, 0)).float()
 
     def __getitem__(self, idx):
-        target = totensortorch(load_image(self.targetlist[idx]))
-        defect = totensortorch(load_image(self.defectlist[idx]))
+        target = self.totensortorch(self.load_image(self.targetlist[idx]))
+        defect = self.totensortorch(self.load_image(self.defectlist[idx]))
+        cat_transform = torch.cat((target.unsqueeze(0), defect.unsqueeze(0)), 0)
+        transformed_images = self.transform(cat_transform)
+        
 
-        return target, defect
+        return transformed_images[0].squeeze(0), transformed_images[1].squeeze(0)
 
 
 
