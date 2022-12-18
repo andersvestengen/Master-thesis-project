@@ -16,7 +16,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 100,
+            "epochs"                : 300,
             "batch_size"            : 32,
             "L1_loss_weight"        : 100,
             "BoxSize"               : 5,
@@ -32,7 +32,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V4_New_CV2_Dataloader",
+            "ModelTrainingName"     : "GAN_V4_New_CV2_DAT_RESNET34",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : True
@@ -88,8 +88,9 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    Generator = Generator_Unet1().to(device)
-    Generator.apply(weights_init)
+    Generator = UNet_ResNet34().to(device)
+    #Generator = Generator_Unet1().to(device)
+    #Generator.apply(weights_init)
 
 
     # Configure dataloaders
