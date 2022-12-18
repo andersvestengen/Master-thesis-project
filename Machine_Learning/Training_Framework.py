@@ -288,7 +288,7 @@ class Training_Framework():
     def Trainer(self, train_loader, val_loader):
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
-                epochs.set_description(f"Training the model on epoch {epoch} [Mode: NonStaggered]")
+                epochs.set_description(f"Training the model on epoch {epoch}")
                 current_GEN_loss = 0
                 current_DIS_loss = 0
                 Discrim_acc_real = 0
