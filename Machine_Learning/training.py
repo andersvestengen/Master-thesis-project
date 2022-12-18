@@ -63,7 +63,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
