@@ -171,12 +171,13 @@ class Training_Framework():
         
         # Generator loss
         fake_B = self.Generator(real_A)         
-        predicted_fake = self.Discriminator(real_A, fake_B) # Compare fake output to original image
+        predicted_fake = self.Discriminator(real_A, fake_B)
         loss_GAN = self.GAN_loss(predicted_fake, self.valid)
+        
         #Pixelwise loss
-        SampleH, SampleW, BoxSize = d_cord
-        loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
-        local_pixelloss = self.pixelwise_loss(fake_B[:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize], real_B[:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize])
+        SampleH, SampleW, BoxSize = d_cord[0]
+        loss_pixel = self.pixelwise_loss(fake_B, real_B)
+        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize], real_B[:,:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize])
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
@@ -263,10 +264,10 @@ class Training_Framework():
 
                     real_A = defect_images.to(self.device) #Defect
                     real_B = images.to(self.device) #Target 
-                    d_cord = defect_coordinates.to(self.device) # local loss coordinates
+                    defect_coordinates.to(self.device) # local loss coordinates
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
-                    GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, d_cord, val=True)
+                    GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, defect_coordinates, val=True)
 
                     #Snapping image from generator during validation
                     if (epoch % 10) == 0:
@@ -317,10 +318,9 @@ class Training_Framework():
 
                     real_A = defect_images.to(self.device) #Defect
                     real_B = images.to(self.device) #Target
-                    d_cord = defect_coordinates.to(self.device) # local loss coordinates
-
+                    defect_coordinates.to(self.device) # local loss coordinates
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
-                    GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B, d_cord)
+                    GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B, defect_coordinates)
 
                     #Analytics
                     current_GEN_loss += GEN_loss

@@ -116,10 +116,11 @@ class GAN_dataset(Dataset):
         else:
             target = self.totensortorch(self.load_image(self.OriginalImagesList[idx]))
 
-        defect, [SampleH, SampleW, BoxSize] = self.DefectGenerator(target.copy())
+        defect, arr = self.DefectGenerator(target.clone())
         
+        arr = torch.tensor(arr)
 
-        return target, defect, [SampleH, SampleW, BoxSize]
+        return target, defect, arr
 
 
 

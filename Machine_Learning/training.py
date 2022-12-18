@@ -18,7 +18,8 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 Settings = {
             "epochs"                : 300,
             "batch_size"            : 32,
-            "L1_loss_weight"        : 100,
+            "L1__local_loss_weight" : 100,
+            "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
@@ -42,6 +43,7 @@ Settings = {
 Settings_cli = {
             "epochs"                : 4,
             "batch_size"            : 1,
+            "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
