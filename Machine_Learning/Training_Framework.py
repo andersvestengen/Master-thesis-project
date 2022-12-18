@@ -164,7 +164,7 @@ class Training_Framework():
             f.write("Generator model: " + self.Generator.name + "\n")
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
 
-    def Generator_updater(self, real_A, real_B, val=False):       
+    def Generator_updater(self, real_A, real_B, d_cord, val=False):       
         self.Discriminator.requires_grad=False
 
         self.Generator.zero_grad()
@@ -174,10 +174,12 @@ class Training_Framework():
         predicted_fake = self.Discriminator(real_A, fake_B) # Compare fake output to original image
         loss_GAN = self.GAN_loss(predicted_fake, self.valid)
         #Pixelwise loss
+        SampleH, SampleW, BoxSize = d_cord
         loss_pixel = self.pixelwise_loss(fake_B, real_B) # might be misinterpreting the loss inputs here.
+        local_pixelloss = self.pixelwise_loss(fake_B[:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize], real_B[:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize])
         
         #Total loss
-        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel
+        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
         
         if not val:
             Total_loss_Generator.backward()
@@ -251,7 +253,7 @@ class Training_Framework():
             else:
                 val_unit = "batch(s)"
             with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
-                for images, defect_images in tepoch:
+                for images, defect_images, defect_coordinates in tepoch:
                     if epoch == 0:
                         tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
@@ -261,9 +263,10 @@ class Training_Framework():
 
                     real_A = defect_images.to(self.device) #Defect
                     real_B = images.to(self.device) #Target 
+                    d_cord = defect_coordinates.to(self.device) # local loss coordinates
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
-                    GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, val=True)
+                    GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, d_cord, val=True)
 
                     #Snapping image from generator during validation
                     if (epoch % 10) == 0:
@@ -302,7 +305,7 @@ class Training_Framework():
                 else:
                     tepoch = tqdm(train_loader, unit='batch(s)', leave=False)
 
-                for images, defect_images in tepoch:
+                for images, defect_images, defect_coordinates in tepoch:
                     if epoch == 0:
                         tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
@@ -314,9 +317,10 @@ class Training_Framework():
 
                     real_A = defect_images.to(self.device) #Defect
                     real_B = images.to(self.device) #Target
+                    d_cord = defect_coordinates.to(self.device) # local loss coordinates
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
-                    GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B)
+                    GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B, d_cord)
 
                     #Analytics
                     current_GEN_loss += GEN_loss
