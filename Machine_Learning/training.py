@@ -16,7 +16,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 100,
+            "epochs"                : 300,
             "batch_size"            : 32,
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
@@ -33,9 +33,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V5_Locallos_region",
+            "ModelTrainingName"     : "GAN_V5_Locallos_30x30_region",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 25000,
+            "Num_training_samples"  : None,
             "Pin_memory"            : True
             }
 

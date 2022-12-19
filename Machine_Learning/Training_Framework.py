@@ -521,20 +521,25 @@ class Model_Inference():
         self.model.load_state_dict(torch.load(self.modeldir, map_location=torch.device(self.device)))
         print("Succesfully loaded", self.modelname, "model")
 
+    def FromTorchTraining(self, image):
+        return image.mul(255).add_(0.5).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+        
     def Inference_run(self, runs=3):
         """
         Does an inference run on the Model for three images
         """
         self.model.eval()
         loader = tqdm(range(runs))
-        for run in loader:
-            loader.set_description(f"Running {run}/{runs} images completed")
-            _ , image = next(iter(self.dataloader))
-            Generated_output_image = self.model(image)
-            im = self.transform(image.squeeze(0))
-            output = self.transform(Generated_output_image.squeeze(0))
-            im.save(self.run_dir + "/original/original_image" + str(run) + ".jpg")
-            output.save(self.run_dir + "/reconstruction/reconstructed_image" + str(run) + ".jpg")
+        with torch.no_grad():
+            for run in loader:
+                loader.set_description(f"Running {run}/{runs} images completed")
+                _ , image, _ = next(iter(self.dataloader))
+
+                fake_B = self.model(image)
+                im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
+                co = Image.fromarray(self.FromTorchTraining(image.squeeze(0)))
+                co.save(self.run_dir + "/original/original_image" + str(run) + ".jpg")
+                im.save(self.run_dir + "/reconstruction/reconstructed_image" + str(run) + ".jpg")
         print("Done!")
         print("All results saved to:")
         print(self.run_dir)
