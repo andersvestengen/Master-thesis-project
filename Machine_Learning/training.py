@@ -16,24 +16,24 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 300,
+            "epochs"                : 100,
             "batch_size"            : 32,
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
+            "Loss_region_Box_mult"  : 6,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 266, # random training seed
             "num_workers"           : 14,
             "shuffle"               : True,
-            "Datahost"              : "cuda", #Should the data be located on the GPU or CPU during training?
             "Datasplit"             : 0.7,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V4_New_CV2__L1LocalLoss_Generator_1",
+            "ModelTrainingName"     : "GAN_V5_Locallos_region",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 25000,
             "Pin_memory"            : True
@@ -45,13 +45,13 @@ Settings_cli = {
             "batch_size"            : 2,
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
+            "Loss_region_Box_mult"  : 6,
             "BoxSize"               : 5,
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,
             "seed"                  : 589, # random training seed
             "num_workers"           : 0,
-            "Datahost"              : "cpu", #Should the data be located on the GPU or CPU during training?
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cpu",

@@ -176,8 +176,9 @@ class Training_Framework():
         
         #Pixelwise loss
         SampleH, SampleW, BoxSize = d_cord[0]
+        L1_loss_region = int(self.Settings["Loss_region_Box_mult"]) * BoxSize
         loss_pixel = self.pixelwise_loss(fake_B, real_B)
-        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize], real_B[:,:,SampleH:SampleH+BoxSize,SampleW:SampleW+BoxSize])
+        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region], real_B[:,:,SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region])
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
@@ -460,7 +461,7 @@ class Training_Framework():
         plt.legend()
         plt.savefig(self.Modeldir + "/discriminator_accuracy_curves.png")
         plt.clf()
-        
+
         #Implement this in analytics
         plt.plot(xaxis, self.Discriminator_accuracy_real_training_raw, label="Discriminator accuracy real training")
         plt.plot(xaxis, self.Discriminator_accuracy_fake_training_raw, label="Discriminator accuracy fake training")

@@ -77,7 +77,7 @@ class GAN_dataset(Dataset):
         SampleH = self.getSample(ImageHeight)
         SampleW = self.getSample(ImageWidth)
         intSample = imageMatrix[:,SampleH:SampleH + self.BoxSize,SampleW:SampleW + self.BoxSize] 
-        mask = torch.randint(0,2, (intSample.size()[1:]))
+        mask = torch.randint(0,2, (intSample.size()[1:])).bool()
         r = torch.full((intSample.size()), 0).float()
         intSample[:,mask] = r[:,mask] 
         imageMatrix[:,SampleH:SampleH+self.BoxSize,SampleW:SampleW+self.BoxSize] = intSample
