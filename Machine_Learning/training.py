@@ -21,7 +21,7 @@ Settings = {
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
-            "Loss_region_Box_mult"  : 6,
+            "Loss_region_Box_mult"  : 1,
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V5_Locallos_30x30_region",
+            "ModelTrainingName"     : "GAN_V5_Locallos_5x5_region",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None,
             "Pin_memory"            : True
