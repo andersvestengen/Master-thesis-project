@@ -22,7 +22,7 @@ class GAN_dataset(Dataset):
         np.random.seed(self.Settings["seed"])
 
         self.BoxSize = self.Settings["BoxSize"]
-        self.device = self.Settings["Datahost"]
+        self.device = self.Settings["device"]
         self.imagefolder="/Images/"
         self.name = "GAN_Dataset_1_GAN_dataset_from_folders"
 
