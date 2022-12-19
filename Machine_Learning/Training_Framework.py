@@ -433,13 +433,21 @@ class Training_Framework():
         xaxis = np.arange(1, self.Generator_loss_validation.shape[0]+1)
         plt.plot(xaxis, self.Generator_loss_train, label="Generator loss training")
         plt.plot(xaxis, self.Generator_loss_validation, label="Generator loss validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Loss")
+        plt.title("Generator loss curves")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/Generator_loss_curves.png")
+        plt.clf() # clear the plot
+
+        xaxis = np.arange(1, self.Discriminator_loss_validation.shape[0]+1)
         plt.plot(xaxis, self.Discriminator_loss_train, label="Discriminator loss training")    
         plt.plot(xaxis, self.Discriminator_loss_validation, label="Discriminator loss validation")
         plt.xlabel("epochs")
         plt.ylabel("Loss")
-        plt.title("Model loss curves")
+        plt.title("Discriminator loss curves")
         plt.legend()
-        plt.savefig(self.Modeldir + "/model_loss_curves.png")
+        plt.savefig(self.Modeldir + "/Discriminator_loss_curves.png")
         plt.clf() # clear the plot
 
         plt.plot(xaxis, self.Discriminator_accuracy_real_training*100, label="Discriminator accuracy real training")
@@ -452,6 +460,7 @@ class Training_Framework():
         plt.legend()
         plt.savefig(self.Modeldir + "/discriminator_accuracy_curves.png")
         plt.clf()
+        
         #Implement this in analytics
         plt.plot(xaxis, self.Discriminator_accuracy_real_training_raw, label="Discriminator accuracy real training")
         plt.plot(xaxis, self.Discriminator_accuracy_fake_training_raw, label="Discriminator accuracy fake training")
