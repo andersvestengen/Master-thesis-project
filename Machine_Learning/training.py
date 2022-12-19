@@ -42,7 +42,7 @@ Settings = {
 # client side Settings
 Settings_cli = {
             "epochs"                : 4,
-            "batch_size"            : 1,
+            "batch_size"            : 2,
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,

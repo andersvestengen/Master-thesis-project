@@ -33,7 +33,7 @@ class DecoderBlock(nn.Module):
             )
         else:
             self.block = nn.Sequential(
-                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+                nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True), #May be the reason why output is blurry
                 ConvRelu(in_channels, middle_channels),
                 ConvRelu(middle_channels, out_channels),
             )
