@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V5_Locallos_15x15_centered",
+            "ModelTrainingName"     : "GAN_V5_Locallos_15x15_centered_2",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None,
             "Pin_memory"            : True
