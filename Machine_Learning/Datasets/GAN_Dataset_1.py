@@ -65,7 +65,7 @@ class GAN_dataset(Dataset):
         returns a random sample between the minimum Boxsize and the sampleInput (height/width)
         """
 
-        return int( ( sampleinput - self.BoxSize ) * np.random.random_sample())
+        return int( ( sampleinput - (self.BoxSize * self.Settings["Loss_region_Box_mult"]) ) * np.random.random_sample())
 
     def DefectGenerator(self, imageMatrix):
         """
