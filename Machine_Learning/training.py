@@ -18,8 +18,8 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 Settings = {
             "epochs"                : 60,
             "batch_size"            : 32,
-            "L1__local_loss_weight" : 300,
-            "L1_loss_weight"        : 10,
+            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1_loss_weight"        : 50,
             "BoxSize"               : 5,
             "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
