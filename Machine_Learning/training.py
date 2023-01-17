@@ -16,12 +16,12 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 300,
+            "epochs"                : 60,
             "batch_size"            : 32,
-            "L1__local_loss_weight" : 100,
+            "L1__local_loss_weight" : 300,
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
-            "Loss_region_Box_mult"  : 1, # A multiplier based on the 'BoxSize' value. Only whole numbers!
+            "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V5_Locallos_10x10_centered",
+            "ModelTrainingName"     : "GAN_V5_Locallos_15x15_centered",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None,
             "Pin_memory"            : True
