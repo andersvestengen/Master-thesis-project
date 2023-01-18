@@ -17,7 +17,7 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
             "epochs"                : 60,
-            "batch_size"            : 32,
+            "batch_size"            : 16,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
@@ -35,7 +35,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "GAN_V5_Locallos_15x15_centered_3",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None,
+            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
