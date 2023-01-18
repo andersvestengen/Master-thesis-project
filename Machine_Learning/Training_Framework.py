@@ -186,6 +186,7 @@ class Training_Framework():
         
         #Pixelwise loss
         SampleH, SampleW, BoxSize = d_cord[0]
+        Sample_h_old, sample_w_old = SampleH, SampleW
         SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
         L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
         loss_pixel = self.pixelwise_loss(fake_B, real_B)

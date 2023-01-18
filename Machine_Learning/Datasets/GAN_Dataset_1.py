@@ -60,12 +60,17 @@ class GAN_dataset(Dataset):
 
 
 
-    def getSample(self, sampleinput):
+    def getSample(self, Total_length):
         """
-        returns a random sample between the minimum Boxsize and the sampleInput (height/width)
+        returns a random sample between the minimum Boxsize and the Total_length (height/width)
         """
+        margin = self.BoxSize * self.Settings["Loss_region_Box_mult"]
+        sample = int( (Total_length - margin) * np.random.random_sample() )
 
-        return int( ( sampleinput - (self.BoxSize * self.Settings["Loss_region_Box_mult"]) ) * np.random.random_sample())
+        if sample < margin: # so there's both lower and upper margin
+            return int(margin)
+        else:
+            return sample
 
     def DefectGenerator(self, imageMatrix):
         """
