@@ -165,9 +165,14 @@ class Training_Framework():
             PSNR_fake_values = np.zeros((total_images))
             SSIM_real_values = np.zeros((total_images))
             SSIM_fake_values = np.zeros((total_images))
+
+            PSNR_real_values_p = np.zeros((total_images))
+            PSNR_fake_values_p = np.zeros((total_images))
+            SSIM_real_values_p = np.zeros((total_images))
+            SSIM_fake_values_p = np.zeros((total_images))
             with tqdm(metric_loader, unit="image", leave=False) as tepoch:
                 for num, tstuff in enumerate(tepoch):
-                    images, defect_images, _ = tstuff
+                    images, defect_images, coordinates = tstuff
                     tepoch.set_description(f"Running metrics {num}/{total_images}")
                     
                     real_A = defect_images.to(self.device) #Defect
@@ -183,16 +188,35 @@ class Training_Framework():
                     PSNR_m_f = 0
                     SSIM_m_r = 0
                     SSIM_m_f = 0
+                    PSNR_m_r_p = 0
+                    PSNR_m_f_p = 0
+                    SSIM_m_r_p = 0
+                    SSIM_m_f_p = 0
+        
+                    #Getting patch coordinates
+                    SampleH, SampleW, BoxSize = coordinates[0]
+                    SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
+                    L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
+                   
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
-                        PSNR_m_f +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        PSNR_m_f +=  PSNR(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
                         SSIM_m_r +=  SSIM(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
-                        SSIM_m_f +=  SSIM(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        SSIM_m_f +=  SSIM(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
+
+                        PSNR_m_r_p +=  PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        PSNR_m_f_p +=  PSNR(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_r_p +=  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_f_p +=  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
 
                     PSNR_real_values[num] = PSNR_m_r / 3
                     PSNR_fake_values[num] = PSNR_m_f / 3
                     SSIM_real_values[num] = SSIM_m_r / 3
                     SSIM_fake_values[num] = SSIM_m_f / 3
+                    PSNR_real_values_p[num] = PSNR_m_r_p / 3
+                    PSNR_fake_values_p[num] = PSNR_m_f_p / 3
+                    SSIM_real_values_p[num] = SSIM_m_r_p / 3
+                    SSIM_fake_values_p[num] = SSIM_m_f_p / 3
 
                     if num > (total_len - 1):
                         break
@@ -201,12 +225,21 @@ class Training_Framework():
             PSNR_real_mean = np.mean(PSNR_real_values)
             SSIM_fake_mean = np.mean(SSIM_fake_values)
             SSIM_real_mean = np.mean(SSIM_real_values)
+            PSNR_fake_mean_p = np.mean(PSNR_fake_values_p)
+            PSNR_real_mean_p = np.mean(PSNR_real_values_p)
+            SSIM_fake_mean_p = np.mean(SSIM_fake_values_p)
+            SSIM_real_mean_p = np.mean(SSIM_real_values_p)
             metloc = self.Modeldir + "/Metrics.txt"
             with open(metloc, 'w') as f:
-                    f.write("PSNR_real:" + str(PSNR_real_mean) + "\n")
-                    f.write("PSNR_fake:" + str(PSNR_fake_mean) + "\n")
-                    f.write("SSIM_real:" + str(SSIM_real_mean) + "\n")
-                    f.write("SSIM_fake:" + str(SSIM_fake_mean) + "\n")
+                    f.write("PSNR_real_total:               " + str(PSNR_real_mean) + "\n")
+                    f.write("PSNR_Generated_total:          " + str(PSNR_fake_mean) + "\n")
+                    f.write("PSNR_real_total_patch:         " + str(PSNR_real_mean_p) + "\n")
+                    f.write("PSNR_Generated_total_patch:    " + str(PSNR_fake_mean_p) + "\n")
+                    f.write("\n")
+                    f.write("SSIM_real_total:               " + str(SSIM_real_mean) + "\n")
+                    f.write("SSIM_Generated_total:          " + str(SSIM_fake_mean) + "\n")
+                    f.write("SSIM_real_total_patch:         " + str(SSIM_real_mean_p) + "\n")
+                    f.write("SSIM_Generated_total_patch:    " + str(SSIM_fake_mean_p) + "\n")
             print("Metrics added to Metrics.txt file")
 
 
@@ -242,7 +275,6 @@ class Training_Framework():
         
         #Pixelwise loss
         SampleH, SampleW, BoxSize = d_cord[0]
-        Sample_h_old, sample_w_old = SampleH, SampleW
         SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
         L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
         loss_pixel = self.pixelwise_loss(fake_B, real_B)
