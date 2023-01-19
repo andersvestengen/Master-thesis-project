@@ -17,11 +17,11 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
             "epochs"                : 60,
-            "batch_size"            : 16,
-            "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "batch_size"            : 32,
+            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 10,
             "BoxSize"               : 5,
-            "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
+            "Loss_region_Box_mult"  : 1, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V5_Locallos_15x15_centered_3",
+            "ModelTrainingName"     : "GAN_V6_5x5_L1loss",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-Settings = Settings_cli
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
