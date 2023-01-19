@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
@@ -121,6 +121,13 @@ if __name__ == '__main__':
                             shuffle         = Settings["shuffle"],
                             drop_last       = Settings["Drop_incomplete_batch"],
                             pin_memory      = Settings["Pin_memory"])
+    
+    metric_loader = DataLoader(val_set,
+                            num_workers     = Settings["num_workers"],
+                            batch_size      = 1, 
+                            shuffle         = Settings["shuffle"],
+                            drop_last       = Settings["Drop_incomplete_batch"],
+                            pin_memory      = Settings["Pin_memory"])
     # Loss functions
     GAN_loss        = torch.nn.MSELoss().to(Settings["device"])
     pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"])
@@ -131,4 +138,4 @@ if __name__ == '__main__':
     #Training
     trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, Discriminator)
 
-    trainer.Trainer(train_loader, val_loader)
+    trainer.Trainer(train_loader, val_loader, metric_loader)

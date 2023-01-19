@@ -7,6 +7,8 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
+from skimage.metrics import peak_signal_noise_ratio as PSNR
+from skimage.metrics import structural_similarity as SSIM
 
 class FileSender():
     """
@@ -94,7 +96,6 @@ class FileSender():
 
 
 
-
 class Training_Framework():
     """
     Framework for training the different networks, should not inherit or mess with pytorch itself, but instead passes the model by assignment to make training more like 
@@ -153,6 +154,61 @@ class Training_Framework():
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
+
+    def CreateMetrics(self, metric_loader):
+        total_len = 500 # manually selected to not take too much time.
+        with torch.no_grad():
+            total_images = len(metric_loader)
+            if total_images > total_len:
+                total_images = total_len
+            PSNR_real_values = np.zeros((total_images))
+            PSNR_fake_values = np.zeros((total_images))
+            SSIM_real_values = np.zeros((total_images))
+            SSIM_fake_values = np.zeros((total_images))
+            with tqdm(metric_loader, unit="image", leave=False) as tepoch:
+                for num, tstuff in enumerate(tepoch):
+                    images, defect_images, _ = tstuff
+                    tepoch.set_description(f"Running metrics {num}/{total_images}")
+                    
+                    real_A = defect_images.to(self.device) #Defect
+                    real_B = images.to(self.device) #Target 
+                    fake_B = self.Generator(real_A.clone())
+
+                    real_A = self.FromTorchTraining(real_A.squeeze(0))
+                    real_B = self.FromTorchTraining(real_B.squeeze(0))
+                    fake_B = self.FromTorchTraining(fake_B.squeeze(0))
+
+                    #Need to calculate for each channel too...
+                    PSNR_m_r = 0
+                    PSNR_m_f = 0
+                    SSIM_m_r = 0
+                    SSIM_m_f = 0
+                    for channel in range(3):
+                        PSNR_m_r +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        PSNR_m_f +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        SSIM_m_r +=  SSIM(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        SSIM_m_f +=  SSIM(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+
+                    PSNR_real_values[num] = PSNR_m_r / 3
+                    PSNR_fake_values[num] = PSNR_m_f / 3
+                    SSIM_real_values[num] = SSIM_m_r / 3
+                    SSIM_fake_values[num] = SSIM_m_f / 3
+
+                    if num > (total_len - 1):
+                        break
+            
+            PSNR_fake_mean = np.mean(PSNR_fake_values)
+            PSNR_real_mean = np.mean(PSNR_real_values)
+            SSIM_fake_mean = np.mean(SSIM_fake_values)
+            SSIM_real_mean = np.mean(SSIM_real_values)
+            metloc = self.Modeldir + "/Metrics.txt"
+            with open(metloc, 'w') as f:
+                    f.write("PSNR_real:" + str(PSNR_real_mean) + "\n")
+                    f.write("PSNR_fake:" + str(PSNR_fake_mean) + "\n")
+                    f.write("SSIM_real:" + str(SSIM_real_mean) + "\n")
+                    f.write("SSIM_fake:" + str(SSIM_fake_mean) + "\n")
+            print("Metrics added to Metrics.txt file")
+
 
 
     def SaveState(self):
@@ -302,7 +358,7 @@ class Training_Framework():
 
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(val_loader))
 
-    def Trainer(self, train_loader, val_loader):
+    def Trainer(self, train_loader, val_loader, metric_loader):
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
@@ -356,6 +412,7 @@ class Training_Framework():
             self.Save_Analytics()
             self.Create_graphs()
             self.SaveState()
+            self.CreateMetrics(metric_loader)
             if self.transmit: # Send finished model to server storage
                 print("Sending files")
                 self.transmitter.send(self.Modeldir)
