@@ -25,7 +25,7 @@ Settings = {
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
-            "seed"                  : 266, # random training seed
+            "seed"                  : 785, # random training seed
             "num_workers"           : 14,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V6_5x5_L1loss",
+            "ModelTrainingName"     : "GAN_V6_Standard_5x5_L1loss",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
