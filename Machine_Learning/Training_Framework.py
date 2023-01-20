@@ -92,7 +92,7 @@ class FileSender():
         local_dir = "Trained_Models"
         local_list = os.listdir(local_dir)
         remote_list = self.ftr.listdir(self.externaldir)
-        fetch_list = [dir for dir in remote_list if dir not in local_list]
+        fetch_list = [dir for dir in local_list if dir not in remote_list]
         if len(fetch_list) == 0:
             print("found no new models")
         else:
