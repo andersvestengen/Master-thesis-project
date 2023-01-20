@@ -88,6 +88,17 @@ class FileSender():
                 self.pull(folder)
             print("completed remote folder transfer")
 
+    def push_local_models(self):
+        local_dir = "Trained_Models"
+        local_list = os.listdir(local_dir)
+        remote_list = self.ftr.listdir(self.externaldir)
+        fetch_list = [dir for dir in remote_list if dir not in local_list]
+        if len(fetch_list) == 0:
+            print("found no new models")
+        else:
+            for folder in fetch_list:
+                self.send(folder)
+            print("completed remote folder transfer")
 
     def close(self):
         self.ftr.close()
@@ -183,7 +194,7 @@ class Training_Framework():
                     real_B = self.FromTorchTraining(real_B.squeeze(0))
                     fake_B = self.FromTorchTraining(fake_B.squeeze(0))
 
-                    #Need to calculate for each channel too...
+                    #Need to calculate for each channel to H,W,Channels
                     PSNR_m_r = 0
                     PSNR_m_f = 0
                     SSIM_m_r = 0
@@ -197,17 +208,26 @@ class Training_Framework():
                     SampleH, SampleW, BoxSize = coordinates[0]
                     SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
                     L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
-                   
+                   # from torch training actually changes the channels to: 
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
                         PSNR_m_f +=  PSNR(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
-                        PSNR_m_r_p +=  PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        """
+                        #This would assign 'inf' values to 0, but inf may be more truthfull? 
+                        psnrval = PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        if psnrval > 100: #Would be in db ?
+                            PSNR_m_r_p += 0
+                        else:
+                            PSNR_m_r_p += psnrval
+                        """
+                        PSNR_m_r_p += PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
                         PSNR_m_f_p +=  PSNR(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                   
-                    SSIM_m_r +=  SSIM(real_A[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
-                    SSIM_m_f +=  SSIM(fake_B[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
-                    SSIM_m_r_p +=  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
-                    SSIM_m_f_p +=  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
+
+
+                    SSIM_m_r_p =  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
+                    SSIM_m_f_p =  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
+                    SSIM_m_r =  SSIM(real_A[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
+                    SSIM_m_f =  SSIM(fake_B[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
 
                     PSNR_real_values[num] = PSNR_m_r / 3
                     PSNR_fake_values[num] = PSNR_m_f / 3
