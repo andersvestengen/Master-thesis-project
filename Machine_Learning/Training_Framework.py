@@ -98,6 +98,7 @@ class FileSender():
         else:
             for folder in fetch_list:
                 self.send(folder)
+                print("sent dir:", folder)
             print("completed remote folder transfer")
 
     def close(self):
