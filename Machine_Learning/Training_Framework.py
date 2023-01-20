@@ -97,6 +97,7 @@ class FileSender():
             print("found no new models")
         else:
             for folder in fetch_list:
+                folder = local_dir + "/" + folder
                 self.send(folder)
                 print("sent dir:", folder)
             print("completed remote folder transfer")
