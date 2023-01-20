@@ -45,8 +45,8 @@ Settings_cli = {
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50,
             "L1_loss_weight"        : 10,
-            "Loss_region_Box_mult"  : 3,
-            "BoxSize"               : 5,
+            "Loss_region_Box_mult"  : 1,
+            "BoxSize"               : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
