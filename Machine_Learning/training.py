@@ -20,7 +20,7 @@ Settings = {
             "batch_size"            : 32,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 10,
-            "BoxSize"               : 5,
+            "BoxSize"               : 10,
             "Loss_region_Box_mult"  : 1, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-Settings = Settings_cli
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
