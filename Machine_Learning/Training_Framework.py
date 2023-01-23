@@ -165,11 +165,7 @@ class Training_Framework():
 
         #Creating folders for image output during training.
         self.modeltraining_output               = self.Modeldir + "/training_output"
-        self.modeltraining_output_images        = self.modeltraining_output + "/originals"
-        self.modeltraining_output_corrections   = self.modeltraining_output + "/corrections"
         os.makedirs(self.modeltraining_output)
-        os.makedirs(self.modeltraining_output_images)
-        os.makedirs(self.modeltraining_output_corrections)
 
         self.Analytics_training("setup", 0, 0, 0, 0, 0, 0, 0, 0)
         self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0, 0, 0)
@@ -357,9 +353,7 @@ class Training_Framework():
                 fake_B = self.Generator(real_im.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im.squeeze(0)))
-
-            co.save(self.modeltraining_output_images + "/" + "Original_image_epoch_" + str(epoch) + ".jpg", "JPEG")
-            im.save(self.modeltraining_output_corrections + "/" + "Generator_output_image_epoch_" + str(epoch) + ".jpg", "JPEG")
+            PIL_concatenate_h(co, im).save(self.modeltraining_output + "/" + "Image_" + str(epoch) + ".jpg", "JPEG")
 
         self.Generator.train()
 
