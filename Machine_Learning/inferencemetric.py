@@ -27,7 +27,7 @@ if __name__ == '__main__':
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "LOCAL_TEST_DELETE_ME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None,
+            "Num_training_samples"  : 50,
             "Pin_memory"            : False
             }
 
@@ -41,4 +41,4 @@ if __name__ == '__main__':
     Model = Generator_Unet1()
 
     inference_run = Model_Inference(Model, imloader)
-    inference_run.Inference_run()
+    inference_run.CreateMetrics()

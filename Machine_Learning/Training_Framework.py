@@ -107,7 +107,6 @@ class FileSender():
         print("SSH and SFTP closed")
 
 
-
 class Training_Framework():
     """
     Framework for training the different networks, should not inherit or mess with pytorch itself, but instead passes the model by assignment to make training more like 
@@ -637,7 +636,8 @@ class Model_Inference():
         os.makedirs(self.run_dir + "/original")
         os.makedirs(self.run_dir + "/reconstruction")
         self.RestoreModel()
-        self.Inference_run()
+        #self.Inference_run()
+
 
     def RestoreModel(self):
         self.model.load_state_dict(torch.load(self.modeldir, map_location=torch.device(self.device)))
@@ -665,5 +665,95 @@ class Model_Inference():
         print("Done!")
         print("All results saved to:")
         print(self.run_dir)
+
+
+    def CreateMetrics(self):
+        total_len = 500 # manually selected to not take too much time.
+        with torch.no_grad():
+            total_images = len(self.dataloader)
+            if total_images > total_len:
+                total_images = total_len
+            PSNR_real_values = np.zeros((total_images))
+            PSNR_fake_values = np.zeros((total_images))
+            SSIM_real_values = np.zeros((total_images))
+            SSIM_fake_values = np.zeros((total_images))
+
+            PSNR_real_values_p = np.zeros((total_images))
+            PSNR_fake_values_p = np.zeros((total_images))
+            SSIM_real_values_p = np.zeros((total_images))
+            SSIM_fake_values_p = np.zeros((total_images))
+            with tqdm(self.dataloader, unit="image", leave=False) as tepoch:
+                for num, tstuff in enumerate(tepoch):
+                    images, defect_images, coordinates = tstuff
+                    tepoch.set_description(f"Running metrics {num}/{total_images}")
+                    
+                    real_A = defect_images.to(self.device) #Defect
+                    real_B = images.to(self.device) #Target 
+                    fake_B = self.model(real_A.clone())
+
+                    real_A = self.FromTorchTraining(real_A.squeeze(0))
+                    real_B = self.FromTorchTraining(real_B.squeeze(0))
+                    fake_B = self.FromTorchTraining(fake_B.squeeze(0))
+
+                    #Need to calculate for each channel to H,W,Channels
+                    PSNR_m_r = 0
+                    PSNR_m_f = 0
+                    SSIM_m_r = 0
+                    SSIM_m_f = 0
+                    PSNR_m_r_p = 0
+                    PSNR_m_f_p = 0
+                    SSIM_m_r_p = 0
+                    SSIM_m_f_p = 0
+        
+                    #Getting patch coordinates
+                    SampleH, SampleW, BoxSize = coordinates[0]
+                    SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
+                    L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
+                   # from torch training actually changes the channels to: 
+                    for channel in range(3):
+                        PSNR_m_r +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        PSNR_m_f +=  PSNR(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
+                        PSNR_m_r_p += PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        PSNR_m_f_p +=  PSNR(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+
+
+                    SSIM_m_r_p =  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
+                    SSIM_m_f_p =  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
+                    SSIM_m_r =  SSIM(real_A[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
+                    SSIM_m_f =  SSIM(fake_B[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
+
+                    PSNR_real_values[num] = PSNR_m_r / 3
+                    PSNR_fake_values[num] = PSNR_m_f / 3
+                    SSIM_real_values[num] = SSIM_m_r
+                    SSIM_fake_values[num] = SSIM_m_f
+                    PSNR_real_values_p[num] = PSNR_m_r_p / 3
+                    PSNR_fake_values_p[num] = PSNR_m_f_p / 3
+                    SSIM_real_values_p[num] = SSIM_m_r_p
+                    SSIM_fake_values_p[num] = SSIM_m_f_p
+
+                    if num > (total_len - 1):
+                        break
+            
+            PSNR_fake_mean = np.mean(PSNR_fake_values)
+            PSNR_real_mean = np.mean(PSNR_real_values)
+            SSIM_fake_mean = np.mean(SSIM_fake_values)
+            SSIM_real_mean = np.mean(SSIM_real_values)
+            PSNR_fake_mean_p = np.mean(PSNR_fake_values_p)
+            PSNR_real_mean_p = np.mean(PSNR_real_values_p)
+            SSIM_fake_mean_p = np.mean(SSIM_fake_values_p)
+            SSIM_real_mean_p = np.mean(SSIM_real_values_p)
+            metloc = self.run_dir + "/Metrics.txt"
+            with open(metloc, 'w') as f:
+                    f.write("PSNR_real_total:               " + str(PSNR_real_mean) + "\n")
+                    f.write("PSNR_Generated_total:          " + str(PSNR_fake_mean) + "\n")
+                    f.write("PSNR_real_total_patch:         " + str(PSNR_real_mean_p) + "\n")
+                    f.write("PSNR_Generated_total_patch:    " + str(PSNR_fake_mean_p) + "\n")
+                    f.write("\n")
+                    f.write("SSIM_real_total:               " + str(SSIM_real_mean) + "\n")
+                    f.write("SSIM_Generated_total:          " + str(SSIM_fake_mean) + "\n")
+                    f.write("SSIM_real_total_patch:         " + str(SSIM_real_mean_p) + "\n")
+                    f.write("SSIM_Generated_total_patch:    " + str(SSIM_fake_mean_p) + "\n")
+            print("Metrics added to Metrics.txt file")
+
 if __name__ == '__main__':
     pass
