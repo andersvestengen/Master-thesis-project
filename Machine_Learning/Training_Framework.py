@@ -614,7 +614,8 @@ class Model_Inference():
         - Modelref: This is the vanilla model class itself, from the Models/ dir
         - Modeldir: This is the location of the trained model.pt file.
     """
-    def __init__(self, modelref, dataloader, device="cpu"):
+    def __init__(self, modelref, dataloader, Settings, device="cpu"):
+        self.Settings = Settings
         self.model = modelref
         self.device = device
         self.transform = transforms.ToPILImage()
@@ -666,6 +667,14 @@ class Model_Inference():
         print("All results saved to:")
         print(self.run_dir)
 
+    def CenteringAlgorithm(self, boxmult, Boxsize, SampleH, SampleW):
+        """
+        Returns new H W coordinates centered on the defect block
+        """
+        len = int(Boxsize * boxmult)
+        len = int(np.floor( len + (Boxsize * 0.5) - (len * 0.5) ))
+
+        return (SampleH - len), (SampleW - len)
 
     def CreateMetrics(self):
         total_len = 500 # manually selected to not take too much time.
@@ -717,19 +726,19 @@ class Model_Inference():
                         PSNR_m_f_p +=  PSNR(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
 
 
-                    SSIM_m_r_p =  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
-                    SSIM_m_f_p =  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
-                    SSIM_m_r =  SSIM(real_A[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
-                    SSIM_m_f =  SSIM(fake_B[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
+                        SSIM_m_r_p +=  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_f_p +=  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_r +=  SSIM(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        SSIM_m_f +=  SSIM(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
 
                     PSNR_real_values[num] = PSNR_m_r / 3
                     PSNR_fake_values[num] = PSNR_m_f / 3
-                    SSIM_real_values[num] = SSIM_m_r
-                    SSIM_fake_values[num] = SSIM_m_f
+                    SSIM_real_values[num] = SSIM_m_r / 3
+                    SSIM_fake_values[num] = SSIM_m_f / 3
                     PSNR_real_values_p[num] = PSNR_m_r_p / 3
                     PSNR_fake_values_p[num] = PSNR_m_f_p / 3
-                    SSIM_real_values_p[num] = SSIM_m_r_p
-                    SSIM_fake_values_p[num] = SSIM_m_f_p
+                    SSIM_real_values_p[num] = SSIM_m_r_p / 3
+                    SSIM_fake_values_p[num] = SSIM_m_f_p / 3
 
                     if num > (total_len - 1):
                         break
