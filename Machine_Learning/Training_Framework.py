@@ -212,32 +212,23 @@ class Training_Framework():
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
                         PSNR_m_f +=  PSNR(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
-                        """
-                        #This would assign 'inf' values to 0, but inf may be more truthfull? 
-                        psnrval = PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        if psnrval > 100: #Would be in db ?
-                            PSNR_m_r_p += 0
-                        else:
-                            PSNR_m_r_p += psnrval
-                        """
                         PSNR_m_r_p += PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
                         PSNR_m_f_p +=  PSNR(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
 
 
-                    SSIM_m_r_p =  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
-                    SSIM_m_f_p =  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,:], data_range=255, multichannel=True)
-                    SSIM_m_r =  SSIM(real_A[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
-                    SSIM_m_f =  SSIM(fake_B[:,:,:], real_B[:,:,:], data_range=255, multichannel=True)
+                        SSIM_m_r_p +=  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_f_p +=  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_r +=  SSIM(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
+                        SSIM_m_f +=  SSIM(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
 
                     PSNR_real_values[num] = PSNR_m_r / 3
                     PSNR_fake_values[num] = PSNR_m_f / 3
-                    SSIM_real_values[num] = SSIM_m_r
-                    SSIM_fake_values[num] = SSIM_m_f
+                    SSIM_real_values[num] = SSIM_m_r / 3
+                    SSIM_fake_values[num] = SSIM_m_f / 3
                     PSNR_real_values_p[num] = PSNR_m_r_p / 3
                     PSNR_fake_values_p[num] = PSNR_m_f_p / 3
-                    SSIM_real_values_p[num] = SSIM_m_r_p
-                    SSIM_fake_values_p[num] = SSIM_m_f_p
-
+                    SSIM_real_values_p[num] = SSIM_m_r_p / 3
+                    SSIM_fake_values_p[num] = SSIM_m_f_p / 3
                     if num > (total_len - 1):
                         break
             
