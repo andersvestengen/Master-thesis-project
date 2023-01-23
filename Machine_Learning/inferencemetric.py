@@ -41,5 +41,5 @@ if __name__ == '__main__':
         Model = Generator_Unet1()
 
         inference_run = Model_Inference(Model, imloader, Settings)
-        inference_run.Inference_run()
         inference_run.CreateMetrics()
+        #inference_run.Inference_run()

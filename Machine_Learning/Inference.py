@@ -12,8 +12,8 @@ if __name__ == '__main__':
             "batch_size"            : 2,
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
-            "Loss_region_Box_mult"  : 6,
-            "BoxSize"               : 5,
+            "Loss_region_Box_mult"  : 1,
+            "BoxSize"               : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : None,
             "preprocess_storage"    : None,
@@ -42,3 +42,4 @@ if __name__ == '__main__':
 
     inference_run = Model_Inference(Model, imloader)
     inference_run.Inference_run()
+    inference_run.CreateMetrics()
