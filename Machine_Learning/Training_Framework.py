@@ -10,6 +10,18 @@ from PIL import Image
 from skimage.metrics import peak_signal_noise_ratio as PSNR
 from skimage.metrics import structural_similarity as SSIM
 
+#---------------- Helper functions ----------------------
+def PIL_concatenate_h(im1, im2):
+    out = Image.new('RGB', (im1.width + im2.width, im1.height))
+    out.paste(im1, (0,0))
+    out.paste(im2, (im1.width, 0))
+    return out
+
+
+#-------------- END helper functions --------------------
+
+
+
 class FileSender():
     """
     This class sets up sending files between the local directory given (!Only expects no subfolders!) and the uio folder "Master_Thesis_Model_Directory/"
@@ -338,11 +350,11 @@ class Training_Framework():
 
         with torch.no_grad():
             if real_A.size(0) > 1:
-                fake_B = self.Generator(real_im.unsqueeze(0))
+                fake_B = self.Generator(real_im.clone().unsqueeze(0))
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im))
             else:
-                fake_B = self.Generator(real_im)
+                fake_B = self.Generator(real_im.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im.squeeze(0)))
 
@@ -625,8 +637,7 @@ class Model_Inference():
         self.modelname = models[choice]
         self.run_dir = self.Inference_dir + "/" + self.modelname
         os.makedirs(self.run_dir)
-        os.makedirs(self.run_dir + "/original")
-        os.makedirs(self.run_dir + "/reconstruction")
+        os.makedirs(self.run_dir + "/output")
         self.RestoreModel()
         #self.Inference_run()
 
@@ -638,7 +649,7 @@ class Model_Inference():
     def FromTorchTraining(self, image):
         return image.mul(255).add_(0.5).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
         
-    def Inference_run(self, runs=3):
+    def Inference_run(self, runs=8):
         """
         Does an inference run on the Model for three images
         """
@@ -648,12 +659,12 @@ class Model_Inference():
             for run in loader:
                 loader.set_description(f"Running {run}/{runs} images completed")
                 _ , image, _ = next(iter(self.dataloader))
-
-                fake_B = self.model(image)
+                real_A = image.clone()
+                fake_B = self.model(image.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
-                co = Image.fromarray(self.FromTorchTraining(image.squeeze(0)))
-                co.save(self.run_dir + "/original/original_image" + str(run) + ".jpg")
-                im.save(self.run_dir + "/reconstruction/reconstructed_image" + str(run) + ".jpg")
+                co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
+                PIL_concatenate_h(co, im).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
+
         print("Done!")
         print("All results saved to:")
         print(self.run_dir)
