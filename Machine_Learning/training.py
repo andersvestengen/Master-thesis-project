@@ -16,12 +16,12 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 60,
-            "batch_size"            : 32,
+            "epochs"                : 100,
+            "batch_size"            : 1,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 10,
             "BoxSize"               : 10,
-            "Loss_region_Box_mult"  : 1, # A multiplier based on the 'BoxSize' value. Only whole numbers!
+            "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V6_Standard_5x5_L1loss",
+            "ModelTrainingName"     : "GAN_V9",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -41,16 +41,16 @@ Settings = {
 
 # client side Settings
 Settings_cli = {
-            "epochs"                : 1,
+            "epochs"                : 2,
             "batch_size"            : 1,
-            "L1__local_loss_weight" : 50,
+            "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
-            "Loss_region_Box_mult"  : 1,
+            "Loss_region_Box_mult"  : 3,
             "BoxSize"               : 10,
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,
-            "seed"                  : 266, # random training seed
+            "seed"                  : 4532, # random training seed
             "num_workers"           : 0,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -60,7 +60,7 @@ Settings_cli = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "LOCAL_TEST_DELETE_ME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 50,
+            "Num_training_samples"  : 20,
             "Pin_memory"            : False
             }
 
