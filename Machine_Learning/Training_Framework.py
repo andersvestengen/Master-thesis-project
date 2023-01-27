@@ -272,14 +272,15 @@ class Training_Framework():
             f.write("Generator model: " + self.Generator.name + "\n")
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
 
-    def CenteringAlgorithm(self, boxmult, Boxsize, SampleH, SampleW):
+
+    def CenteringAlgorithm(self, boxmult, Boxsize, SampleY, SampleX):
         """
         Returns new H W coordinates centered on the defect block
         """
-        len = int(Boxsize * boxmult)
-        len = int(np.floor( len + (Boxsize * 0.5) - (len * 0.5) ))
+        len = (Boxsize * boxmult * 0.5)
+        co  = np.floor(((SampleY - len + (Boxsize * 0.5)), (SampleX - len + (Boxsize * 0.5)))).astype(int)
 
-        return (SampleH - len), (SampleW - len)
+        return co[0], co[1]
         
 
     def Generator_updater(self, real_A, real_B, d_cord, val=False):       
@@ -294,11 +295,11 @@ class Training_Framework():
         loss_GAN = self.GAN_loss(predicted_fake, valid)
         
         #Pixelwise loss
-        SampleH, SampleW, BoxSize = d_cord[0]
-        SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
+        SampleY, SampleX, BoxSize = d_cord[0]
+        SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
         L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
         loss_pixel = self.pixelwise_loss(fake_B, real_B)
-        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region], real_B[:,:,SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region])
+        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
