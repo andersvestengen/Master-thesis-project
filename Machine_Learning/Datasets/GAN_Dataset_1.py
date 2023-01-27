@@ -72,22 +72,23 @@ class GAN_dataset(Dataset):
         else:
             return sample
 
+
     def DefectGenerator(self, imageMatrix):
         """
         Takes a matrix-converted image and returns a training sample of that image with a randomly degraded [Boxsize * Boxsize] square, and coordinates for loss function.
         
         """
-        ImageHeight = imageMatrix.size(1)
-        ImageWidth = imageMatrix.size(2)
-        SampleH = self.getSample(ImageHeight)
-        SampleW = self.getSample(ImageWidth)
-        intSample = imageMatrix[:,SampleH:SampleH + self.BoxSize,SampleW:SampleW + self.BoxSize] 
+        ImageY = imageMatrix.size(1)
+        ImageX = imageMatrix.size(2)
+        SampleY = self.getSample(ImageY)
+        SampleX = self.getSample(ImageX)
+        intSample = imageMatrix[:,SampleY:SampleY + self.BoxSize, SampleX:SampleX + self.BoxSize] 
         mask = torch.randint(0,2, (intSample.size()[1:])).bool()
         r = torch.full((intSample.size()), 0).float()
         intSample[:,mask] = r[:,mask] 
-        imageMatrix[:,SampleH:SampleH+self.BoxSize,SampleW:SampleW+self.BoxSize] = intSample
-       
-        return imageMatrix, [SampleH, SampleW, self.BoxSize]
+        imageMatrix[:,SampleY:SampleY+self.BoxSize,SampleX:SampleX+self.BoxSize] = intSample
+
+        return imageMatrix, [SampleY, SampleX, self.BoxSize]
     
     def __len__(self):
             return len(self.OriginalImagesList)
@@ -108,6 +109,7 @@ class GAN_dataset(Dataset):
 
 
     def load_image(self, path):
+        #imread returns Y,X,C
         image = self.CenterCrop(cv2.imread(str(path)))
         return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)/255
 
