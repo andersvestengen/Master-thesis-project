@@ -278,9 +278,10 @@ class Training_Framework():
         Returns new H W coordinates centered on the defect block
         """
         len = (Boxsize * boxmult * 0.5)
-        co  = np.floor(((SampleY - len + (Boxsize * 0.5)), (SampleX - len + (Boxsize * 0.5)))).astype(int)
+        Y  = torch.floor(SampleY - len + (Boxsize * 0.5)).to(torch.int8)
+        X = torch.floor(SampleX - len + (Boxsize * 0.5)).to(torch.int8)
 
-        return co[0], co[1]
+        return Y,X
         
 
     def Generator_updater(self, val=False):       
