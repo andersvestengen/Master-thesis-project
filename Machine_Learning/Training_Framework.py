@@ -283,23 +283,22 @@ class Training_Framework():
         return co[0], co[1]
         
 
-    def Generator_updater(self, real_A, real_B, d_cord, val=False):       
+    def Generator_updater(self, val=False):       
         self.Discriminator.requires_grad=False
 
         self.Generator.zero_grad()
         valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         # Generator loss
-        fake_B = self.Generator(real_A)         
-        predicted_fake = self.Discriminator(real_A, fake_B)
+        predicted_fake = self.Discriminator(self.real_A, self.fake_B)
         loss_GAN = self.GAN_loss(predicted_fake, valid)
         
         #Pixelwise loss
-        SampleY, SampleX, BoxSize = d_cord[0]
+        SampleY, SampleX, BoxSize = self.defect_coordinates[0]
         SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
         L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
-        loss_pixel = self.pixelwise_loss(fake_B, real_B)
-        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
+        loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
+        local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
@@ -310,7 +309,7 @@ class Training_Framework():
 
         return Total_loss_Generator.item(), loss_pixel.item()
 
-    def Discriminator_updater(self, real_A, real_B, val=False):
+    def Discriminator_updater(self, val=False):
         self.Discriminator.requires_grad=True
         
         self.Discriminator.zero_grad()
@@ -319,13 +318,12 @@ class Training_Framework():
         fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         #Real loss
-        predicted_real = self.Discriminator(real_A, real_B)
+        predicted_real = self.Discriminator(self.real_A, self.real_B)
         
         loss_real = self.GAN_loss(predicted_real, valid)
 
         #Fake loss
-        fake_B = self.Generator(real_A)
-        predicted_fake = self.Discriminator(real_A, fake_B.detach())
+        predicted_fake = self.Discriminator(self.real_A, self.fake_B.detach())
         loss_fake = self.GAN_loss(predicted_fake, fake)
 
         #Total loss and backprop
@@ -341,16 +339,16 @@ class Training_Framework():
         return image.mul(255).add_(0.5).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
 
 
-    def Generate_validation_images(self, epoch, real_A):
+    def Generate_validation_images(self, epoch):
         self.Generator.eval()
 
-        if real_A.size(0) > 1:
-            real_im = real_A[0,:,:,:].clone()
+        if self.real_A.size(0) > 1:
+            real_im = self.real_A[0,:,:,:].clone()
         else:
-            real_im = real_A.clone()
+            real_im = self.real_A.clone()
 
         with torch.no_grad():
-            if real_A.size(0) > 1:
+            if self.real_A.size(0) > 1:
                 fake_B = self.Generator(real_im.clone().unsqueeze(0))
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im))
@@ -383,16 +381,16 @@ class Training_Framework():
                     elif epoch > 0:
                         tepoch.set_description(f"Validation Gen_loss {self.Generator_loss_validation[epoch-1]:.4f} Disc_loss {self.Discriminator_loss_validation[epoch-1]:.4f}")
 
-                    real_A = defect_images.to(self.device) #Defect
-                    real_B = images.to(self.device) #Target 
-                    defect_coordinates.to(self.device) # local loss coordinates
-
-                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B, val=True)
-                    GEN_loss, loss_pixel = self.Generator_updater(real_A, real_B, defect_coordinates, val=True)
+                    self.real_A = defect_images.to(self.device) #Defect
+                    self.real_B = images.to(self.device) #Target
+                    self.fake_B = self.Generator(self.real_A)
+                    self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
+                    GEN_loss, loss_pixel = self.Generator_updater(val=True)
 
                     #Snapping image from generator during validation
                     if (epoch % 10) == 0:
-                        self.Generate_validation_images(epoch, real_A)
+                        self.Generate_validation_images(epoch)
 
                     #Analytics            
                     current_DIS_loss += DIS_loss  
@@ -434,11 +432,12 @@ class Training_Framework():
                         tepoch.set_description(f"Training Gen_loss {self.Generator_loss_train[epoch-1]:.4f} Disc_loss {self.Discriminator_loss_train[epoch-1]:.4f}")
                         
 
-                    real_A = defect_images.to(self.device) #Defect
-                    real_B = images.to(self.device) #Target
-                    defect_coordinates.to(self.device) # local loss coordinates
-                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(real_A, real_B)
-                    GEN_loss, loss_pixel, = self.Generator_updater(real_A, real_B, defect_coordinates)
+                    self.real_A = defect_images.to(self.device) #Defect
+                    self.real_B = images.to(self.device) #Target
+                    self.fake_B = self.Generator(self.real_A)
+                    self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()
+                    GEN_loss, loss_pixel, = self.Generator_updater()
 
                     #Analytics
                     current_GEN_loss += GEN_loss
