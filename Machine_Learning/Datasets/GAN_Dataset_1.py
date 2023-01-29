@@ -16,7 +16,7 @@ class GAN_dataset(Dataset):
         - update the Description
     """
 
-    def __init__(self, Settings, transform=None):
+    def __init__(self, Settings, transform=None, preprocess=False):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
         np.random.seed(self.Settings["seed"])
@@ -58,8 +58,23 @@ class GAN_dataset(Dataset):
 
             print("Number of images is:", len(self.OriginalImagesList))
 
-
-
+        #Create preprocess storage if condition is met 
+        self.preprocess = preprocess
+        self.preprocess_storage = self.Settings["preprocess_storage"]
+        self.preprocess_cache = self.preprocess_storage + "/processed_images.pt"
+        if self.preprocess and not os.isdir(self.preprocess_storage):
+            os.makedirs(self.preprocess_storage)
+            self.ImagePreprocessor()
+        elif self.preprocess and not os.exists(self.preprocess_cache):
+            self.ImagePreprocessor()
+        elif self.preprocess and os.exists(self.preprocess_cache):
+            self.data = torch.load(self.preprocess_cache, map_location="cpu")
+        
+        if self.data.size(0) != len(self.OriginalImagesList):
+            print("Number of cached images not equal to the amount of images selected[", self.data.size(0), " | ", len(self.OriginalImagesList),"]" )
+            self.data = 0
+            self.ImagePreprocessor()
+            
     def getSample(self, Total_length):
         """
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
@@ -71,6 +86,43 @@ class GAN_dataset(Dataset):
             return int(margin)
         else:
             return sample
+
+    def ImagePreprocessor(self):
+        with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
+            for num, imagedir in enumerate(Prepoch):
+                # Transform image and add 
+                image = self.transform(Image.open(imagedir))
+
+                if (num > 0) and (num % 200 == 0):
+                    torch.save(self.data, self.preprocess_storage+"/processed_images"+str(num)+".pt")
+                    self.data = 0                  
+
+                if num == 0 or num % 200 == 0:
+                    Prepoch.set_description(f"Preprocessing images for CUDA")
+                    self.data = image
+                else:
+                    Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
+                    self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
+            if not isinstance(self.data, int):
+                print("trying to save incomplete last cache size")
+                torch.save(self.data, self.preprocess_storage+"/processed_images_last.pt")
+        print("reconstituting images into single file:")
+        self.data = 0
+        cache_list = sorted(glob.glob(self.preprocess_storage + "**/*.pt", recursive=True))
+        with tqdm(cache_list, unit='patches', leave=True) as Crepoch:
+            for num, cache in enumerate(Crepoch):
+
+                if num == 0:
+                    self.data = torch.load(cache)
+                    os.remove(cache)
+                else:
+                    Crepoch.set_description(f"Stacking cache for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
+                    temp = torch.load(cache)
+                    self.data = torch.cat((self.data, temp), 0)
+                    os.remove(cache)
+        print("Saving to file")
+        torch.save(self.data, self.preprocess_cache)
+
 
 
     def DefectGenerator(self, imageMatrix):
@@ -91,6 +143,9 @@ class GAN_dataset(Dataset):
         return imageMatrix, [SampleY, SampleX, self.BoxSize]
     
     def __len__(self):
+        if self.preprocess:
+            return self.data.size(0)
+        else:
             return len(self.OriginalImagesList)
 
     def resize_im(self, image):
@@ -119,9 +174,15 @@ class GAN_dataset(Dataset):
 
     def __getitem__(self, idx):
         if self.transform is not None:
-            target = self.transform(self.totensortorch(self.load_image(self.OriginalImagesList[idx])))
+            if self.preprocess:
+                target = self.transform(self.data[idx,:])
+            else:
+                target = self.transform(self.totensortorch(self.load_image(self.OriginalImagesList[idx])))
         else:
-            target = self.totensortorch(self.load_image(self.OriginalImagesList[idx]))
+            if self.preprocess:
+                target = self.data[idx,:]
+            else:
+                target = self.totensortorch(self.load_image(self.OriginalImagesList[idx]))
 
         defect, arr = self.DefectGenerator(target.clone())
         
