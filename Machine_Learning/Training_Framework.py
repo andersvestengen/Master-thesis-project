@@ -308,7 +308,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return Total_loss_Generator.item(), loss_pixel.item()
+        return loss_GAN.item(), loss_pixel.item() + local_pixelloss.item()
 
     def Discriminator_updater(self, val=False):
         self.Discriminator.requires_grad=True
@@ -569,6 +569,18 @@ class Training_Framework():
         plt.savefig(self.Modeldir + "/Discriminator_loss_curves.png")
         plt.clf() # clear the plot
 
+        xaxis = np.arange(1, self.Discriminator_loss_validation.shape[0]+1)
+        plt.plot(xaxis, self.Generator_loss_train, label="Generator loss training")
+        plt.plot(xaxis, self.Generator_loss_validation, label="Generator loss validation")
+        plt.plot(xaxis, self.Discriminator_loss_train, label="Discriminator loss training")    
+        plt.plot(xaxis, self.Discriminator_loss_validation, label="Discriminator loss validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Loss")
+        plt.title("Combined loss curves")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/Combined_loss_curves.png")
+        plt.clf() # clear the plot
+
         plt.plot(xaxis, self.Discriminator_accuracy_real_training*100, label="Discriminator accuracy real training")
         plt.plot(xaxis, self.Discriminator_accuracy_fake_training*100, label="Discriminator accuracy fake training")
         plt.plot(xaxis, self.Discriminator_accuracy_real_validation*100, label="Discriminator accuracy real validation")
@@ -596,7 +608,7 @@ class Training_Framework():
         plt.plot(xaxis, self.Generator_pixel_loss_validation*100, label="Validation")
         plt.xlabel("epochs")
         plt.ylabel("L1-loss")
-        plt.title("Generator pixel loss")
+        plt.title("Generator combined pixel loss")
         plt.legend()
         plt.savefig(self.Modeldir + "/generator_pixel_loss.png")
         plt.clf()

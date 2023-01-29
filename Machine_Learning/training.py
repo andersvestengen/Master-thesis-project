@@ -16,7 +16,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 100,
+            "epochs"                : 60,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 10,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V9",
+            "ModelTrainingName"     : "GAN_V10",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -41,7 +41,7 @@ Settings = {
 
 # client side Settings
 Settings_cli = {
-            "epochs"                : 2,
+            "epochs"                : 5,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-Settings = Settings_cli
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
@@ -96,7 +96,11 @@ if __name__ == '__main__':
 
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(Settings, transform=training_transforms, preprocess=True)
+    if Settings["batch_size"] == 1:
+        Custom_dataset = GAN_dataset(Settings, transform=training_transforms, preprocess=True)
+    else:
+        Custom_dataset = GAN_dataset(Settings, transform=training_transforms)
+
 
     Settings["Dataset_name"] = Custom_dataset.name 
 
@@ -137,6 +141,4 @@ if __name__ == '__main__':
 
     #Training
     trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, Discriminator)
-    start = time()
     trainer.Trainer(train_loader, val_loader, metric_loader)
-    print("training time:", time() - start)
