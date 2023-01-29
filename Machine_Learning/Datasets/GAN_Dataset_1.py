@@ -60,21 +60,29 @@ class GAN_dataset(Dataset):
 
         #Create preprocess storage if condition is met 
         self.preprocess = preprocess
-        self.preprocess_storage = self.Settings["preprocess_storage"]
-        self.preprocess_cache = self.preprocess_storage + "/processed_images.pt"
-        if self.preprocess and not os.isdir(self.preprocess_storage):
-            os.makedirs(self.preprocess_storage)
-            self.ImagePreprocessor()
-        elif self.preprocess and not os.exists(self.preprocess_cache):
-            self.ImagePreprocessor()
-        elif self.preprocess and os.exists(self.preprocess_cache):
-            self.data = torch.load(self.preprocess_cache, map_location="cpu")
+        if self.preprocess:
+            self.preprocess_storage = self.Settings["preprocess_storage"]
+
+            if self.preprocess_storage is None:
+                self.preprocess_storage = self.workingdir + "/Processing_storage"
+
+            self.preprocess_cache = self.preprocess_storage + "/processed_images.pt"
+
+            if not os.path.isdir(self.preprocess_storage):
+                os.makedirs(self.preprocess_storage)
+                self.ImagePreprocessor()
+
+            if self.preprocess and not os.path.exists(self.preprocess_cache):
+                self.ImagePreprocessor()
+            else:
+                print("Loading cache data from file")
+                self.data = torch.load(self.preprocess_cache, map_location="cpu")
         
-        if self.data.size(0) != len(self.OriginalImagesList):
-            print("Number of cached images not equal to the amount of images selected[", self.data.size(0), " | ", len(self.OriginalImagesList),"]" )
-            self.data = 0
-            self.ImagePreprocessor()
-            
+            if self.data.size(0) != len(self.OriginalImagesList):
+                print("Number of cached images not equal to the amount of images selected[", self.data.size(0), " | ", len(self.OriginalImagesList),"]" )
+                self.data = 0
+                self.ImagePreprocessor()
+
     def getSample(self, Total_length):
         """
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
@@ -91,7 +99,7 @@ class GAN_dataset(Dataset):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
             for num, imagedir in enumerate(Prepoch):
                 # Transform image and add 
-                image = self.transform(Image.open(imagedir))
+                image = self.totensortorch(self.load_image(imagedir))
 
                 if (num > 0) and (num % 200 == 0):
                     torch.save(self.data, self.preprocess_storage+"/processed_images"+str(num)+".pt")
@@ -99,7 +107,7 @@ class GAN_dataset(Dataset):
 
                 if num == 0 or num % 200 == 0:
                     Prepoch.set_description(f"Preprocessing images for CUDA")
-                    self.data = image
+                    self.data = image.unsqueeze(0)
                 else:
                     Prepoch.set_description(f"Preprocessing images for CUDA, stack size {self.data.element_size() * self.data.nelement() * 1e-6:.0f} MB")
                     self.data = torch.cat((self.data, image.unsqueeze(0)), 0)
