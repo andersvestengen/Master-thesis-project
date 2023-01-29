@@ -8,7 +8,7 @@ import numpy as np
 from torch.optim import Adam
 from Training_Framework import Training_Framework
 from torchvision import transforms
-
+from time import time
 
 Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
 Desk_dir = "G:/Master-thesis-project/Machine_Learning"
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(Settings, transform=training_transforms)
+    Custom_dataset = GAN_dataset(Settings, transform=training_transforms, preprocess=True)
 
     Settings["Dataset_name"] = Custom_dataset.name 
 
@@ -137,5 +137,6 @@ if __name__ == '__main__':
 
     #Training
     trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, Discriminator)
-
+    start = time()
     trainer.Trainer(train_loader, val_loader, metric_loader)
+    print("training time:", time() - start)

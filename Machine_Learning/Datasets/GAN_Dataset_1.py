@@ -19,12 +19,17 @@ class GAN_dataset(Dataset):
     def __init__(self, Settings, transform=None, preprocess=False):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
-        np.random.seed(self.Settings["seed"])
-
+        self.rng = np.random.default_rng(self.Settings["seed"])
+        torch.manual_seed(self.Settings["seed"])
+        self.defect_seed = torch.Generator()
+        self.defect_seed.manual_seed(self.Settings["seed"])
         self.BoxSize = self.Settings["BoxSize"]
         self.device = self.Settings["device"]
         self.imagefolder="/Images/"
-        self.name = "GAN_Dataset_1_GAN_dataset_from_folders"
+        if preprocess:
+            self.name = "GAN_Dataset_1_GAN_dataset_caching"
+        else:
+            self.name = "GAN_Dataset_1_GAN_dataset_from_folders"
 
         # Set incoming transform to transform
         self.transform = transform
@@ -72,7 +77,7 @@ class GAN_dataset(Dataset):
                 os.makedirs(self.preprocess_storage)
                 self.ImagePreprocessor()
 
-            if self.preprocess and not os.path.exists(self.preprocess_cache):
+            if not os.path.exists(self.preprocess_cache):
                 self.ImagePreprocessor()
             else:
                 print("Loading cache data from file")
@@ -81,6 +86,7 @@ class GAN_dataset(Dataset):
             if self.data.size(0) != len(self.OriginalImagesList):
                 print("Number of cached images not equal to the amount of images selected[", self.data.size(0), " | ", len(self.OriginalImagesList),"]" )
                 self.data = 0
+                os.remove(self.preprocess_cache)
                 self.ImagePreprocessor()
 
     def getSample(self, Total_length):
@@ -88,7 +94,7 @@ class GAN_dataset(Dataset):
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
         """
         margin = self.BoxSize * self.Settings["Loss_region_Box_mult"]
-        sample = int( (Total_length - margin) * np.random.random_sample() )
+        sample = int( (Total_length - margin) * self.rng.random() )
 
         if sample < margin: # so there's both lower and upper margin
             return int(margin)
@@ -143,7 +149,7 @@ class GAN_dataset(Dataset):
         SampleY = self.getSample(ImageY)
         SampleX = self.getSample(ImageX)
         intSample = imageMatrix[:,SampleY:SampleY + self.BoxSize, SampleX:SampleX + self.BoxSize] 
-        mask = torch.randint(0,2, (intSample.size()[1:])).bool()
+        mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
         r = torch.full((intSample.size()), 0).float()
         intSample[:,mask] = r[:,mask] 
         imageMatrix[:,SampleY:SampleY+self.BoxSize,SampleX:SampleX+self.BoxSize] = intSample
