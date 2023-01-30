@@ -732,16 +732,16 @@ class Model_Inference():
                     L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
                    # from torch training actually changes the channels to: 
                     for channel in range(3):
-                        PSNR_m_r +=  PSNR(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
-                        PSNR_m_f +=  PSNR(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
-                        PSNR_m_r_p += PSNR(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        PSNR_m_f_p +=  PSNR(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
+                        PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
+                        PSNR_m_r_p += PSNR(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        PSNR_m_f_p +=  PSNR(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
 
 
-                        SSIM_m_r_p +=  SSIM(real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        SSIM_m_f_p +=  SSIM(fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        SSIM_m_r +=  SSIM(real_A[:,:,channel], real_B[:,:,channel], data_range=255)
-                        SSIM_m_f +=  SSIM(fake_B[:,:,channel], real_B[:,:,channel], data_range=255)
+                        SSIM_m_r_p +=  SSIM(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_f_p +=  SSIM(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_r +=  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
+                        SSIM_m_f +=  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
 
                     PSNR_real_values[num] = PSNR_m_r / 3
                     PSNR_fake_values[num] = PSNR_m_f / 3
