@@ -26,7 +26,7 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 993, # random training seed
-            "num_workers"           : 8,
+            "num_workers"           : 14,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cuda",
@@ -41,7 +41,7 @@ Settings = {
 
 # client side Settings
 Settings_cli = {
-            "epochs"                : 11,
+            "epochs"                : 2,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50,
             "L1_loss_weight"        : 10,
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-Settings = Settings_cli
+#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
