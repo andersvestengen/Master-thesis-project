@@ -18,15 +18,15 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 Settings = {
             "epochs"                : 60,
             "batch_size"            : 1,
-            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1__local_loss_weight" : 10, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 10,
             "BoxSize"               : 10,
             "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
-            "seed"                  : 785, # random training seed
-            "num_workers"           : 14,
+            "seed"                  : 993, # random training seed
+            "num_workers"           : 8,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cuda",
@@ -41,7 +41,7 @@ Settings = {
 
 # client side Settings
 Settings_cli = {
-            "epochs"                : 5,
+            "epochs"                : 2,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),

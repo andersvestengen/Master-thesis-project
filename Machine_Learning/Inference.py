@@ -31,10 +31,10 @@ if __name__ == '__main__':
             "Pin_memory"            : False
             }
 
-    Custom_dataset = GAN_dataset(Settings)
+    Custom_dataset = GAN_dataset(Settings, preprocess=True)
 
     imloader = DataLoader(Custom_dataset,
-                                    num_workers = 1,
+                                    num_workers = 0,
                                     batch_size = 1, 
                                     shuffle = True,
                                     drop_last=False)
@@ -42,4 +42,4 @@ if __name__ == '__main__':
 
     inference_run = Model_Inference(Model, imloader, Settings)
     inference_run.Inference_run()
-    #inference_run.CreateMetrics()
+    inference_run.CreateMetrics()

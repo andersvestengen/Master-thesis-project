@@ -191,6 +191,10 @@ class Training_Framework():
             SSIM_fake_values_p = np.zeros((total_images))
             with tqdm(metric_loader, unit="image", leave=False) as tepoch:
                 for num, tstuff in enumerate(tepoch):
+
+                    if num > (total_len - 1):
+                        break
+                    
                     images, defect_images, coordinates = tstuff
                     tepoch.set_description(f"Running metrics {num}/{total_images}")
                     
@@ -237,8 +241,6 @@ class Training_Framework():
                     PSNR_fake_values_p[num] = PSNR_m_f_p / 3
                     SSIM_real_values_p[num] = SSIM_m_r_p / 3
                     SSIM_fake_values_p[num] = SSIM_m_f_p / 3
-                    if num > (total_len - 1):
-                        break
             
             PSNR_fake_mean = np.mean(PSNR_fake_values)
             PSNR_real_mean = np.mean(PSNR_real_values)

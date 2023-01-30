@@ -20,7 +20,6 @@ class GAN_dataset(Dataset):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
         self.rng = np.random.default_rng(self.Settings["seed"])
-        torch.manual_seed(self.Settings["seed"])
         self.defect_seed = torch.Generator()
         self.defect_seed.manual_seed(self.Settings["seed"])
         self.BoxSize = self.Settings["BoxSize"]
