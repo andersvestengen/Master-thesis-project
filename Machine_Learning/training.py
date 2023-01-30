@@ -16,10 +16,10 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 60,
+            "epochs"                : 20,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 10,
+            "L1_loss_weight"        : 50,
             "BoxSize"               : 10,
             "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
@@ -33,9 +33,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V10",
+            "ModelTrainingName"     : "GAN_V11_Split_Huberdelta_1",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -133,12 +133,13 @@ if __name__ == '__main__':
                             drop_last       = Settings["Drop_incomplete_batch"],
                             pin_memory      = Settings["Pin_memory"])
     # Loss functions
-    GAN_loss        = torch.nn.MSELoss().to(Settings["device"])
-    pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"])
+    GAN_loss        = torch.nn.MSELoss().to(Settings["device"]) # GAN loss for GEN and DIS
+    pixelwise_local_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
+    pixelwise_loss = torch.nn.HuberLoss(delta=1).to(Settings["device"]) # general pixellos
 
     Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"], betas=[0.5, 0.999])
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"]*0.5, betas=[0.5, 0.999])
 
     #Training
-    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, Discriminator)
+    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, pixelwise_local_loss, Discriminator)
     trainer.Trainer(train_loader, val_loader, metric_loader)

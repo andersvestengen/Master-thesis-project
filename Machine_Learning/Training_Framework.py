@@ -125,7 +125,7 @@ class Training_Framework():
     Legos and less like a novel.
     """
 
-    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, Discriminator):
+    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, pixelwise_local_loss, Discriminator):
         torch.manual_seed(Settings["seed"])
         np.random.seed(Settings["seed"])
         self.Settings = Settings
@@ -133,6 +133,7 @@ class Training_Framework():
         self.Generator_optimizer = G_opt
         self.GAN_loss = GAN_loss
         self.pixelwise_loss = pixelwise_loss
+        self.pixelwise_local_loss = pixelwise_local_loss
         self.Discriminator = Discriminator
         self.image_transform = transforms.ToPILImage()
         self.Discriminator_optimizer = D_opt
@@ -194,7 +195,7 @@ class Training_Framework():
 
                     if num > (total_len - 1):
                         break
-                    
+
                     images, defect_images, coordinates = tstuff
                     tepoch.set_description(f"Running metrics {num}/{total_images}")
                     
@@ -301,7 +302,7 @@ class Training_Framework():
         SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
         L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
         loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
-        local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
+        local_pixelloss = self.pixelwise_local_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
