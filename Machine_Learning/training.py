@@ -41,9 +41,9 @@ Settings = {
 
 # client side Settings
 Settings_cli = {
-            "epochs"                : 2,
+            "epochs"                : 11,
             "batch_size"            : 1,
-            "L1__local_loss_weight" : 100,
+            "L1__local_loss_weight" : 50,
             "L1_loss_weight"        : 10,
             "Loss_region_Box_mult"  : 3,
             "BoxSize"               : 10,
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
