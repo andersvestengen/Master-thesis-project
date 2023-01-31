@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V11_Split_Huberdelta_1_Resnet34",
+            "ModelTrainingName"     : "GAN_V12",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -134,12 +134,11 @@ if __name__ == '__main__':
                             pin_memory      = Settings["Pin_memory"])
     # Loss functions
     GAN_loss        = torch.nn.MSELoss().to(Settings["device"]) # GAN loss for GEN and DIS
-    pixelwise_local_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
-    pixelwise_loss = torch.nn.HuberLoss(delta=1).to(Settings["device"]) # general pixellos
+    pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
 
     Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"], betas=[0.5, 0.999])
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"]*0.5, betas=[0.5, 0.999])
 
     #Training
-    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, pixelwise_local_loss, Discriminator)
+    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, Discriminator)
     trainer.Trainer(train_loader, val_loader, metric_loader)
