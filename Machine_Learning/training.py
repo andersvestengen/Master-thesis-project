@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V11_Split_Huberdelta_1",
+            "ModelTrainingName"     : "GAN_V11_Split_Huberdelta_1_Resnet34",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -90,9 +90,9 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    #Generator = UNet_ResNet34().to(device)
-    Generator = Generator_Unet1().to(device)
-    Generator.apply(weights_init)
+    Generator = UNet_ResNet34().to(device)
+    #Generator = Generator_Unet1().to(device)
+    #Generator.apply(weights_init)
 
 
     # Configure dataloaders
