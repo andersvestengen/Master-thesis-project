@@ -84,9 +84,12 @@ class GAN_dataset(Dataset):
         
             if self.data.size(0) != len(self.OriginalImagesList):
                 print("Number of cached images not equal to the amount of images selected[", self.data.size(0), " | ", len(self.OriginalImagesList),"]" )
-                self.data = 0
-                os.remove(self.preprocess_cache)
-                self.ImagePreprocessor()
+                if self.data.size(0) > len(self.OriginalImagesList):
+                    self.data = self.data[:len(self.OriginalImagesList)]
+                else:
+                    self.data = 0
+                    os.remove(self.preprocess_cache)
+                    self.ImagePreprocessor()
 
     def getSample(self, Total_length):
         """
