@@ -16,10 +16,10 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 20,
+            "epochs"                : 60,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 50,
+            "L1_loss_weight"        : 10,
             "BoxSize"               : 10,
             "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
             "lr"                    : 0.0002,
@@ -35,7 +35,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "GAN_V12",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
