@@ -19,9 +19,14 @@ class GAN_dataset(Dataset):
     def __init__(self, Settings, transform=None, preprocess=False):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
-        self.rng = np.random.default_rng(self.Settings["seed"])
-        self.defect_seed = torch.Generator()
-        self.defect_seed.manual_seed(self.Settings["seed"])
+        if not self.Settings["seed"] == None:
+            self.rng = np.random.default_rng(self.Settings["seed"])
+            self.defect_seed = torch.Generator()
+            self.defect_seed.manual_seed(self.Settings["seed"])
+        else:
+            self.rng = np.random.default_rng()
+            self.defect_seed = torch.Generator()
+            self.defect_seed.manual_seed()            
         self.BoxSize = self.Settings["BoxSize"]
         self.device = self.Settings["device"]
         self.imagefolder="/Images/"
