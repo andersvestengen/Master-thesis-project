@@ -1,6 +1,7 @@
 from torch.utils.data import DataLoader
 import torch
 from Models.GAN_Model_1 import Generator_Unet1, Discriminator_1
+from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Datasets.GAN_Dataset_1 import GAN_dataset
 from Training_Framework import Model_Inference
 
@@ -38,7 +39,8 @@ if __name__ == '__main__':
                                     batch_size = 1, 
                                     shuffle = True,
                                     drop_last=False)
-    Model = Generator_Unet1()
+    #Model = Generator_Unet1()
+    Model = UNet_ResNet34()
 
     inference_run = Model_Inference(Model, imloader, Settings)
     inference_run.Inference_run()
