@@ -220,8 +220,8 @@ class Training_Framework():
                     #Getting patch coordinates
                     SampleH, SampleW, BoxSize = coordinates[0]
                     #Changed this from the Boxmult parameter to 1 because I believe the metrics should compare just the defect patch with the original.
-                    SampleH, SampleW = self.CenteringAlgorithm(1, BoxSize, SampleH, SampleW)
-                    L1_loss_region = BoxSize * 1
+                    #SampleH, SampleW = self.CenteringAlgorithm(1, BoxSize, SampleH, SampleW)
+                    L1_loss_region = BoxSize
                    # from torch training actually changes the channels to: 
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
@@ -707,6 +707,9 @@ class Model_Inference():
                 for num, tstuff in enumerate(tepoch):
                     images, defect_images, coordinates = tstuff
                     tepoch.set_description(f"Running metrics {num}/{total_images}")
+
+                    if num > (total_len - 1):
+                        break
                     
                     real_A = defect_images.to(self.device) #Defect
                     real_B = images.to(self.device) #Target 
@@ -728,8 +731,8 @@ class Model_Inference():
         
                     #Getting patch coordinates
                     SampleH, SampleW, BoxSize = coordinates[0]
-                    SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
-                    L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
+                    #SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
+                    L1_loss_region = BoxSize #* int(self.Settings["Loss_region_Box_mult"])
                    # from torch training actually changes the channels to: 
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
@@ -751,9 +754,6 @@ class Model_Inference():
                     PSNR_fake_values_p[num] = PSNR_m_f_p / 3
                     SSIM_real_values_p[num] = SSIM_m_r_p / 3
                     SSIM_fake_values_p[num] = SSIM_m_f_p / 3
-
-                    if num > (total_len - 1):
-                        break
             
             PSNR_fake_mean = np.mean(PSNR_fake_values)
             PSNR_real_mean = np.mean(PSNR_real_values)
