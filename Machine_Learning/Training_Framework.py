@@ -282,8 +282,8 @@ class Training_Framework():
         Returns new H W coordinates centered on the defect block
         """
         len = (Boxsize * boxmult * 0.5)
-        Y  = torch.floor(SampleY - len + (Boxsize * 0.5)).to(torch.int8)
-        X = torch.floor(SampleX - len + (Boxsize * 0.5)).to(torch.int8)
+        Y  = torch.floor(SampleY - len + (Boxsize * 0.5)).to(torch.uint8)
+        X = torch.floor(SampleX - len + (Boxsize * 0.5)).to(torch.uint8)
 
         return Y,X
         
@@ -679,14 +679,15 @@ class Model_Inference():
         print("All results saved to:")
         print(self.run_dir)
 
-    def CenteringAlgorithm(self, boxmult, Boxsize, SampleH, SampleW):
+    def CenteringAlgorithm(self, boxmult, Boxsize, SampleY, SampleX):
         """
         Returns new H W coordinates centered on the defect block
         """
-        len = int(Boxsize * boxmult)
-        len = int(np.floor( len + (Boxsize * 0.5) - (len * 0.5) ))
+        len = (Boxsize * boxmult * 0.5)
+        Y  = torch.floor(SampleY - len + (Boxsize * 0.5)).to(torch.uint8)
+        X = torch.floor(SampleX - len + (Boxsize * 0.5)).to(torch.uint8)
 
-        return (SampleH - len), (SampleW - len)
+        return Y,X
 
     def CreateMetrics(self):
         total_len = 500 # manually selected to not take too much time.
