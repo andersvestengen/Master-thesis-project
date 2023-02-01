@@ -39,8 +39,8 @@ if __name__ == '__main__':
                                     batch_size = 1, 
                                     shuffle = True,
                                     drop_last=False)
-    #Model = Generator_Unet1()
-    Model = UNet_ResNet34()
+    Model = Generator_Unet1()
+    #Model = UNet_ResNet34()
 
     inference_run = Model_Inference(Model, imloader, Settings)
     inference_run.Inference_run()

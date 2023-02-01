@@ -218,10 +218,8 @@ class Training_Framework():
         
                     #Getting patch coordinates
                     SampleH, SampleW, BoxSize = coordinates[0]
-                    #Changed this from the Boxmult parameter to 1 because I believe the metrics should compare just the defect patch with the original.
-                    #SampleH, SampleW = self.CenteringAlgorithm(1, BoxSize, SampleH, SampleW)
                     L1_loss_region = BoxSize
-                   # from torch training actually changes the channels to: 
+
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                         PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
@@ -243,25 +241,26 @@ class Training_Framework():
                     SSIM_real_values_p[num] = SSIM_m_r_p / 3
                     SSIM_fake_values_p[num] = SSIM_m_f_p / 3
             
-            PSNR_fake_mean = np.mean(PSNR_fake_values)
-            PSNR_real_mean = np.mean(PSNR_real_values)
-            SSIM_fake_mean = np.mean(SSIM_fake_values)
-            SSIM_real_mean = np.mean(SSIM_real_values)
-            PSNR_fake_mean_p = np.mean(PSNR_fake_values_p)
-            PSNR_real_mean_p = np.mean(PSNR_real_values_p)
-            SSIM_fake_mean_p = np.mean(SSIM_fake_values_p)
-            SSIM_real_mean_p = np.mean(SSIM_real_values_p)
+            PSNR_fake_mean = np.ma.masked_invalid(PSNR_fake_values).mean()
+            PSNR_real_mean = np.ma.masked_invalid(PSNR_real_values).mean()
+            SSIM_fake_mean = np.ma.masked_invalid(SSIM_fake_values).mean()
+            SSIM_real_mean = np.ma.masked_invalid(SSIM_real_values).mean()
+            PSNR_fake_mean_p = np.ma.masked_invalid(PSNR_fake_values_p).mean()
+            PSNR_real_mean_p = np.ma.masked_invalid(PSNR_real_values_p).mean()
+            SSIM_fake_mean_p = np.ma.masked_invalid(SSIM_fake_values_p).mean()
+            SSIM_real_mean_p = np.ma.masked_invalid(SSIM_real_values_p).mean()
+
             metloc = self.Modeldir + "/Model_metrics.txt"
             with open(metloc, 'w') as f:
                     f.write("PSNR_real_total:                " + str(PSNR_real_mean) + "    dB" + "\n")
-                    f.write("PSNR_Generated_total:           " + str(PSNR_fake_mean) + "    dB" + "\n")
-                    f.write("PSNR_real_defect_patch:         " + str(PSNR_real_mean_p) + "  dB" + "\n")
-                    f.write("PSNR_Generated_defect_patch:    " + str(PSNR_fake_mean_p) + "  dB" + "\n")
+                    f.write("PSNR_Generated_total:           " + str(PSNR_fake_mean) + "   dB" + "\n")
+                    f.write("PSNR_real_defect_patch:         " + str(PSNR_real_mean_p) + "    dB" + "\n")
+                    f.write("PSNR_Generated_defect_patch:    " + str(PSNR_fake_mean_p) + "    dB" + "\n")
                     f.write("\n")
                     f.write("SSIM_real_total:                " + str(SSIM_real_mean) + "    %" + "\n")
                     f.write("SSIM_Generated_total:           " + str(SSIM_fake_mean) + "    %" + "\n")
-                    f.write("SSIM_real_defect_patch:         " + str(SSIM_real_mean_p) + "  %" + "\n")
-                    f.write("SSIM_Generated_defect_patch:    " + str(SSIM_fake_mean_p) + "  %" + "\n")
+                    f.write("SSIM_real_defect_patch:         " + str(SSIM_real_mean_p) + "   %" + "\n")
+                    f.write("SSIM_Generated_defect_patch:    " + str(SSIM_fake_mean_p) + "    %" + "\n")
             print("Metrics added to Model_metrics.txt file")
 
 
@@ -731,9 +730,8 @@ class Model_Inference():
         
                     #Getting patch coordinates
                     SampleH, SampleW, BoxSize = coordinates[0]
-                    #SampleH, SampleW = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleH, SampleW)
-                    L1_loss_region = BoxSize #* int(self.Settings["Loss_region_Box_mult"])
-                   # from torch training actually changes the channels to: 
+                    L1_loss_region = BoxSize
+
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                         PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
@@ -755,25 +753,26 @@ class Model_Inference():
                     SSIM_real_values_p[num] = SSIM_m_r_p / 3
                     SSIM_fake_values_p[num] = SSIM_m_f_p / 3
             
-            PSNR_fake_mean = np.mean(PSNR_fake_values)
-            PSNR_real_mean = np.mean(PSNR_real_values)
-            SSIM_fake_mean = np.mean(SSIM_fake_values)
-            SSIM_real_mean = np.mean(SSIM_real_values)
-            PSNR_fake_mean_p = np.mean(PSNR_fake_values_p)
-            PSNR_real_mean_p = np.mean(PSNR_real_values_p)
-            SSIM_fake_mean_p = np.mean(SSIM_fake_values_p)
-            SSIM_real_mean_p = np.mean(SSIM_real_values_p)
+            PSNR_fake_mean = np.ma.masked_invalid(PSNR_fake_values).mean()
+            PSNR_real_mean = np.ma.masked_invalid(PSNR_real_values).mean()
+            SSIM_fake_mean = np.ma.masked_invalid(SSIM_fake_values).mean()
+            SSIM_real_mean = np.ma.masked_invalid(SSIM_real_values).mean()
+            PSNR_fake_mean_p = np.ma.masked_invalid(PSNR_fake_values_p).mean()
+            PSNR_real_mean_p = np.ma.masked_invalid(PSNR_real_values_p).mean()
+            SSIM_fake_mean_p = np.ma.masked_invalid(SSIM_fake_values_p).mean()
+            SSIM_real_mean_p = np.ma.masked_invalid(SSIM_real_values_p).mean()
+
             metloc = self.run_dir + "/Model_metrics.txt"
             with open(metloc, 'w') as f:
                     f.write("PSNR_real_total:                " + str(PSNR_real_mean) + "    dB" + "\n")
-                    f.write("PSNR_Generated_total:           " + str(PSNR_fake_mean) + "    dB" + "\n")
-                    f.write("PSNR_real_defect_patch:         " + str(PSNR_real_mean_p) + "  dB" + "\n")
-                    f.write("PSNR_Generated_defect_patch:    " + str(PSNR_fake_mean_p) + "  dB" + "\n")
+                    f.write("PSNR_Generated_total:           " + str(PSNR_fake_mean) + "   dB" + "\n")
+                    f.write("PSNR_real_defect_patch:         " + str(PSNR_real_mean_p) + "    dB" + "\n")
+                    f.write("PSNR_Generated_defect_patch:    " + str(PSNR_fake_mean_p) + "    dB" + "\n")
                     f.write("\n")
                     f.write("SSIM_real_total:                " + str(SSIM_real_mean) + "    %" + "\n")
                     f.write("SSIM_Generated_total:           " + str(SSIM_fake_mean) + "    %" + "\n")
-                    f.write("SSIM_real_defect_patch:         " + str(SSIM_real_mean_p) + "  %" + "\n")
-                    f.write("SSIM_Generated_defect_patch:    " + str(SSIM_fake_mean_p) + "  %" + "\n")
+                    f.write("SSIM_real_defect_patch:         " + str(SSIM_real_mean_p) + "   %" + "\n")
+                    f.write("SSIM_Generated_defect_patch:    " + str(SSIM_fake_mean_p) + "    %" + "\n")
             print("Metrics added to Model_metrics.txt file")
 
 if __name__ == '__main__':
