@@ -16,7 +16,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 60,
+            "epochs"                : 100,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 10,
@@ -25,7 +25,7 @@ Settings = {
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
-            "seed"                  : 993, # random training seed
+            "seed"                  : 172, # random training seed
             "num_workers"           : 14,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V12",
+            "ModelTrainingName"     : "GAN_V13",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
