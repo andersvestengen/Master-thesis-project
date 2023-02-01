@@ -252,15 +252,19 @@ class Training_Framework():
 
             metloc = self.Modeldir + "/Model_metrics.txt"
             with open(metloc, 'w') as f:
-                    f.write("PSNR_real_total:                " + str(PSNR_real_mean) + "    dB" + "\n")
-                    f.write("PSNR_Generated_total:           " + str(PSNR_fake_mean) + "   dB" + "\n")
-                    f.write("PSNR_real_defect_patch:         " + str(PSNR_real_mean_p) + "    dB" + "\n")
-                    f.write("PSNR_Generated_defect_patch:    " + str(PSNR_fake_mean_p) + "    dB" + "\n")
+                    f.write("Full image:\n")
+                    f.write(f"PSNR_real_total:                  {PSNR_real_mean:.2f}    dB \n")
+                    f.write(f"PSNR_Generated_total:             {PSNR_fake_mean:.2f}    dB \n")
+                    f.write("Defect patch:\n")
+                    f.write(f"PSNR_real_defect_patch:           {PSNR_real_mean_p:.2f}    dB \n")
+                    f.write(f"PSNR_Generated_defect_patch:      {PSNR_fake_mean_p:.2f}    dB \n")
                     f.write("\n")
-                    f.write("SSIM_real_total:                " + str(SSIM_real_mean) + "    %" + "\n")
-                    f.write("SSIM_Generated_total:           " + str(SSIM_fake_mean) + "    %" + "\n")
-                    f.write("SSIM_real_defect_patch:         " + str(SSIM_real_mean_p) + "   %" + "\n")
-                    f.write("SSIM_Generated_defect_patch:    " + str(SSIM_fake_mean_p) + "    %" + "\n")
+                    f.write("Full image:\n")
+                    f.write(f"SSIM_real_total:                  {SSIM_real_mean*100:.2f}    % \n")
+                    f.write(f"SSIM_Generated_total:             {SSIM_fake_mean*100:.2f}    % \n")
+                    f.write("Defect patch:\n")
+                    f.write(f"SSIM_real_defect_patch:           {SSIM_real_mean_p*100:.2f}    % \n")
+                    f.write(f"SSIM_Generated_defect_patch:      {SSIM_fake_mean_p*100:.2f}    % \n")
             print("Metrics added to Model_metrics.txt file")
 
 
@@ -764,15 +768,19 @@ class Model_Inference():
 
             metloc = self.run_dir + "/Model_metrics.txt"
             with open(metloc, 'w') as f:
-                    f.write("PSNR_real_total:                " + str(PSNR_real_mean) + "    dB" + "\n")
-                    f.write("PSNR_Generated_total:           " + str(PSNR_fake_mean) + "   dB" + "\n")
-                    f.write("PSNR_real_defect_patch:         " + str(PSNR_real_mean_p) + "    dB" + "\n")
-                    f.write("PSNR_Generated_defect_patch:    " + str(PSNR_fake_mean_p) + "    dB" + "\n")
+                    f.write("Full image:\n")
+                    f.write(f"PSNR_real_total:                  {PSNR_real_mean:.2f}    dB \n")
+                    f.write(f"PSNR_Generated_total:             {PSNR_fake_mean:.2f}    dB \n")
+                    f.write("Defect patch:\n")
+                    f.write(f"PSNR_real_defect_patch:           {PSNR_real_mean_p:.2f}    dB \n")
+                    f.write(f"PSNR_Generated_defect_patch:      {PSNR_fake_mean_p:.2f}    dB \n")
                     f.write("\n")
-                    f.write("SSIM_real_total:                " + str(SSIM_real_mean) + "    %" + "\n")
-                    f.write("SSIM_Generated_total:           " + str(SSIM_fake_mean) + "    %" + "\n")
-                    f.write("SSIM_real_defect_patch:         " + str(SSIM_real_mean_p) + "   %" + "\n")
-                    f.write("SSIM_Generated_defect_patch:    " + str(SSIM_fake_mean_p) + "    %" + "\n")
+                    f.write("Full image:\n")
+                    f.write(f"SSIM_real_total:                  {SSIM_real_mean*100:.2f}    % \n")
+                    f.write(f"SSIM_Generated_total:             {SSIM_fake_mean*100:.2f}    % \n")
+                    f.write("Defect patch:\n")
+                    f.write(f"SSIM_real_defect_patch:           {SSIM_real_mean_p*100:.2f}    % \n")
+                    f.write(f"SSIM_Generated_defect_patch:      {SSIM_fake_mean_p*100:.2f}    % \n")
             print("Metrics added to Model_metrics.txt file")
 
 if __name__ == '__main__':
