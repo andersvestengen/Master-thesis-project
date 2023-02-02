@@ -16,7 +16,7 @@ class GAN_dataset(Dataset):
         - update the Description
     """
 
-    def __init__(self, Settings, transform=None, preprocess=False):
+    def __init__(self, Settings, transform=None, preprocess=True):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
         if not self.Settings["seed"] == None:
@@ -27,7 +27,7 @@ class GAN_dataset(Dataset):
             self.rng = np.random.default_rng()
             self.defect_seed = torch.Generator()
             self.defect_seed.manual_seed()            
-        self.BoxSize = self.Settings["BoxSize"]
+        self.BoxSet = self.Settings["BoxSet"]
         self.device = self.Settings["device"]
         self.imagefolder="/Images/"
         if preprocess:
@@ -96,11 +96,11 @@ class GAN_dataset(Dataset):
                     os.remove(self.preprocess_cache)
                     self.ImagePreprocessor()
 
-    def getSample(self, Total_length):
+    def getSample(self, Total_length, BoxSize):
         """
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
         """
-        margin = self.BoxSize * self.Settings["Loss_region_Box_mult"]
+        margin = BoxSize * self.Settings["Loss_region_Box_mult"]
         sample = int( (Total_length - margin) * self.rng.random() )
 
         if sample < margin: # so there's both lower and upper margin
@@ -151,17 +151,19 @@ class GAN_dataset(Dataset):
         Takes a matrix-converted image and returns a training sample of that image with a randomly degraded [Boxsize * Boxsize] square, and coordinates for loss function.
         
         """
+        BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed)
         ImageY = imageMatrix.size(1)
         ImageX = imageMatrix.size(2)
-        SampleY = self.getSample(ImageY)
-        SampleX = self.getSample(ImageX)
-        intSample = imageMatrix[:,SampleY:SampleY + self.BoxSize, SampleX:SampleX + self.BoxSize] 
+        SampleY = self.getSample(ImageY, BoxSize)
+        SampleX = self.getSample(ImageX, BoxSize)
+        intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
         mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
-        r = torch.full((intSample.size()), 0).float()
+        color = torch.randint(0,2, (1,), generator=self.defect_seed)
+        r = torch.full((intSample.size()), color.item()).float()
         intSample[:,mask] = r[:,mask] 
-        imageMatrix[:,SampleY:SampleY+self.BoxSize,SampleX:SampleX+self.BoxSize] = intSample
+        imageMatrix[:,SampleY:SampleY+BoxSize,SampleX:SampleX+BoxSize] = intSample
 
-        return imageMatrix, [SampleY, SampleX, self.BoxSize]
+        return imageMatrix, [SampleY, SampleX, BoxSize]
     
     def __len__(self):
         if self.preprocess:

@@ -18,10 +18,10 @@ Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 Settings = {
             "epochs"                : 100,
             "batch_size"            : 1,
-            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 10,
-            "BoxSize"               : 10,
-            "Loss_region_Box_mult"  : 3, # A multiplier based on the 'BoxSize' value. Only whole numbers!
+            "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1_loss_weight"        : 50,
+            "BoxSet"               : [3,10], # min/max defect, inclusive
+            "Loss_region_Box_mult"  : 3, # This is now static at 3, do not change!
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V13",
+            "ModelTrainingName"     : "GAN_V14",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -44,9 +44,9 @@ Settings_cli = {
             "epochs"                : 2,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50,
-            "L1_loss_weight"        : 10,
+            "L1_loss_weight"        : 50,
             "Loss_region_Box_mult"  : 3,
-            "BoxSize"               : 10,
+            "BoxSet"                : [3,10],
             "lr"                    : 0.0002,
             "dataset_loc"           : Desk_dir,
             "preprocess_storage"    : None,
@@ -65,7 +65,7 @@ Settings_cli = {
             }
 
 #Remove this for server training
-#Settings = Settings_cli
+Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),
