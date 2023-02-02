@@ -217,18 +217,19 @@ class Training_Framework():
                     SSIM_m_f_p = 0
         
                     #Getting patch coordinates
-                    SampleH, SampleW, BoxSize = coordinates[0]
-                    L1_loss_region = BoxSize
+                    SampleY, SampleX, BoxSize = coordinates[0]
+                    SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
+                    L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
 
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                         PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-                        PSNR_m_r_p += PSNR(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        PSNR_m_f_p +=  PSNR(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        PSNR_m_r_p += PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                        PSNR_m_f_p +=  PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
 
 
-                        SSIM_m_r_p +=  SSIM(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        SSIM_m_f_p +=  SSIM(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_r_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                        SSIM_m_f_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
                         SSIM_m_r +=  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                         SSIM_m_f +=  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
 
@@ -733,18 +734,19 @@ class Model_Inference():
                     SSIM_m_f_p = 0
         
                     #Getting patch coordinates
-                    SampleH, SampleW, BoxSize = coordinates[0]
-                    L1_loss_region = BoxSize
+                    SampleY, SampleX, BoxSize = coordinates[0]
+                    SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
+                    L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
 
                     for channel in range(3):
                         PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                         PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-                        PSNR_m_r_p += PSNR(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        PSNR_m_f_p +=  PSNR(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        PSNR_m_r_p += PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                        PSNR_m_f_p +=  PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
 
 
-                        SSIM_m_r_p +=  SSIM(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], real_A[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
-                        SSIM_m_f_p +=  SSIM(real_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], fake_B[SampleH:SampleH+L1_loss_region,SampleW:SampleW+L1_loss_region,channel], data_range=255)
+                        SSIM_m_r_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                        SSIM_m_f_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
                         SSIM_m_r +=  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                         SSIM_m_f +=  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
 

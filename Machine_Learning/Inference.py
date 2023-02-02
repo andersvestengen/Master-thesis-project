@@ -14,7 +14,7 @@ if __name__ == '__main__':
             "L1__local_loss_weight" : 100,
             "L1_loss_weight"        : 10,
             "Loss_region_Box_mult"  : 3,
-            "BoxSize"               : 10,
+            "BoxSet"                : [3,10],
             "lr"                    : 0.0002,
             "dataset_loc"           : None,
             "preprocess_storage"    : None,

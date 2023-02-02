@@ -16,7 +16,7 @@ Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
 
 Settings = {
-            "epochs"                : 100,
+            "epochs"                : 10,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 50,
@@ -33,15 +33,15 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V14",
+            "ModelTrainingName"     : "GAN_V14_dynamic_defect_validation",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
 # client side Settings
 Settings_cli = {
-            "epochs"                : 2,
+            "epochs"                : 1,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50,
             "L1_loss_weight"        : 50,
