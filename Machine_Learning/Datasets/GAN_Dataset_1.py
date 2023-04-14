@@ -154,8 +154,8 @@ class GAN_dataset(Dataset):
         BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed)
         ImageY = imageMatrix.size(1)
         ImageX = imageMatrix.size(2)
-        SampleY = self.getSample(ImageY, BoxSize)
-        SampleX = self.getSample(ImageX, BoxSize)
+        SampleY = self.getSample(ImageY, self.BoxSet[1])
+        SampleX = self.getSample(ImageX, self.BoxSet[1])
         intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
         mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
         color = torch.randint(0,2, (1,), generator=self.defect_seed)

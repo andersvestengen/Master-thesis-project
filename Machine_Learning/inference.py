@@ -18,7 +18,7 @@ if __name__ == '__main__':
 				"batch_size"            : 1,
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
 				"L1_loss_weight"        : 50,
-				"BoxSet"               : [3,10], # min/max defect, inclusive
+				"BoxSet"               : [3,10], # Low/high Boxsize of the error region. The value represents for length and with.
 				"Loss_region_Box_mult"  : 3, # This is now static at 3, do not change!
 				"lr"                    : 0.0002,
 				"dataset_loc"           : Machine_learning_dir,

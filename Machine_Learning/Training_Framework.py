@@ -639,6 +639,7 @@ class Model_Inference():
         self.modeldir = modeldir
         self.modelname = modelname
         self.run_dir = run_dir
+        self.BoxSet = self.Settings["BoxSet"]
         self.RestoreModel()
         
 
@@ -659,7 +660,7 @@ class Model_Inference():
         loader = tqdm(range(runs))
         with torch.no_grad():
             for run in loader:
-                loader.set_description(f"Running {run}/{runs} images completed")
+                loader.set_description(f"Running {run+1}/{runs} images completed")
                 _ , image, _ = next(iter(self.dataloader))
                 real_A = image.to(self.device)
                 fake_B = self.model(real_A)
@@ -697,7 +698,7 @@ class Model_Inference():
             lbar = tqdm(range(total_images))
             for num in lbar:
                 images, defect_images, coordinates = next(iter(self.dataloader))
-                lbar.set_description(f"Running metrics {num}/{total_images} images")
+                lbar.set_description(f"Running metrics {num+1}/{total_images} images")
 
                 if num > (total_len - 1):
                     break
@@ -722,6 +723,7 @@ class Model_Inference():
     
                 #Getting patch coordinates
                 SampleY, SampleX, BoxSize = coordinates[0]
+                BoxSize = self.BoxSet[1]
                 SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
                 L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
 
