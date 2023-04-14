@@ -630,29 +630,18 @@ class Model_Inference():
         - Modelref: This is the vanilla model class itself, from the Models/ dir
         - Modeldir: This is the location of the trained model.pt file.
     """
-    def __init__(self, modelref, dataloader, Settings, device="cpu"):
+    def __init__(self, modelref, dataloader, Settings, modeldir, modelname, run_dir, device="gpu"):
         self.Settings = Settings
         self.model = modelref
         self.device = device
         self.transform = transforms.ToPILImage()
         self.dataloader = dataloader
-        self.models_loc = "Trained_Models"
-        self.Inference_dir = "Inference_Run"
-        models = os.listdir(self.models_loc)
 
-        for num, model in enumerate(models):
-            choice = "[" + str(num) + "]    " + model
-            print(choice)
-
-        choice  = int(input("please input modelnum: "))
-
-        self.modeldir = self.models_loc + "/"  + models[choice] + "/model.pt"
-        self.modelname = models[choice]
-        self.run_dir = self.Inference_dir + "/" + self.modelname
-        os.makedirs(self.run_dir)
-        os.makedirs(self.run_dir + "/output")
+        self.modeldir = modeldir
+        self.modelname = modelname
+        self.run_dir = run_dir
         self.RestoreModel()
-        #self.Inference_run()
+        
 
 
     def RestoreModel(self):
