@@ -9,8 +9,9 @@ import shutil
 
 if __name__ == '__main__':
 
-		Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
-		Preprocess_dir = "/home/anders/Thesis_image_cache"
+		Machine_learning_dir = "/home/anders/Master-thesis-project/Machine_Learning" # should point to the Machine learning folder of the local directory
+		Preprocess_dir = "/home/anders/Thesis_image_cache" # This can be set wherever you want. This is where the dataloader will create the image cache after converting the training images to tensor files.
+		#No editing of the images happens in the step above, its simply the dataloader converting the original images to tensors so the whole training set can be loaded in RAM before training starts. 
 
 		Settings = {
 				"epochs"                : 5,
@@ -20,10 +21,10 @@ if __name__ == '__main__':
 				"BoxSet"               : [3,10], # min/max defect, inclusive
 				"Loss_region_Box_mult"  : 3, # This is now static at 3, do not change!
 				"lr"                    : 0.0002,
-				"dataset_loc"           : Server_dir,
+				"dataset_loc"           : Machine_learning_dir,
 				"preprocess_storage"    : Preprocess_dir,
 				"seed"                  : 172, # random training seed
-				"num_workers"           : 2,
+				"num_workers"           : 1,
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
