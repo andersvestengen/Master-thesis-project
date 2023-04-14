@@ -11,9 +11,9 @@ from torchvision import transforms
 from time import time
 
 Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
-Desk_dir = "G:/Master-thesis-project/Machine_Learning"
-Server_dir = "/itf-fi-ml/home/andergv/Master-thesis-project/Machine_Learning"
-Preprocess_dir = "/itf-fi-ml/shared/users/andergv"
+#Desk_dir = "G:/Master-thesis-project/Machine_Learning"
+Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
+Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
             "epochs"                : 5,
@@ -26,7 +26,7 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 172, # random training seed
-            "num_workers"           : 14,
+            "num_workers"           : 2,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cuda",
@@ -35,7 +35,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
