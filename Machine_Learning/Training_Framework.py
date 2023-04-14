@@ -9,6 +9,7 @@ from tqdm import tqdm
 from PIL import Image
 from skimage.metrics import peak_signal_noise_ratio as PSNR
 from skimage.metrics import structural_similarity as SSIM
+import time
 
 #---------------- Helper functions ----------------------
 def PIL_concatenate_h(im1, im2):
@@ -169,6 +170,8 @@ class Training_Framework():
 
         self.Analytics_training("setup", 0, 0, 0, 0, 0, 0, 0, 0)
         self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0, 0, 0)
+        
+        self.train_start = time.time()
 
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
@@ -270,6 +273,7 @@ class Training_Framework():
 
 
     def SaveState(self):
+        training_time = int((time.time() - self.train_start) / 60)
         PSettings = list(self.Settings)
         stateloc = self.Modeldir + "/Savestate.txt"
         with open(stateloc, 'w') as f:
@@ -277,6 +281,7 @@ class Training_Framework():
                 f.write(param +  ": " + str(self.Settings[param]) + "\n")
             f.write("Generator model: " + self.Generator.name + "\n")
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
+            f.write("Total training time: " + training_time + "\n")
 
 
     def CenteringAlgorithm(self, boxmult, Boxsize, SampleY, SampleX):
