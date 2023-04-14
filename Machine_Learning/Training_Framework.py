@@ -630,7 +630,7 @@ class Model_Inference():
         - Modelref: This is the vanilla model class itself, from the Models/ dir
         - Modeldir: This is the location of the trained model.pt file.
     """
-    def __init__(self, modelref, dataloader, Settings, modeldir, modelname, run_dir, device="gpu"):
+    def __init__(self, modelref, dataloader, Settings, modeldir, modelname, run_dir, device="cuda"):
         self.Settings = Settings
         self.model = modelref
         self.device = device
@@ -646,6 +646,7 @@ class Model_Inference():
 
     def RestoreModel(self):
         self.model.load_state_dict(torch.load(self.modeldir, map_location=torch.device(self.device)))
+        self.model.to(self.device)
         print("Succesfully loaded", self.modelname, "model")
 
     def FromTorchTraining(self, image):
@@ -661,8 +662,8 @@ class Model_Inference():
             for run in loader:
                 loader.set_description(f"Running {run}/{runs} images completed")
                 _ , image, _ = next(iter(self.dataloader))
-                real_A = image.clone()
-                fake_B = self.model(image.clone())
+                real_A = image.to(self.device)
+                fake_B = self.model(real_A)
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
                 PIL_concatenate_h(co, im).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
@@ -684,7 +685,7 @@ class Model_Inference():
     def CreateMetrics(self):
         total_len = 500 # manually selected to not take too much time.
         with torch.no_grad():
-            total_images = len(self.dataloader)
+            total_images = total_len
             if total_images > total_len:
                 total_images = total_len
             PSNR_real_values = np.zeros((total_images))
