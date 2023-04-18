@@ -16,24 +16,24 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
-            "epochs"                : 5,
+            "epochs"                : 10,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 50,
             "BoxSet"               : [3,10], # min/max defect, inclusive
-            "Loss_region_Box_mult"  : 3, # This is now static at 3, do not change!
+            "Loss_region_Box_mult"  : 4, # This is now static at 3, do not change!
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 172, # random training seed
-            "num_workers"           : 2,
+            "num_workers"           : 1,
             "shuffle"               : True,
             "Datasplit"             : 0.7,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
+            "ModelTrainingName"     : "GAN_V14_5",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True

@@ -220,8 +220,12 @@ class Training_Framework():
     
                 #Getting patch coordinates
                 SampleY, SampleX, BoxSize = coordinates[0]
-                SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
-                L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
+                #BoxSize = self.BoxSet[1] * int(self.Settings["Loss_region_Box_mult"])
+                if BoxSize < 7:
+                    L1_loss_region = 7
+                else:
+                    L1_loss_region = BoxSize
+                SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
 
                 for channel in range(3):
                     PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
@@ -734,8 +738,6 @@ class Model_Inference():
                 else:
                     L1_loss_region = BoxSize
                 SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
-                print(coordinates[0])
-                print(SampleY, SampleX, L1_loss_region)
                 for channel in range(3):
                     PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                     PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
