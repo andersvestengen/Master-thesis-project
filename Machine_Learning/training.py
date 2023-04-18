@@ -39,33 +39,6 @@ Settings = {
             "Pin_memory"            : True
             }
 
-# client side Settings
-Settings_cli = {
-            "epochs"                : 1,
-            "batch_size"            : 1,
-            "L1__local_loss_weight" : 50,
-            "L1_loss_weight"        : 50,
-            "Loss_region_Box_mult"  : 3,
-            "BoxSet"                : [3,10],
-            "lr"                    : 0.0002,
-            "dataset_loc"           : Desk_dir,
-            "preprocess_storage"    : None,
-            "seed"                  : 4532, # random training seed
-            "num_workers"           : 0,
-            "shuffle"               : True,
-            "Datasplit"             : 0.7,
-            "device"                : "cpu",
-            "ImageHW"               : 256,
-            "RestoreModel"          : False,
-            #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "LOCAL_TEST_DELETE_ME",
-            "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 20,
-            "Pin_memory"            : False
-            }
-
-#Remove this for server training
-#Settings = Settings_cli
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(),

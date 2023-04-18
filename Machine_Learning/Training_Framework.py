@@ -155,8 +155,8 @@ class Training_Framework():
             self.workingdir = self.Settings["dataset_loc"]
 
         #Create the directory of the model (Look back at this for batch training.)
-        time = str(datetime.now())
-        stamp = time[:-16] + "_" + time[11:-7].replace(":", "-")
+        times = str(datetime.now())
+        stamp = times[:-16] + "_" + times[11:-7].replace(":", "-")
         if self.Settings["ModelTrainingName"] is not None:
             self.Modeldir = self.workingdir +  "/Trained_Models/" + self.Settings["ModelTrainingName"] + " (" + stamp +")"
         else:
@@ -285,9 +285,9 @@ class Training_Framework():
                 f.write(param +  ": " + str(self.Settings[param]) + "\n")
             f.write("Generator model: " + self.Generator.name + "\n")
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
-            f.write("Total training time: " + training_time + "\n")
+            f.write("Total training time: " + str(training_time) + " minutes \n")
 
-    def CenteringAlgorithm(BoxSize, BoundingBox, Y, X):
+    def CenteringAlgorithm(self, BoxSize, BoundingBox, Y, X):
         """
         Returns a larger bounding box centered on the defect block
         """
