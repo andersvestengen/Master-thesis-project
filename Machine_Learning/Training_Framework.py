@@ -277,7 +277,9 @@ class Training_Framework():
 
 
     def SaveState(self):
-        training_time = int((time.time() - self.train_start) / 60)
+        training_time_seconds = time.time() - self.train_start
+        minutes, training_time_seconds = divmod(training_time_seconds, 60)
+        hours, minutes = divmod(minutes, 60)
         PSettings = list(self.Settings)
         stateloc = self.Modeldir + "/Savestate.txt"
         with open(stateloc, 'w') as f:
@@ -285,7 +287,7 @@ class Training_Framework():
                 f.write(param +  ": " + str(self.Settings[param]) + "\n")
             f.write("Generator model: " + self.Generator.name + "\n")
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
-            f.write("Total training time: " + str(training_time) + " minutes \n")
+            f.write("Total training time: " + str(hours) + " hours " + str(minutes) + " minutes \n")
 
     def CenteringAlgorithm(self, BoxSize, BoundingBox, Y, X):
         """
