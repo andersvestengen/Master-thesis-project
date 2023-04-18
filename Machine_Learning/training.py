@@ -33,7 +33,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V14_10",
+            "ModelTrainingName"     : "GAN_V14_12_normal_0.1",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -45,10 +45,18 @@ training_transforms = transforms.Compose([
     transforms.RandomVerticalFlip(),
 ])
 
+# Old weight inits
+"""
 def weights_init(m): # from the pix2pix paper
     classname = m.__class__.__name__
     if classname.find("Conv") != -1:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
+        torch.nn.init.normal_(m.weight.data, 0.0, 0.2)
+"""
+
+def weights_init(m): # from the pix2pix paper
+    classname = m.__class__.__name__
+    if classname.find("Conv") != -1:
+        torch.nn.init.kaiming_uniform_(m.weight.data, mode="fan_in", nonlinearity="relu")
 
 if __name__ == '__main__':
     # Setup GPU (or not)
