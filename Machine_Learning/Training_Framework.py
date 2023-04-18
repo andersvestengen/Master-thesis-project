@@ -283,16 +283,16 @@ class Training_Framework():
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
             f.write("Total training time: " + training_time + "\n")
 
-
-    def CenteringAlgorithm(self, boxmult, Boxsize, SampleY, SampleX):
+    def CenteringAlgorithm(BoxSize, BoundingBox, Y, X):
         """
-        Returns new H W coordinates centered on the defect block
+        Returns a larger bounding box centered on the defect block
         """
-        len = (Boxsize * boxmult * 0.5)
-        Y  = torch.floor(SampleY - len + (Boxsize * 0.5)).to(torch.uint8)
-        X = torch.floor(SampleX - len + (Boxsize * 0.5)).to(torch.uint8)
 
-        return Y,X
+        x = torch.round(X + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
+        y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
+
+        return y,x
+
         
 
     def Generator_updater(self, val=False):       
@@ -307,8 +307,8 @@ class Training_Framework():
         
         #Pixelwise loss
         SampleY, SampleX, BoxSize = self.defect_coordinates[0]
-        SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
         L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
+        SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
         loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
         local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
         
@@ -677,15 +677,15 @@ class Model_Inference():
         print("All results saved to:")
         print(self.run_dir)
 
-    def CenteringAlgorithm(self, boxmult, Boxsize, SampleY, SampleX):
+    def CenteringAlgorithm(self, BoxSize, BoundingBox, Y, X):
         """
-        Returns new H W coordinates centered on the defect block
+        Returns a larger bounding box centered on the defect block
         """
-        len = (Boxsize * boxmult * 0.5)
-        Y  = torch.floor(SampleY - len + (Boxsize * 0.5)).to(torch.uint8)
-        X = torch.floor(SampleX - len + (Boxsize * 0.5)).to(torch.uint8)
 
-        return Y,X
+        x = torch.round(X + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
+        y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
+
+        return y,x
 
     def CreateMetrics(self):
         total_len = 500 # manually selected to not take too much time.
@@ -728,10 +728,14 @@ class Model_Inference():
     
                 #Getting patch coordinates
                 SampleY, SampleX, BoxSize = coordinates[0]
-                BoxSize = self.BoxSet[1]
-                SampleY, SampleX = self.CenteringAlgorithm(int(self.Settings["Loss_region_Box_mult"]), BoxSize, SampleY, SampleX)
-                L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
-
+                #BoxSize = self.BoxSet[1] * int(self.Settings["Loss_region_Box_mult"])
+                if BoxSize < 7:
+                    L1_loss_region = 7
+                else:
+                    L1_loss_region = BoxSize
+                SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
+                print(coordinates[0])
+                print(SampleY, SampleX, L1_loss_region)
                 for channel in range(3):
                     PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                     PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)

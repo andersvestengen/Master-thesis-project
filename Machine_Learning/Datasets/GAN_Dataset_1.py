@@ -95,18 +95,15 @@ class GAN_dataset(Dataset):
                     self.data = 0
                     os.remove(self.preprocess_cache)
                     self.ImagePreprocessor()
-
+        
     def getSample(self, Total_length, BoxSize):
         """
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
         """
         margin = BoxSize * self.Settings["Loss_region_Box_mult"]
-        sample = int( (Total_length - margin) * self.rng.random() )
+        sample = ((Total_length - margin) * torch.rand(1, generator=self.defect_seed)).to(torch.uint8).clamp(margin)
 
-        if sample < margin: # so there's both lower and upper margin
-            return int(margin)
-        else:
-            return sample
+        return sample
 
     def ImagePreprocessor(self):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
