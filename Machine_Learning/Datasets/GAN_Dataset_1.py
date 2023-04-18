@@ -152,8 +152,8 @@ class GAN_dataset(Dataset):
         
         """
         BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed)
-        ImageY = imageMatrix.size(1)
-        ImageX = imageMatrix.size(2)
+        ImageY = imageMatrix.size(1) # Horizontal
+        ImageX = imageMatrix.size(2) # Vertical
         SampleY = self.getSample(ImageY, self.BoxSet[1])
         SampleX = self.getSample(ImageX, self.BoxSet[1])
         intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
@@ -187,7 +187,7 @@ class GAN_dataset(Dataset):
 
 
     def load_image(self, path):
-        #imread returns Y,X,C
+        #imread returns X,Y,C
         image = self.CenterCrop(cv2.imread(str(path)))
         return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)/255
 
