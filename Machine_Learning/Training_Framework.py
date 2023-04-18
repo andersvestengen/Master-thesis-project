@@ -194,7 +194,7 @@ class Training_Framework():
             SSIM_fake_values_p = np.zeros((total_images))
             lbar = tqdm(range(total_images))
             for num in lbar:
-                images, defect_images, coordinates = next(iter(self.dataloader))
+                images, defect_images, coordinates = next(iter(metric_loader))
                 lbar.set_description(f"Running metrics {num}/{total_images} images")
 
                 if num > (total_len - 1):
