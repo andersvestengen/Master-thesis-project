@@ -45,17 +45,16 @@ training_transforms = transforms.Compose([
     transforms.RandomVerticalFlip(),
 ])
 
-"""
-#For future reference
+
 #Try with instancenorm affine, to enable learnable parameters
 
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        nn.init.normal_(m.weight.data, 0.0, 0.02)
+        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
     elif classname.find('BatchNorm') != -1:
-        nn.init.normal_(m.weight.data, 1.0, 0.02)
-        nn.init.constant_(m.bias.data, 0)
+        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
+        torch.nn.init.constant_(m.bias.data, 0)
 """
 
 def weights_init(m):
@@ -69,7 +68,7 @@ def weights_init(m):
         torch.nn.init.xavier_uniform_(m.weight.data)
         if m.bias is not None:
             m.bias.data.fill_(0)
-
+"""
 
 
 
