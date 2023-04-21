@@ -176,7 +176,7 @@ class Training_Framework():
         self.train_start = time.time()
 
     def Save_Model(self, epoch):
-            if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
+            if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])) or (self.Generator_pixel_loss_validation[epoch] < np.min(self.Generator_pixel_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
     def SaveState(self):
@@ -381,8 +381,9 @@ class Training_Framework():
             self.Save_Analytics()
             self.Create_graphs()
             self.SaveState()
-            Metrics = Model_Inference(self.Generator, val_loader, self.Settings, self.Modeldir, training=True)
-            Metrics.CreateMetrics()
+            #Something fishy about metric calc at the end of training. Using the inference.py script until further notice
+            #Metrics = Model_Inference(self.Generator, val_loader, self.Settings, self.Modeldir, training=True)
+            #Metrics.CreateMetrics()
             #self.CreateMetrics(metric_loader) # Hook this up to the metric loader from the inference class instead
             if self.transmit: # Send finished model to server storage
                 print("Sending files")

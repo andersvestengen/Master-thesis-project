@@ -33,9 +33,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "From_Metrics_check",
+            "ModelTrainingName"     : "GAN_14_23_new_normal_weight_Instance_affine",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 5000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -52,7 +52,10 @@ def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
+        if m.bias is not None:
+            print("conv has bias!")
+            torch.nn.init.constant_(m.bias.data, 0)
+    elif classname.find('InstanceNorm2d') != -1:
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0)
 """
