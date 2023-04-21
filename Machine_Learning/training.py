@@ -35,7 +35,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "GAN_V14_22_BoxSize_localloss",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 5000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 4000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -122,12 +122,6 @@ if __name__ == '__main__':
                             drop_last       = Settings["Drop_incomplete_batch"],
                             pin_memory      = Settings["Pin_memory"])
     
-    metric_loader = DataLoader(val_set,
-                            num_workers     = Settings["num_workers"],
-                            batch_size      = 1, 
-                            shuffle         = Settings["shuffle"],
-                            drop_last       = Settings["Drop_incomplete_batch"],
-                            pin_memory      = Settings["Pin_memory"])
     # Loss functions
     GAN_loss        = torch.nn.MSELoss().to(Settings["device"]) # GAN loss for GEN and DIS
     pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
@@ -137,4 +131,4 @@ if __name__ == '__main__':
 
     #Training
     trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, Discriminator)
-    trainer.Trainer(train_loader, val_loader, metric_loader)
+    trainer.Trainer(train_loader, val_loader)

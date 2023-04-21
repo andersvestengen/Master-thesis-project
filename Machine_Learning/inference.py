@@ -79,7 +79,7 @@ if __name__ == '__main__':
 						shutil.rmtree(run_dir)
 						os.makedirs(run_dir)
 						os.makedirs(run_dir + "/output")
-						inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname, run_dir)
+						inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=modelname, run_dir=run_dir)
 						inference_run.Inference_run()
 						inference_run.CreateMetrics()
 						break
@@ -88,6 +88,6 @@ if __name__ == '__main__':
 		else:
 			os.makedirs(run_dir)
 			os.makedirs(run_dir + "/output")
-			inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname, run_dir)
+			inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=modelname, run_dir=run_dir)
 			inference_run.Inference_run()
 			inference_run.CreateMetrics()

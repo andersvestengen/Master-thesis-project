@@ -142,6 +142,7 @@ class Training_Framework():
         self.Discriminator_loss = 0
         self.patch = (1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4)
         self.transmit = False # No reason to do file transfer in the future
+
         """
          decision = input("would you like to send model to server? [y/n]: ")
 
@@ -177,105 +178,6 @@ class Training_Framework():
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
-
-    def CreateMetrics(self, metric_loader):
-        total_len = 500 # manually selected to not take too much time.
-        with torch.no_grad():
-            total_images = len(metric_loader)
-            if total_images > total_len:
-                total_images = total_len
-            PSNR_real_values = np.zeros((total_images))
-            PSNR_fake_values = np.zeros((total_images))
-            SSIM_real_values = np.zeros((total_images))
-            SSIM_fake_values = np.zeros((total_images))
-
-            PSNR_real_values_p = np.zeros((total_images))
-            PSNR_fake_values_p = np.zeros((total_images))
-            SSIM_real_values_p = np.zeros((total_images))
-            SSIM_fake_values_p = np.zeros((total_images))
-            lbar = tqdm(range(total_images))
-            for num in lbar:
-                images, defect_images, coordinates = next(iter(metric_loader))
-                lbar.set_description(f"Running metrics {num}/{total_images} images")
-
-                if num > (total_len - 1):
-                    break
-                
-                real_A = defect_images.to(self.device) #Defect
-                real_B = images.to(self.device) #Target 
-                fake_B = self.Generator(real_A.clone())
-
-                real_A = self.FromTorchTraining(real_A.squeeze(0))
-                real_B = self.FromTorchTraining(real_B.squeeze(0))
-                fake_B = self.FromTorchTraining(fake_B.squeeze(0))
-
-                #Need to calculate for each channel to H,W,Channels
-                PSNR_m_r = 0
-                PSNR_m_f = 0
-                SSIM_m_r = 0
-                SSIM_m_f = 0
-                PSNR_m_r_p = 0
-                PSNR_m_f_p = 0
-                SSIM_m_r_p = 0
-                SSIM_m_f_p = 0
-    
-                #Getting patch coordinates
-                SampleY, SampleX, BoxSize = coordinates[0]
-                #BoxSize = self.BoxSet[1] * int(self.Settings["Loss_region_Box_mult"])
-                if BoxSize < 7:
-                    L1_loss_region = 7
-                else:
-                    L1_loss_region = BoxSize
-                SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
-
-                for channel in range(3):
-                    PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
-                    PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-                    PSNR_m_r_p += PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    PSNR_m_f_p +=  PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-
-
-                    SSIM_m_r_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    SSIM_m_f_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    SSIM_m_r +=  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
-                    SSIM_m_f +=  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-
-                PSNR_real_values[num] = PSNR_m_r / 3
-                PSNR_fake_values[num] = PSNR_m_f / 3
-                SSIM_real_values[num] = SSIM_m_r / 3
-                SSIM_fake_values[num] = SSIM_m_f / 3
-                PSNR_real_values_p[num] = PSNR_m_r_p / 3
-                PSNR_fake_values_p[num] = PSNR_m_f_p / 3
-                SSIM_real_values_p[num] = SSIM_m_r_p / 3
-                SSIM_fake_values_p[num] = SSIM_m_f_p / 3
-            
-            PSNR_fake_mean = np.ma.masked_invalid(PSNR_fake_values).mean()
-            PSNR_real_mean = np.ma.masked_invalid(PSNR_real_values).mean()
-            SSIM_fake_mean = np.ma.masked_invalid(SSIM_fake_values).mean()
-            SSIM_real_mean = np.ma.masked_invalid(SSIM_real_values).mean()
-            PSNR_fake_mean_p = np.ma.masked_invalid(PSNR_fake_values_p).mean()
-            PSNR_real_mean_p = np.ma.masked_invalid(PSNR_real_values_p).mean()
-            SSIM_fake_mean_p = np.ma.masked_invalid(SSIM_fake_values_p).mean()
-            SSIM_real_mean_p = np.ma.masked_invalid(SSIM_real_values_p).mean()
-
-            metloc = self.Modeldir + "/Model_metrics.txt"
-            with open(metloc, 'w') as f:
-                    f.write("Full image:\n")
-                    f.write(f"PSNR_real_total:                  {PSNR_real_mean:.2f}    dB \n")
-                    f.write(f"PSNR_Generated_total:             {PSNR_fake_mean:.2f}    dB \n")
-                    f.write("Defect patch:\n")
-                    f.write(f"PSNR_real_defect_patch:           {PSNR_real_mean_p:.2f}    dB \n")
-                    f.write(f"PSNR_Generated_defect_patch:      {PSNR_fake_mean_p:.2f}    dB \n")
-                    f.write("\n")
-                    f.write("Full image:\n")
-                    f.write(f"SSIM_real_total:                  {SSIM_real_mean*100:.2f}    % \n")
-                    f.write(f"SSIM_Generated_total:             {SSIM_fake_mean*100:.2f}    % \n")
-                    f.write("Defect patch:\n")
-                    f.write(f"SSIM_real_defect_patch:           {SSIM_real_mean_p*100:.2f}    % \n")
-                    f.write(f"SSIM_Generated_defect_patch:      {SSIM_fake_mean_p*100:.2f}    % \n")
-            print("Metrics added to Model_metrics.txt file")
-
-
 
     def SaveState(self):
         training_time_seconds = time.time() - self.train_start
@@ -427,7 +329,7 @@ class Training_Framework():
 
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real, Discrim_acc_fake, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, len(val_loader))
 
-    def Trainer(self, train_loader, val_loader, metric_loader):
+    def Trainer(self, train_loader, val_loader):
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
@@ -479,6 +381,8 @@ class Training_Framework():
             self.Save_Analytics()
             self.Create_graphs()
             self.SaveState()
+            Metrics = Model_Inference(self.Generator, val_loader, self.Settings, self.Modeldir, training=True)
+            Metrics.CreateMetrics()
             #self.CreateMetrics(metric_loader) # Hook this up to the metric loader from the inference class instead
             if self.transmit: # Send finished model to server storage
                 print("Sending files")
@@ -641,18 +545,19 @@ class Model_Inference():
         - Modelref: This is the vanilla model class itself, from the Models/ dir
         - Modeldir: This is the location of the trained model.pt file.
     """
-    def __init__(self, modelref, dataloader, Settings, modeldir, modelname, run_dir, device="cuda"):
+    def __init__(self, modelref, dataloader, Settings, modeldir, modelname=None, run_dir=None, device="cuda", training=False):
         self.Settings = Settings
         self.model = modelref
         self.device = device
         self.transform = transforms.ToPILImage()
         self.dataloader = dataloader
-
+        self.training = training
         self.modeldir = modeldir
         self.modelname = modelname
         self.run_dir = run_dir
         self.BoxSet = self.Settings["BoxSet"]
-        self.RestoreModel()
+        if not training:
+            self.RestoreModel()
         
 
 
@@ -772,7 +677,10 @@ class Model_Inference():
             SSIM_fake_mean_p = np.ma.masked_invalid(SSIM_fake_values_p).mean()
             SSIM_real_mean_p = np.ma.masked_invalid(SSIM_real_values_p).mean()
 
-            metloc = self.run_dir + "/Model_metrics.txt"
+            if not self.training:
+                metloc = self.run_dir + "/Model_metrics.txt"
+            else:
+                metloc = self.modeldir + "/Model_metrics.txt"
             with open(metloc, 'w') as f:
                     f.write("Full image:\n")
                     f.write(f"PSNR_real_total:                  {PSNR_real_mean:.2f}    dB \n")
