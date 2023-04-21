@@ -18,24 +18,24 @@ Preprocess_dir = "/home/anders/Thesis_image_cache"
 Settings = {
             "epochs"                : 10,
             "batch_size"            : 1,
-            "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 50,
+            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1_loss_weight"        : 100,
             "BoxSet"               : [3,10], # min/max defect, inclusive
-            "Loss_region_Box_mult"  : 3, # How many multiples of the defect box would you like the loss to account for?
+            "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 172, # random training seed
             "num_workers"           : 1,
             "shuffle"               : True,
-            "Datasplit"             : 0.7,
+            "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V14_12_normal_0.1",
+            "ModelTrainingName"     : "GAN_V14_22_BoxSize_localloss",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 5000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -45,19 +45,33 @@ training_transforms = transforms.Compose([
     transforms.RandomVerticalFlip(),
 ])
 
-# Old weight inits
+"""
+#For future reference
+#Try with instancenorm affine, to enable learnable parameters
 
-def weights_init(m): # from the pix2pix paper
+def weights_init(m):
     classname = m.__class__.__name__
-    if classname.find("Conv") != -1:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.1)
+    if classname.find('Conv') != -1:
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+    elif classname.find('BatchNorm') != -1:
+        nn.init.normal_(m.weight.data, 1.0, 0.02)
+        nn.init.constant_(m.bias.data, 0)
 """
 
-def weights_init(m): # from the pix2pix paper
-    classname = m.__class__.__name__
-    if classname.find("Conv") != -1:
-        torch.nn.init.kaiming_uniform_(m.weight.data, mode="fan_in", nonlinearity="relu")
-"""
+def weights_init(m):
+    if isinstance(m, torch.nn.Conv2d):
+        #torch.nn.init.normal_(m.weight.data, 0.0, 0.15)
+        torch.nn.init.xavier_uniform_(m.weight.data)
+        if m.bias is not None:
+            m.bias.data.fill_(0)
+    if isinstance(m, torch.nn.ConvTranspose2d):
+        #torch.nn.init.normal_(m.weight.data, 0.0, 0.15)
+        torch.nn.init.xavier_uniform_(m.weight.data)
+        if m.bias is not None:
+            m.bias.data.fill_(0)
+
+
+
 
 if __name__ == '__main__':
     # Setup GPU (or not)

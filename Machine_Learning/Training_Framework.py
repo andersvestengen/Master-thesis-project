@@ -141,13 +141,14 @@ class Training_Framework():
         self.Generator_loss = 0
         self.Discriminator_loss = 0
         self.patch = (1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4)
-        self.transmit = False
-        decision = input("would you like to send model to server? [y/n]: ")
+        self.transmit = False # No reason to do file transfer in the future
+        """
+         decision = input("would you like to send model to server? [y/n]: ")
 
         if decision == "y":
             self.transmit = True
-            self.transmitter = FileSender()
-
+            self.transmitter = FileSender()       
+        """
         # Set the working Directory
         if not self.Settings["dataset_loc"]:
             self.workingdir = os.getcwd()
@@ -313,7 +314,7 @@ class Training_Framework():
         
         #Pixelwise loss
         SampleY, SampleX, BoxSize = self.defect_coordinates[0]
-        L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"])
+        L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"]) # trying standard 30x30 loss box
         SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
         loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
         local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
@@ -478,7 +479,7 @@ class Training_Framework():
             self.Save_Analytics()
             self.Create_graphs()
             self.SaveState()
-            self.CreateMetrics(metric_loader)
+            #self.CreateMetrics(metric_loader) # Hook this up to the metric loader from the inference class instead
             if self.transmit: # Send finished model to server storage
                 print("Sending files")
                 self.transmitter.send(self.Modeldir)
@@ -696,6 +697,7 @@ class Model_Inference():
     def CreateMetrics(self):
         total_len = 500 # manually selected to not take too much time.
         with torch.no_grad():
+            self.model.eval()
             total_images = total_len
             PSNR_real_values = np.zeros((total_images))
             PSNR_fake_values = np.zeros((total_images))
