@@ -33,9 +33,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_V14_22_BoxSize_localloss",
+            "ModelTrainingName"     : "From_Metrics_check",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 4000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 5000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
