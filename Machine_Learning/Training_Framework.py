@@ -288,7 +288,7 @@ class Training_Framework():
             pixelloss = torch.zeros(self.Settings["epochs"])
             Discrim_acc_real_raw = torch.zeros(self.Settings["epochs"])
             Discrim_acc_fake_raw = torch.zeros(self.Settings["epochs"])
-            
+
             if self.Settings["batch_size"] == 1:
                 val_unit = "image(s)"
             else:
@@ -583,15 +583,15 @@ class Model_Inference():
         with torch.no_grad():
             self.model.eval()
             total_images = total_len
-            PSNR_real_values = np.zeros((total_images))
-            PSNR_fake_values = np.zeros((total_images))
-            SSIM_real_values = np.zeros((total_images))
-            SSIM_fake_values = np.zeros((total_images))
+            PSNR_real_values = np.zeros((total_images, 3))
+            PSNR_fake_values = np.zeros((total_images, 3))
+            SSIM_real_values = np.zeros((total_images, 3))
+            SSIM_fake_values = np.zeros((total_images, 3))
 
-            PSNR_real_values_p = np.zeros((total_images))
-            PSNR_fake_values_p = np.zeros((total_images))
-            SSIM_real_values_p = np.zeros((total_images))
-            SSIM_fake_values_p = np.zeros((total_images))
+            PSNR_real_values_p = np.zeros((total_images, 3))
+            PSNR_fake_values_p = np.zeros((total_images, 3))
+            SSIM_real_values_p = np.zeros((total_images, 3))
+            SSIM_fake_values_p = np.zeros((total_images, 3))
             lbar = tqdm(range(total_images))
             for num in lbar:
                 images, defect_images, coordinates = next(iter(self.dataloader))
@@ -607,16 +607,6 @@ class Model_Inference():
                 real_A = self.FromTorchTraining(real_A.squeeze(0))
                 real_B = self.FromTorchTraining(real_B.squeeze(0))
                 fake_B = self.FromTorchTraining(fake_B.squeeze(0))
-
-                #Need to calculate for each channel to H,W,Channels
-                PSNR_m_r = 0
-                PSNR_m_f = 0
-                SSIM_m_r = 0
-                SSIM_m_f = 0
-                PSNR_m_r_p = 0
-                PSNR_m_f_p = 0
-                SSIM_m_r_p = 0
-                SSIM_m_f_p = 0
     
                 #Getting patch coordinates
                 SampleY, SampleX, BoxSize = coordinates[0]
@@ -627,34 +617,26 @@ class Model_Inference():
                     L1_loss_region = BoxSize
                 SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
                 for channel in range(3):
-                    PSNR_m_r +=  PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
-                    PSNR_m_f +=  PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-                    PSNR_m_r_p += PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    PSNR_m_f_p +=  PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                    PSNR_real_values[num, channel]       = PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
+                    PSNR_fake_values[num, channel]       = PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
+                    PSNR_real_values_p[num, channel]     = PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                    PSNR_fake_values_p[num, channel]     = PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
 
 
-                    SSIM_m_r_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    SSIM_m_f_p +=  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    SSIM_m_r +=  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
-                    SSIM_m_f +=  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
+                    SSIM_real_values_p[num, channel]     =  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                    SSIM_fake_values_p[num, channel]     =  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                    SSIM_real_values[num, channel]       =  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
+                    SSIM_fake_values[num, channel]       =  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
 
-                PSNR_real_values[num] = PSNR_m_r / 3
-                PSNR_fake_values[num] = PSNR_m_f / 3
-                SSIM_real_values[num] = SSIM_m_r / 3
-                SSIM_fake_values[num] = SSIM_m_f / 3
-                PSNR_real_values_p[num] = PSNR_m_r_p / 3
-                PSNR_fake_values_p[num] = PSNR_m_f_p / 3
-                SSIM_real_values_p[num] = SSIM_m_r_p / 3
-                SSIM_fake_values_p[num] = SSIM_m_f_p / 3
             
-            PSNR_fake_mean = np.ma.masked_invalid(PSNR_fake_values).mean()
-            PSNR_real_mean = np.ma.masked_invalid(PSNR_real_values).mean()
-            SSIM_fake_mean = np.ma.masked_invalid(SSIM_fake_values).mean()
-            SSIM_real_mean = np.ma.masked_invalid(SSIM_real_values).mean()
-            PSNR_fake_mean_p = np.ma.masked_invalid(PSNR_fake_values_p).mean()
-            PSNR_real_mean_p = np.ma.masked_invalid(PSNR_real_values_p).mean()
-            SSIM_fake_mean_p = np.ma.masked_invalid(SSIM_fake_values_p).mean()
-            SSIM_real_mean_p = np.ma.masked_invalid(SSIM_real_values_p).mean()
+            PSNR_fake_mean = np.nanmean(PSNR_fake_values, axis=[1,0])
+            PSNR_real_mean = np.nanmean(PSNR_real_values, axis=[1,0])
+            SSIM_fake_mean = np.nanmean(SSIM_fake_values, axis=[1,0])
+            SSIM_real_mean = np.nanmean(SSIM_real_values, axis=[1,0])
+            PSNR_fake_mean_p = np.nanmean(PSNR_fake_values_p, axis=[1,0])
+            PSNR_real_mean_p = np.nanmean(PSNR_real_values_p, axis=[1,0])
+            SSIM_fake_mean_p = np.nanmean(SSIM_fake_values_p, axis=[1,0])
+            SSIM_real_mean_p = np.nanmean(SSIM_real_values_p, axis=[1,0])
 
             if not self.training:
                 metloc = self.run_dir + "/Model_metrics.txt"
