@@ -170,8 +170,8 @@ class Training_Framework():
         self.modeltraining_output               = self.Modeldir + "/training_output"
         os.makedirs(self.modeltraining_output)
 
-        self.Analytics_training("setup", 0, 0, 0, 0, 0, 0, 0, 0)
-        self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0, 0, 0)
+        self.Analytics_training("setup", 0, 0, 0, 0, 0)
+        self.Analytics_validation("setup", 0, 0, 0, 0, 0)
         
         self.train_start = time.time()
 
@@ -629,14 +629,14 @@ class Model_Inference():
                     SSIM_fake_values[num, channel]       =  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
 
             
-            PSNR_fake_mean = np.nanmean(PSNR_fake_values, axis=[1,0])
-            PSNR_real_mean = np.nanmean(PSNR_real_values, axis=[1,0])
-            SSIM_fake_mean = np.nanmean(SSIM_fake_values, axis=[1,0])
-            SSIM_real_mean = np.nanmean(SSIM_real_values, axis=[1,0])
-            PSNR_fake_mean_p = np.nanmean(PSNR_fake_values_p, axis=[1,0])
-            PSNR_real_mean_p = np.nanmean(PSNR_real_values_p, axis=[1,0])
-            SSIM_fake_mean_p = np.nanmean(SSIM_fake_values_p, axis=[1,0])
-            SSIM_real_mean_p = np.nanmean(SSIM_real_values_p, axis=[1,0])
+            PSNR_fake_mean = np.ma.masked_invalid(PSNR_fake_values).mean(axis=(1,0))
+            PSNR_real_mean = np.ma.masked_invalid(PSNR_real_values).mean(axis=(1,0))
+            SSIM_fake_mean = np.ma.masked_invalid(SSIM_fake_values).mean(axis=(1,0))
+            SSIM_real_mean = np.ma.masked_invalid(SSIM_real_values).mean(axis=(1,0))
+            PSNR_fake_mean_p = np.ma.masked_invalid(PSNR_fake_values_p).mean(axis=(1,0))
+            PSNR_real_mean_p = np.ma.masked_invalid(PSNR_real_values_p).mean(axis=(1,0))
+            SSIM_fake_mean_p = np.ma.masked_invalid(SSIM_fake_values_p).mean(axis=(1,0))
+            SSIM_real_mean_p = np.ma.masked_invalid(SSIM_real_values_p).mean(axis=(1,0))
 
             if not self.training:
                 metloc = self.run_dir + "/Model_metrics.txt"
