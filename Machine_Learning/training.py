@@ -16,10 +16,10 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
-            "epochs"                : 1,
+            "epochs"                : 10,
             "batch_size"            : 1,
-            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 100,
+            "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1_loss_weight"        : 50,
             "BoxSet"               : [3,10], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "lr"                    : 0.0002,
@@ -33,9 +33,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "CUDA_optim_test_DELETE_ME",
+            "ModelTrainingName"     : "GAN_14_Normal_Initialization_mean_0_std_0.02",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 500, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -51,30 +51,10 @@ training_transforms = transforms.Compose([
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        torch.nn.init.kaiming_normal_(m.weight.data)
+        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
         if m.bias is not None:
             print("conv has bias!")
             torch.nn.init.constant_(m.bias.data, 0)
-
-    #InstanceNorm now running without learnable parameters
-    #elif classname.find('InstanceNorm2d') != -1:
-    #    torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
-    #    torch.nn.init.constant_(m.bias.data, 0)
-"""
-
-def weights_init(m):
-    if isinstance(m, torch.nn.Conv2d):
-        #torch.nn.init.normal_(m.weight.data, 0.0, 0.15)
-        torch.nn.init.xavier_uniform_(m.weight.data)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
-    if isinstance(m, torch.nn.ConvTranspose2d):
-        #torch.nn.init.normal_(m.weight.data, 0.0, 0.15)
-        torch.nn.init.xavier_uniform_(m.weight.data)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
-"""
-
 
 
 if __name__ == '__main__':

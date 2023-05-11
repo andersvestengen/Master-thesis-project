@@ -359,8 +359,8 @@ class Training_Framework():
                     current_GEN_loss[epoch] =  GEN_loss
                     current_DIS_loss[epoch] =  DIS_loss
                     pixelloss[epoch] =  loss_pixel                    
-                    Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) /(self.patch[1]*2)
-                    Discrim_acc_fake_raw[epoch] = torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2)
+                    Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) / (self.patch[1]*2)
+                    Discrim_acc_fake_raw[epoch] = torch.sum(predicted_fake, (2,3)) / (self.patch[1]*2)
                 
                 #Save per epoch
                 self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
