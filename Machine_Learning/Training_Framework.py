@@ -197,8 +197,8 @@ class Training_Framework():
         Returns a larger bounding box centered on the defect block
         """
 
-        x = torch.round(X + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
-        y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
+        x = torch.round(X + 0.5*BoxSize - 0.5*BoundingBox).to(self.device, torch.uint8).clamp(0, 256 - BoundingBox)
+        y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(self.device, torch.uint8).clamp(0, 256 - BoundingBox)
 
         return y,x
 
@@ -216,7 +216,7 @@ class Training_Framework():
         
         #Pixelwise loss
         SampleY, SampleX, BoxSize = self.defect_coordinates[0]
-        L1_loss_region = BoxSize * int(self.Settings["Loss_region_Box_mult"]) # trying standard 30x30 loss box
+        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device) # trying standard 30x30 loss box
         SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
         loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
         local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])

@@ -33,9 +33,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Training_improvement_test",
+            "ModelTrainingName"     : "CUDA_optim_test_DELETE_ME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 5000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 500, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -51,13 +51,15 @@ training_transforms = transforms.Compose([
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
+        torch.nn.init.kaiming_normal_(m.weight.data)
         if m.bias is not None:
             print("conv has bias!")
             torch.nn.init.constant_(m.bias.data, 0)
-    elif classname.find('InstanceNorm2d') != -1:
-        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
-        torch.nn.init.constant_(m.bias.data, 0)
+
+    #InstanceNorm now running without learnable parameters
+    #elif classname.find('InstanceNorm2d') != -1:
+    #    torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
+    #    torch.nn.init.constant_(m.bias.data, 0)
 """
 
 def weights_init(m):
