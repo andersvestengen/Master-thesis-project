@@ -10,3 +10,4 @@
 *.txt
 *.npz
 *.pt
+*.json
