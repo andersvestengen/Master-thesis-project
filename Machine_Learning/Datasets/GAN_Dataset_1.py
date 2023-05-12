@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import cv2
-
+import PIL 
 
 class GAN_dataset(Dataset):
     """
@@ -34,6 +34,16 @@ class GAN_dataset(Dataset):
             self.name = "GAN_Dataset_1_GAN_dataset_caching"
         else:
             self.name = "GAN_Dataset_1_GAN_dataset_from_folders"
+
+        # Set conversion transform during preproccessing
+        self.ConvertToTensor = transforms.ToTensor()        
+        self.FromPillowToTorch = torch.nn.Sequential(
+                transforms.CenterCrop(256),
+                # These constants will need to be looked at
+                transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                     std=[0.229, 0.224, 0.225]),
+        )
+
 
         # Set incoming transform to transform
         self.transform = transform
