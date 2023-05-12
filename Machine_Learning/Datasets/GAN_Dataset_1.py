@@ -147,8 +147,8 @@ class GAN_dataset(Dataset):
         """
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
         """
-        margin = torch.tensor(BoxSize * self.Settings["Loss_region_Box_mult"], device=self.device).to(torch.uint8)
-        sample = ((Total_length - margin) * torch.rand(1, generator=self.defect_seed)).to(self.device, torch.uint8).clamp(margin)
+        margin = torch.tensor(BoxSize * self.Settings["Loss_region_Box_mult"]).to(torch.uint8)
+        sample = ((Total_length - margin) * torch.rand(1, generator=self.defect_seed)).to(torch.uint8).clamp(margin)
 
         return sample
 
@@ -163,13 +163,13 @@ class GAN_dataset(Dataset):
         SampleY = self.getSample(ImageY, self.BoxSet[1])
         SampleX = self.getSample(ImageX, self.BoxSet[1])
         intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
-        mask = torch.randint(0,2, (intSample.size()[1:]), device=self.device, generator=self.defect_seed).bool()
-        color = torch.randint(0,2, (1,), device=self.device, generator=self.defect_seed)
-        r = torch.full((intSample.size()), color.item(), device=self.device).float()
+        mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
+        color = torch.randint(0,2, (1,), generator=self.defect_seed)
+        r = torch.full((intSample.size()), color.item()).float()
         intSample[:,mask] = r[:,mask] 
         imageMatrix[:,SampleY:SampleY+BoxSize,SampleX:SampleX+BoxSize] = intSample
 
-        return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize], device=self.device)
+        return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize])
     
     def __len__(self):
         if self.preprocess:
@@ -210,14 +210,14 @@ class GAN_dataset(Dataset):
     def __getitem__(self, idx):
         if self.transform is not None:
             if self.preprocess:
-                target = self.transform(self.data[idx,:]).to(self.device)
+                target = self.transform(self.data[idx,:])
             else:
-                target = self.transform(self.Image_To_Sample_Transform(self.load_torch_image(self.OriginalImagesList[idx]))).to(self.device)
+                target = self.transform(self.Image_To_Sample_Transform(self.load_torch_image(self.OriginalImagesList[idx])))
         else:
             if self.preprocess:
-                target = self.data[idx,:].to(self.device)
+                target = self.data[idx,:]
             else:
-                target = self.Image_To_Sample_Transform(self.load_torch_image(self.OriginalImagesList[idx])).to(self.device)
+                target = self.Image_To_Sample_Transform(self.load_torch_image(self.OriginalImagesList[idx]))
 
         defect, arr = self.DefectGenerator(target.clone())
 

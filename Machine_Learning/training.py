@@ -16,7 +16,7 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
-            "epochs"                : 10,
+            "epochs"                : 1,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 50,
@@ -33,9 +33,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_14_Normal_Initialization_mean_0_std_0.02",
+            "ModelTrainingName"     : "DUMMY_CUDA_TEST_DELETEME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 1000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
