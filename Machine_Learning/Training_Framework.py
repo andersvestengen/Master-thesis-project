@@ -204,8 +204,9 @@ class Training_Framework():
 
         
 
-    def Generator_updater(self, val=False):       
-        self.Discriminator.requires_grad=False
+    def Generator_updater(self, val=False): 
+        if not val:      
+            self.Discriminator.requires_grad=False
 
         self.Generator.zero_grad()
         valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
@@ -231,9 +232,9 @@ class Training_Framework():
         return loss_GAN, loss_pixel + local_pixelloss
 
     def Discriminator_updater(self, val=False):
-        self.Discriminator.requires_grad=True
-        
-        self.Discriminator.zero_grad()
+        if not val:
+            self.Discriminator.requires_grad=True
+            self.Discriminator.zero_grad()
 
         valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
@@ -293,6 +294,13 @@ class Training_Framework():
                 val_unit = "image(s)"
             else:
                 val_unit = "batch(s)"
+
+            #Turn off propagation
+            self.Generator.eval()
+            self.Generator.requires_grad=False
+            self.Discriminator.eval()
+            self.Discriminator.requires_grad=False
+            
             with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
                 for images, defect_images, defect_coordinates in tepoch:
                     if epoch == 0:
@@ -318,6 +326,12 @@ class Training_Framework():
                     pixelloss[epoch] =  loss_pixel.detach()                    
                     Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) /(self.patch[1]*2).detach()
                     Discrim_acc_fake_raw[epoch] = torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2).detach()
+
+            #Turn on propagation
+            self.Generator.train()
+            self.Generator.requires_grad=True
+            self.Discriminator.train()
+            self.Discriminator.requires_grad=True
 
             #Snapping image from generator during validation
             if (epoch % 10) == 0:

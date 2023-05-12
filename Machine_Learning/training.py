@@ -16,7 +16,7 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
-            "epochs"                : 1,
+            "epochs"                : 10,
             "batch_size"            : 1,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 50,
@@ -26,16 +26,16 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 172, # random training seed
-            "num_workers"           : 1,
+            "num_workers"           : 4,
             "shuffle"               : True,
             "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "DUMMY_CUDA_TEST_DELETEME",
+            "ModelTrainingName"     : "GAN_14_Normalized_Input",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 1000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -45,6 +45,7 @@ training_transforms = transforms.Compose([
     transforms.RandomVerticalFlip(),
 ])
 
+training_transforms = None
 
 #Try with instancenorm affine, to enable learnable parameters
 
@@ -54,7 +55,7 @@ def weights_init(m):
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
         if m.bias is not None:
             print("conv has bias!")
-            torch.nn.init.constant_(m.bias.data, 0)
+            torch.nn.init.constant_(m.bias.data, 1)
 
 
 if __name__ == '__main__':
