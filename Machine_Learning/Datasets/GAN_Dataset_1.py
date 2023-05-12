@@ -37,11 +37,13 @@ class GAN_dataset(Dataset):
 
         # Set conversion transform during preproccessing
         self.ConvertToTensor = transforms.ToTensor()        
+        
         self.FromPillowToTorch = torch.nn.Sequential(
                 transforms.CenterCrop(256),
-                # These constants will need to be looked at
-                transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                     std=[0.229, 0.224, 0.225]),
+
+                # Constants calculated using the Dataset_Check_Norm.py script
+                transforms.Normalize(mean=[0.450, 0.414, 0.378],
+                     std=[0.252, 0.239, 0.236]),
         )
 
 

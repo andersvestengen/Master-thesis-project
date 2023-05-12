@@ -29,7 +29,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "GAN_14_Normal_Initialization_mean_0_std_0.02",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 1000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 5000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
