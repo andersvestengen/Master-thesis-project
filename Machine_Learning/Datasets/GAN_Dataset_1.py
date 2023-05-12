@@ -8,8 +8,6 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import cv2
-import PIL 
-
 class GAN_dataset(Dataset):
     """
     TODO: 
@@ -37,8 +35,8 @@ class GAN_dataset(Dataset):
 
         # Set conversion transform during preproccessing
         self.ConvertToTensor = transforms.ToTensor()        
-        
-        self.FromPillowToTorch = torch.nn.Sequential(
+
+        self.Image_To_Sample_Transform = torch.nn.Sequential(
                 transforms.CenterCrop(256),
 
                 # Constants calculated using the Dataset_Check_Norm.py script
@@ -112,7 +110,7 @@ class GAN_dataset(Dataset):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
             for num, imagedir in enumerate(Prepoch):
                 # Transform image and add 
-                image = self.totensortorch(self.load_image(imagedir))
+                image = self.Image_To_Sample_Transform(self.load_torch_image(imagedir))
 
                 if (num > 0) and (num % 200 == 0):
                     torch.save(self.data, self.preprocess_storage+"/processed_images"+str(num)+".pt")
@@ -149,8 +147,8 @@ class GAN_dataset(Dataset):
         """
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
         """
-        margin = BoxSize * self.Settings["Loss_region_Box_mult"]
-        sample = ((Total_length - margin) * torch.rand(1, generator=self.defect_seed)).to(torch.uint8).clamp(margin)
+        margin = torch.tensor(BoxSize * self.Settings["Loss_region_Box_mult"], device=self.device).to(torch.uint8)
+        sample = ((Total_length - margin) * torch.rand(1, generator=self.defect_seed)).to(self.device, torch.uint8).clamp(margin)
 
         return sample
 
@@ -159,19 +157,19 @@ class GAN_dataset(Dataset):
         Takes a matrix-converted image and returns a training sample of that image with a randomly degraded [Boxsize * Boxsize] square, and coordinates for loss function.
         
         """
-        BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed)
+        BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed).to(torch.uint8)
         ImageY = imageMatrix.size(1) # Horizontal
         ImageX = imageMatrix.size(2) # Vertical
         SampleY = self.getSample(ImageY, self.BoxSet[1])
         SampleX = self.getSample(ImageX, self.BoxSet[1])
         intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
-        mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
-        color = torch.randint(0,2, (1,), generator=self.defect_seed)
-        r = torch.full((intSample.size()), color.item()).float()
+        mask = torch.randint(0,2, (intSample.size()[1:]), device=self.device, generator=self.defect_seed).bool()
+        color = torch.randint(0,2, (1,), device=self.device, generator=self.defect_seed)
+        r = torch.full((intSample.size()), color.item(), device=self.device).float()
         intSample[:,mask] = r[:,mask] 
         imageMatrix[:,SampleY:SampleY+BoxSize,SampleX:SampleX+BoxSize] = intSample
 
-        return imageMatrix, [SampleY, SampleX, BoxSize]
+        return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize], device=self.device)
     
     def __len__(self):
         if self.preprocess:
@@ -179,11 +177,11 @@ class GAN_dataset(Dataset):
         else:
             return len(self.OriginalImagesList)
 
-    def resize_im(self, image):
+    def resize_im(self, image): # REDUNDANT
         sizes = [256, 256]
         return cv2.resize(image, sizes, interpolation= cv2.INTER_LINEAR)
 
-    def CenterCrop(self, image, val=256):
+    def CenterCrop(self, image, val=256): # Redundant
         center = image.shape
         if center[0] < 256 or center[1] < 256:
             image = self.resize_im(image)
@@ -198,26 +196,30 @@ class GAN_dataset(Dataset):
         #imread returns X,Y,C
         image = self.CenterCrop(cv2.imread(str(path)))
         return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)/255
+    
+    def load_torch_image(self, path): # NEW!
+        # ToTensor will convert dim from HWC to CHW, and scale from 0,255 to 0,1
+        image = self.ConvertToTensor(Image.open(str(path)))
+        return image
+        
 
-    def totensortorch(self, image):
+    def totensortorch(self, image): # THIS should now be redundant
         return torch.from_numpy(np.moveaxis(image, -1, 0)).float()
 
 
     def __getitem__(self, idx):
         if self.transform is not None:
             if self.preprocess:
-                target = self.transform(self.data[idx,:])
+                target = self.transform(self.data[idx,:]).to(self.device)
             else:
-                target = self.transform(self.totensortorch(self.load_image(self.OriginalImagesList[idx])))
+                target = self.transform(self.Image_To_Sample_Transform(self.load_torch_image(self.OriginalImagesList[idx]))).to(self.device)
         else:
             if self.preprocess:
-                target = self.data[idx,:]
+                target = self.data[idx,:].to(self.device)
             else:
-                target = self.totensortorch(self.load_image(self.OriginalImagesList[idx]))
+                target = self.Image_To_Sample_Transform(self.load_torch_image(self.OriginalImagesList[idx])).to(self.device)
 
         defect, arr = self.DefectGenerator(target.clone())
-        
-        arr = torch.tensor(arr)
 
         return target, defect, arr
 
