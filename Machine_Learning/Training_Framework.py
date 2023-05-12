@@ -258,7 +258,15 @@ class Training_Framework():
 
     
     def FromTorchTraining(self, image):
-        return image.mul(255).add_(0.5).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+        #Normalization and sdt constants:
+        means = torch.tensor([0.450, 0.414, 0.378], device=self.device) 
+        stds = torch.tensor([0.252, 0.239, 0.236], device=self.device)
+
+        #undo normalization and std 
+        for ch, m, s in zip(image, means, stds):
+            ch.mul_(s).add_(m)
+
+        return image.mul(255).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
 
 
     def Generate_validation_images(self, epoch):
@@ -563,7 +571,15 @@ class Model_Inference():
         print("Succesfully loaded", self.modelname, "model")
 
     def FromTorchTraining(self, image):
-        return image.mul(255).add_(0.5).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+        #Normalization and sdt constants:
+        means = torch.tensor([0.450, 0.414, 0.378], device=self.device) 
+        stds = torch.tensor([0.252, 0.239, 0.236], device=self.device)
+
+        #undo normalization and std 
+        for ch, m, s in zip(image, means, stds):
+            ch.mul_(s).add_(m)
+
+        return image.mul(255).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
         
     def Inference_run(self, runs=8):
         """
