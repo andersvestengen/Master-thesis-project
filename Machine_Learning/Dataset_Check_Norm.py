@@ -51,11 +51,11 @@ dim_std = torch.zeros((Settings["Num_training_samples"], 3))
 for i, data in enumerate(train_loader):
     image, _, _ = data
 
-    dim_mean[i,:] = torch.mean(image[0,:])
-    dim_std[i,:] = image[0,:]
+    dim_mean[i,:] = torch.mean(image[0,:], dim=(1,2))
+    dim_std[i,:] = torch.std(image[0,:], dim=(1,2))
 
 total_mean = torch.mean(dim_mean, dim=0)
-total_std = torch.std(dim_mean, dim=0)
+total_std = torch.mean(dim_std, dim=0)
 
 
 print("mean:", total_mean)
