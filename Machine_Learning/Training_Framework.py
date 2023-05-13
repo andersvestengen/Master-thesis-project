@@ -343,7 +343,7 @@ class Training_Framework():
                     current_GEN_loss[epoch] =  GEN_loss.detach()
                     current_DIS_loss[epoch] =  DIS_loss.detach()
                     pixelloss[epoch] =  loss_pixel.detach()                    
-                    Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) /(self.patch[1]*2).detach()
+                    Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) /(self.patch[1]*2).detach() #This needs to correspond to batch-sizes again
                     Discrim_acc_fake_raw[epoch] = torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2).detach()
 
             #Turn on propagation
@@ -391,7 +391,9 @@ class Training_Framework():
                     #This is all assuming batch-size stays at 1
                     current_GEN_loss[epoch] =  GEN_loss.detach()
                     current_DIS_loss[epoch] =  DIS_loss.detach()
-                    pixelloss[epoch] =  loss_pixel.detach()                    
+                    pixelloss[epoch] =  loss_pixel.detach()
+                    print("predicted_real size:", predicted_real.size())          
+                    print("self.patch size:", self.patch.size())          
                     Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) / (self.patch[1]*2).detach()
                     Discrim_acc_fake_raw[epoch] = torch.sum(predicted_fake, (2,3)) / (self.patch[1]*2).detach()
                 

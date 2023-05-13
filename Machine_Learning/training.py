@@ -17,7 +17,7 @@ Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
             "epochs"                : 10,
-            "batch_size"            : 1,
+            "batch_size"            : 16,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 50,
             "BoxSet"               : [3,10], # min/max defect, inclusive
@@ -26,7 +26,7 @@ Settings = {
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 172, # random training seed
-            "num_workers"           : 4,
+            "num_workers"           : 2,
             "shuffle"               : True,
             "Data_mean"             : [0.5274, 0.4378, 0.3555],
             "Data_std"              : [0.2842, 0.2463, 0.2103],
@@ -35,7 +35,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_14_Normalized_Input",
+            "ModelTrainingName"     : "GAN_15_Batchnorm_test",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -47,7 +47,7 @@ training_transforms = transforms.Compose([
     transforms.RandomVerticalFlip(),
 ])
 
-training_transforms = None
+training_transforms = None # Removing the transforms until I'm sure they're useful.
 
 #Try with instancenorm affine, to enable learnable parameters
 

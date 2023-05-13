@@ -25,6 +25,8 @@ if __name__ == '__main__':
 				"preprocess_storage"    : Preprocess_dir,
 				"seed"                  : 172, # random training seed
 				"num_workers"           : 1,
+				"Data_mean"             : [0.5274, 0.4378, 0.3555],
+				"Data_std"              : [0.2842, 0.2463, 0.2103],
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
@@ -63,15 +65,18 @@ if __name__ == '__main__':
 		model_inf = []
 		with open(model_state, 'r') as f:
 			model_inf = [Line for Line in f]
-
-		model_arch = model_inf[21].split(':')[1].strip() # 21 is the location of the model architecture in the savestate.txt
+		Is_old = input("Is the model pre normalization? [y/n]: ")
+		if Is_old == "y":
+			model_arch = model_inf[21].split(':')[1].strip() # 21 is the location of the model architecture in the savestate.txt
+		else:
+			model_arch = model_inf[23].split(':')[1].strip() # 23 is the location of the model architecture in the savestate.txt after introducing normalization
 
 		if model_arch == "Generator_Unet1":
 			Model = Generator_Unet1()
 
 		elif model_arch == "UNet_ResNet34":
 			Model = UNet_ResNet34()
-
+		print(model_arch)
 		if os.path.isdir(run_dir):
 				while True:
 					choice = input("The directory already exists, would you like to replace it for new inference? [y/n]: ")

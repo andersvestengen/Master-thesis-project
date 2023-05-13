@@ -18,7 +18,7 @@ class UnetEncoderLayer(nn.Module):
         super(UnetEncoderLayer, self).__init__()
         layers = [nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=False)]
         if normalize:
-            layers.append(nn.InstanceNorm2d(channel_out))
+            layers.append(nn.BatchNorm2d(channel_out))
         layers.append(nn.LeakyReLU(0.2))
         if dropout:
             layers.append(nn.Dropout(dropout))
@@ -33,7 +33,7 @@ class UnetDecoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, dropout=0.0):
         super(UnetDecoderLayer, self).__init__()
         layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
-                  nn.InstanceNorm2d(channel_out),
+                  nn.BatchNorm2d(channel_out),
                   nn.ReLU(inplace=True),
         ]
         if dropout:
@@ -120,7 +120,7 @@ def Discriminator_block(input_filters, output_filters, normalization=True):
     """Returns downsampling layers of each discriminator block"""
     layers = [nn.Conv2d(input_filters, output_filters, 4, stride=2, padding=1)]
     if normalization:
-        layers.append(nn.InstanceNorm2d(output_filters))
+        layers.append(nn.BatchNorm2d(output_filters))
     layers.append(nn.LeakyReLU(0.2, inplace=True))
     return layers
 
