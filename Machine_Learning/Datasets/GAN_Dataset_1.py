@@ -27,6 +27,8 @@ class GAN_dataset(Dataset):
             self.defect_seed.manual_seed()            
         self.BoxSet = self.Settings["BoxSet"]
         self.device = self.Settings["device"]
+        self.mean = self.Settings["Data_mean"]
+        self.std = self.Settings["Data_std"]
         self.imagefolder="/Images/"
         if preprocess:
             self.name = "GAN_Dataset_1_GAN_dataset_caching"
@@ -40,8 +42,8 @@ class GAN_dataset(Dataset):
                 transforms.CenterCrop(256),
 
                 # Constants calculated using the Dataset_Check_Norm.py script
-                transforms.Normalize(mean=[0.450, 0.414, 0.378],
-                     std=[0.252, 0.239, 0.236]),
+                transforms.Normalize(mean=self.mean,
+                                     std=self.std),
         )
 
 

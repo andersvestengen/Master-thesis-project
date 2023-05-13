@@ -28,6 +28,8 @@ Settings = {
             "seed"                  : 172, # random training seed
             "num_workers"           : 4,
             "shuffle"               : True,
+            "Data_mean"             : [0.5274, 0.4378, 0.3555],
+            "Data_std"              : [0.2842, 0.2463, 0.2103],
             "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 256,

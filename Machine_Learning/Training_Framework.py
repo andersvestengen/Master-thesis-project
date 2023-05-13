@@ -119,6 +119,22 @@ class FileSender():
         self.cli.close()
         print("SSH and SFTP closed")
 
+class NormalizeInverse(transforms.Normalize):
+    """
+    Reverses the normalization applied in the dataset. Class is borrowed from the official Pytorch forums and is not my creation
+    link: https://discuss.pytorch.org/t/simple-way-to-inverse-transform-normalization/4821/20
+    """
+
+    def __init__(self, mean, std):
+        mean = torch.as_tensor(mean)
+        std = torch.as_tensor(std)
+        std_inv = 1 / (std + 1e-7)
+        mean_inv = -mean * std_inv
+        super().__init__(mean=mean_inv, std=std_inv)
+
+    def __call__(self, tensor):
+        return super().__call__(tensor.clone())
+    
 
 class Training_Framework():
     """
@@ -140,6 +156,7 @@ class Training_Framework():
         self.device = self.Settings["device"]
         self.Generator_loss = 0
         self.Discriminator_loss = 0
+        self.Reverse_Normalization = NormalizeInverse(self.Settings["Data_mean"], self.Settings["Data_std"])
         self.patch = torch.tensor((1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4), device=self.device)
         self.transmit = False # No reason to do file transfer in the future
 
@@ -258,15 +275,9 @@ class Training_Framework():
 
     
     def FromTorchTraining(self, image):
-        #Normalization and sdt constants:
-        means = torch.tensor([0.450, 0.414, 0.378], device=self.device) 
-        stds = torch.tensor([0.252, 0.239, 0.236], device=self.device)
+        #Returns a trainable tensor back into a visual image.
+        return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
 
-        #undo normalization and std 
-        for ch, m, s in zip(image, means, stds):
-            ch.mul_(s).add_(m)
-
-        return image.mul(255).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
 
 
     def Generate_validation_images(self, epoch):
@@ -553,11 +564,11 @@ class Model_Inference():
         self.Settings = Settings
         self.model = modelref
         self.device = device
-        self.transform = transforms.ToPILImage()
         self.dataloader = dataloader
         self.training = training
         self.modeldir = modeldir
         self.modelname = modelname
+        self.Reverse_Normalization = NormalizeInverse(self.Settings["Data_mean"], self.Settings["Data_std"])
         self.run_dir = run_dir
         self.BoxSet = self.Settings["BoxSet"]
         if not training:
@@ -571,15 +582,8 @@ class Model_Inference():
         print("Succesfully loaded", self.modelname, "model")
 
     def FromTorchTraining(self, image):
-        #Normalization and sdt constants:
-        means = torch.tensor([0.450, 0.414, 0.378], device=self.device) 
-        stds = torch.tensor([0.252, 0.239, 0.236], device=self.device)
-
-        #undo normalization and std 
-        for ch, m, s in zip(image, means, stds):
-            ch.mul_(s).add_(m)
-
-        return image.mul(255).clamp_(0,255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
+        #Returns a trainable tensor back into a visual image.
+        return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
         
     def Inference_run(self, runs=8):
         """

@@ -33,26 +33,18 @@ Settings = {
             "Pin_memory"            : True
             }
 
+norm_trans = transforms.ToTensor()
 
 Custom_dataset = GAN_dataset(Settings, transform=None, preprocess=True)
-
-
-train_loader = DataLoader(Custom_dataset,
-                        num_workers     = Settings["num_workers"],
-                        batch_size      = Settings["batch_size"], 
-                        shuffle         = Settings["shuffle"],
-                        drop_last       = Settings["Drop_incomplete_batch"],
-                        pin_memory      = Settings["Pin_memory"])
-
 
 dim_mean = torch.zeros((Settings["Num_training_samples"], 3))
 dim_std = torch.zeros((Settings["Num_training_samples"], 3))
 
-for i, data in enumerate(train_loader):
-    image, _, _ = data
+for i in range(Settings["Num_training_samples"]):
+    image, _, _ = next(iter(Custom_dataset))
 
-    dim_mean[i,:] = torch.mean(image[0,:], dim=(1,2))
-    dim_std[i,:] = torch.std(image[0,:], dim=(1,2))
+    dim_mean[i,:] = torch.mean(image, dim=(1,2))
+    dim_std[i,:] = torch.std(image, dim=(1,2))
 
 total_mean = torch.mean(dim_mean, dim=0)
 total_std = torch.mean(dim_std, dim=0)
