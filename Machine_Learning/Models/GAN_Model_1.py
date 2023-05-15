@@ -140,8 +140,8 @@ class Discriminator_1(nn.Module):
             nn.Conv2d(512, 1, 4, padding=1, bias=False),
         )
         
-    def forward(self, image_A, image_B):
+    def forward(self, input):
         #Concatenates original and generates image by channel to produce discriminator input.
-        input = torch.cat((image_A, image_B), 1)
+        #input = torch.cat((image_A, image_B), 1)
         return self.model(input)
     

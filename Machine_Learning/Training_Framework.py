@@ -235,9 +235,6 @@ class Training_Framework():
 
 
     def Generator_updater(self, val=False): 
-        if not val:      
-            self.Discriminator.requires_grad=False
-
         self.Generator.zero_grad()
         #valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
@@ -263,22 +260,20 @@ class Training_Framework():
         return loss_GAN.detach(), (loss_pixel + local_pixelloss).detach()
 
     def Discriminator_updater(self, val=False):
-        if not val:
-            self.Discriminator.requires_grad=True
-            self.Discriminator.zero_grad()
-
         #valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         #fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         #Real loss
-        predicted_real = self.Discriminator(self.real_A, self.real_B)
+        real_AB = torch.cat((self.real_A, self.real_B), 1)
+        predicted_real = self.Discriminator(real_AB)
         
         valid = Make_Label_Tensor(predicted_fake, True)
         fake = Make_Label_Tensor(predicted_fake, False)
         loss_real = self.GAN_loss(predicted_real, valid)
 
         #Fake loss
-        predicted_fake = self.Discriminator(self.real_A, self.fake_B.detach())
+        fake_AB = torch.cat((self.real_A, self.fake_B), 1)        
+        predicted_fake = self.Discriminator(fake_AB.detach())
         loss_fake = self.GAN_loss(predicted_fake, fake)
 
         #Total loss and backprop
