@@ -10,6 +10,7 @@ from PIL import Image
 from skimage.metrics import peak_signal_noise_ratio as PSNR
 from skimage.metrics import structural_similarity as SSIM
 import time
+import sys
 
 #---------------- Helper functions ----------------------
 def PIL_concatenate_h(im1, im2):
@@ -219,17 +220,30 @@ class Training_Framework():
 
         return y,x
 
-        
+
+    def Make_Label_Tensor(self, tensor_size, bool_val):
+        """
+        Return a label tensor with size tensor_size and values bool_val
+        """       
+
+        if bool_val:
+            label_tensor = torch.tensor(1, device=self.device, dtype=torch.float32, requires_grad=False)
+        else:
+            label_tensor = torch.tensor(0, device=self.device, dtype=torch.float32)
+
+        return label_tensor.expand_as(tensor_size)
+
 
     def Generator_updater(self, val=False): 
         if not val:      
             self.Discriminator.requires_grad=False
 
         self.Generator.zero_grad()
-        valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
+        #valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         # Generator loss
         predicted_fake = self.Discriminator(self.real_A, self.fake_B)
+        valid = Make_Label_Tensor(predicted_fake, True)
         loss_GAN = self.GAN_loss(predicted_fake, valid)
         
         #Pixelwise loss
@@ -246,19 +260,21 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return loss_GAN, loss_pixel + local_pixelloss
+        return loss_GAN.detach(), (loss_pixel + local_pixelloss).detach()
 
     def Discriminator_updater(self, val=False):
         if not val:
             self.Discriminator.requires_grad=True
             self.Discriminator.zero_grad()
 
-        valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
-        fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
+        #valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
+        #fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         #Real loss
         predicted_real = self.Discriminator(self.real_A, self.real_B)
         
+        valid = Make_Label_Tensor(predicted_fake, True)
+        fake = Make_Label_Tensor(predicted_fake, False)
         loss_real = self.GAN_loss(predicted_real, valid)
 
         #Fake loss
@@ -271,7 +287,7 @@ class Training_Framework():
             Total_loss_Discriminator.backward() # backward run        
             self.Discriminator_optimizer.step() # step
 
-        return Total_loss_Discriminator, predicted_real, predicted_fake
+        return Total_loss_Discriminator.detach(), predicted_real.detach(), predicted_fake.detach()
 
     
     def FromTorchTraining(self, image):
@@ -303,11 +319,12 @@ class Training_Framework():
 
     def validation_run(self, val_loader, epoch):
         with torch.no_grad():
-            current_GEN_loss = torch.zeros(self.Settings["epochs"]).to(self.device)
-            current_DIS_loss = torch.zeros(self.Settings["epochs"]).to(self.device)
-            pixelloss = torch.zeros(self.Settings["epochs"]).to(self.device)
-            Discrim_acc_real_raw = torch.zeros(self.Settings["epochs"]).to(self.device)
-            Discrim_acc_fake_raw = torch.zeros(self.Settings["epochs"]).to(self.device)
+
+            current_GEN_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+            current_DIS_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+            pixelloss =             torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+            Discrim_acc_real_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+            Discrim_acc_fake_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
 
             if self.Settings["batch_size"] == 1:
                 val_unit = "image(s)"
@@ -321,7 +338,7 @@ class Training_Framework():
             self.Discriminator.requires_grad=False
             
             with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
-                for images, defect_images, defect_coordinates in tepoch:
+                for num, images, defect_images, defect_coordinates in enumerate(tepoch):
                     if epoch == 0:
                         tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
@@ -334,17 +351,15 @@ class Training_Framework():
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
                     GEN_loss, loss_pixel = self.Generator_updater(val=True)
 
-                    #Snapping image from generator during validation
-                    #if (epoch % 10) == 0:
-                    #    self.Generate_validation_images(epoch)
-
                     #Analytics
-                    #This is all assuming batch-size stays at 1
-                    current_GEN_loss[epoch] =  GEN_loss.detach()
-                    current_DIS_loss[epoch] =  DIS_loss.detach()
-                    pixelloss[epoch] =  loss_pixel.detach()                    
-                    Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) /(self.patch[1]*2).detach() #This needs to correspond to batch-sizes again
-                    Discrim_acc_fake_raw[epoch] = torch.sum(predicted_fake, (2,3)) /(self.patch[1]*2).detach()
+                    current_GEN_loss[num: num + self.Settings["batch_size"]] =  GEN_loss
+                    current_DIS_loss[num: num + self.Settings["batch_size"]] =  DIS_loss
+                    pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel
+
+                    #Self.patch size is torch.size([3])
+                    #self.predicted_real size is: torch.size([16, 1, 16, 16])                
+                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3))
+                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3))
 
             #Turn on propagation
             self.Generator.train()
@@ -362,11 +377,11 @@ class Training_Framework():
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
-                current_GEN_loss = torch.zeros(self.Settings["epochs"]).to(self.device)
-                current_DIS_loss = torch.zeros(self.Settings["epochs"]).to(self.device)
-                pixelloss = torch.zeros(self.Settings["epochs"]).to(self.device)
-                Discrim_acc_real_raw = torch.zeros(self.Settings["epochs"]).to(self.device)
-                Discrim_acc_fake_raw = torch.zeros(self.Settings["epochs"]).to(self.device)
+                current_GEN_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+                current_DIS_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+                pixelloss =             torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+                Discrim_acc_real_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+                Discrim_acc_fake_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
 
                 if self.Settings["batch_size"] == 1:
                     tepoch = tqdm(train_loader, unit='image(s)', leave=False)
@@ -389,13 +404,15 @@ class Training_Framework():
 
                     #Analytics
                     #This is all assuming batch-size stays at 1
-                    current_GEN_loss[epoch] =  GEN_loss.detach()
-                    current_DIS_loss[epoch] =  DIS_loss.detach()
-                    pixelloss[epoch] =  loss_pixel.detach()
-                    print("predicted_real size:", predicted_real.size())          
-                    print("self.patch size:", self.patch.size())          
-                    Discrim_acc_real_raw[epoch] = torch.sum(predicted_real, (2,3)) / (self.patch[1]*2).detach()
-                    Discrim_acc_fake_raw[epoch] = torch.sum(predicted_fake, (2,3)) / (self.patch[1]*2).detach()
+                    current_GEN_loss[num: num + self.Settings["batch_size"]] =  GEN_loss
+                    current_DIS_loss[num: num + self.Settings["batch_size"]] =  DIS_loss
+                    pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel
+
+                    #Self.patch size is torch.size([3])
+                    #self.predicted_real size is: torch.size([16, 1, 16, 16])                
+                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3))
+                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3))
+
                 
                 #Save per epoch
                 self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
