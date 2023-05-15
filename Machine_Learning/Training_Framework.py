@@ -239,8 +239,9 @@ class Training_Framework():
         #valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         # Generator loss
-        predicted_fake = self.Discriminator(self.real_A, self.fake_B)
-        valid = Make_Label_Tensor(predicted_fake, True)
+        fake_AB = torch.cat((self.real_A, self.fake_B), 1)     
+        predicted_fake = self.Discriminator(fake_AB)
+        valid = self.Make_Label_Tensor(predicted_fake, True)
         loss_GAN = self.GAN_loss(predicted_fake, valid)
         
         #Pixelwise loss
@@ -267,8 +268,8 @@ class Training_Framework():
         real_AB = torch.cat((self.real_A, self.real_B), 1)
         predicted_real = self.Discriminator(real_AB)
         
-        valid = Make_Label_Tensor(predicted_fake, True)
-        fake = Make_Label_Tensor(predicted_fake, False)
+        valid = self.Make_Label_Tensor(predicted_real, True)
+        fake = self.Make_Label_Tensor(predicted_real, False)
         loss_real = self.GAN_loss(predicted_real, valid)
 
         #Fake loss
@@ -333,7 +334,8 @@ class Training_Framework():
             self.Discriminator.requires_grad=False
             
             with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
-                for num, images, defect_images, defect_coordinates in enumerate(tepoch):
+                for num, data in enumerate(tepoch):
+                    images, defect_images, defect_coordinates = data
                     if epoch == 0:
                         tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
@@ -353,8 +355,8 @@ class Training_Framework():
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])                
-                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3))
-                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3))
+                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3)).squeeze(1)
+                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3)).squeeze(1)
 
             #Turn on propagation
             self.Generator.train()
@@ -383,7 +385,8 @@ class Training_Framework():
                 else:
                     tepoch = tqdm(train_loader, unit='batch(s)', leave=False)
 
-                for images, defect_images, defect_coordinates in tepoch:
+                for num, data in enumerate(tepoch):
+                    images, defect_images, defect_coordinates = data
                     if epoch == 0:
                         tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
@@ -404,9 +407,9 @@ class Training_Framework():
                     pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel
 
                     #Self.patch size is torch.size([3])
-                    #self.predicted_real size is: torch.size([16, 1, 16, 16])                
-                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3))
-                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3))
+                    #self.predicted_real size is: torch.size([16, 1, 16, 16])
+                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3)).squeeze(1)
+                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3)).squeeze(1)
 
                 
                 #Save per epoch
