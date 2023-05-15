@@ -23,7 +23,7 @@ Settings = {
             "num_workers"           : 1,
             "Data_mean"             : [0.5274, 0.4378, 0.3555],
             "Data_std"              : [0.2842, 0.2463, 0.2103],
-            "Do norm"               : False, #Normalization on or off 
+            "Do norm"               : True, #Normalization on or off 
             "shuffle"               : True,
             "Datasplit"             : 0.8,
             "device"                : "cuda",
@@ -36,9 +36,14 @@ Settings = {
             "Pin_memory"            : True
             }
 
+#Settings["Data_mean"] = [0.3212, 0.3858, 0.2613]
+#Settings["Data_std"] = [0.2938, 0.2827, 0.2658]
+
 norm_trans = transforms.ToTensor()
 
 Custom_dataset = GAN_dataset(Settings, transform=None, preprocess=True)
+
+Settings["Num_training_samples"] = len(Custom_dataset)
 
 dim_mean = torch.zeros((Settings["Num_training_samples"], 3))
 dim_std = torch.zeros((Settings["Num_training_samples"], 3))
@@ -52,6 +57,7 @@ with tqdm(Custom_dataset, unit="image", leave=True) as tepoch:
 
 total_mean = torch.mean(dim_mean, dim=0)
 total_std = torch.mean(dim_std, dim=0)
+
 
 
 print("mean:", total_mean)

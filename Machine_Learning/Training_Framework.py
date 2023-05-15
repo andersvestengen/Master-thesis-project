@@ -617,9 +617,9 @@ class Model_Inference():
         with torch.no_grad():
             for run in loader:
                 loader.set_description(f"Running {run+1}/{runs} images completed")
-                _ , image, _ = next(iter(self.dataloader))
-                real_A = image.to(self.device)
-                fake_B = self.model(real_A)
+                _ , defect_image, _ = next(iter(self.dataloader))
+                real_A = defect_image.to(self.device)
+                fake_B = self.model(real_A.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
                 PIL_concatenate_h(co, im).save(self.run_dir + "/output/image_" + str(run) + ".jpg")

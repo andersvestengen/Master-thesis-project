@@ -30,8 +30,8 @@ if __name__ == '__main__':
 				"preprocess_storage"    : Preprocess_dir,
 				"seed"                  : 172, # random training seed
 				"num_workers"           : 1,
-				"Data_mean"             : [0.5274, 0.4378, 0.3555],
-				"Data_std"              : [0.2842, 0.2463, 0.2103],
+            "Data_mean"             : [0.3212, 0.3858, 0.2613],
+            "Data_std"              : [0.2938, 0.2827, 0.2658],
             	"Do norm"               : True, #Normalization on or off 
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
@@ -41,17 +41,10 @@ if __name__ == '__main__':
 				#No spaces in the model name, please use '_'
 				"ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
 				"Drop_incomplete_batch" : True,
-				"Num_training_samples"  : 17000, #Setting this to None makes the Dataloader use all available images.
+				"Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
 				"Pin_memory"            : True
 				}
 
-		Custom_dataset = GAN_dataset(Settings, preprocess=True)
-
-		imloader = DataLoader(Custom_dataset,
-										num_workers = 0,
-										batch_size = 1, 
-										shuffle = True,
-										drop_last=False)
 	
 		models_loc = "Trained_Models"
 		Inference_dir = "Inference_Run"
@@ -73,20 +66,47 @@ if __name__ == '__main__':
 			model_inf = [Line for Line in f]
 
 
-		model_arch = ""
-		for modelname in Current_model_list:
-			for loc in model_ref_loc:
-				model_arch = model_inf[loc].split(':')[1].strip()
+		# Checking if model ran with normalization or not (legacy model support)
+		was_norm = model_inf[14].split(':')[1].strip()
+		print("was_norm:", was_norm)
+		if (was_norm) == "True":
+			print("Model detected with normalization")
+			Settings["Do norm"] = True
+		else:
+			print("Model detected without normalization")
+			Settings["Do norm"] = False
 
-				if modelname == model_arch:
+
+		Custom_dataset = GAN_dataset(Settings, preprocess=False)
+
+		imloader = DataLoader(Custom_dataset,
+										num_workers = 0,
+										batch_size = 1, 
+										shuffle = True,
+										drop_last=False)
+
+		# Deciding on model architecture
+		model_arch = ""
+
+		for model_name in Current_model_list:
+			for loc in model_ref_loc:
+				try:
+					model_arch = model_inf[loc].split(':')[1].strip()
+				except:
+					pass
+
+				if model_name == model_arch:
 					print("found model arch!")
 					print(model_arch)
 					break
+			else:
+				continue
+			break
 
 		if model_arch == "Generator_Unet1":
 			Model = Generator_Unet1()
 
-		elif model_arch == "UNet_ResNet34":
+		if model_arch == "UNet_ResNet34":
 			Model = UNet_ResNet34()
 
 

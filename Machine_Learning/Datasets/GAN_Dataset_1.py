@@ -47,6 +47,7 @@ class GAN_dataset(Dataset):
                                         std=self.std),
             )
         else:
+            print("Dataset: Normalization is off")
             self.Image_To_Sample_Transform = transforms.CenterCrop(256)
 
 
