@@ -35,7 +35,7 @@ if __name__ == '__main__':
 				#No spaces in the model name, please use '_'
 				"ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
 				"Drop_incomplete_batch" : True,
-				"Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
+				"Num_training_samples"  : 17000, #Setting this to None makes the Dataloader use all available images.
 				"Pin_memory"            : True
 				}
 
