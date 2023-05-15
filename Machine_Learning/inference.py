@@ -9,13 +9,18 @@ import shutil
 
 if __name__ == '__main__':
 
+
+		Current_model_list = ["Generator_Unet1", "UNet_ResNet34"]
+		model_ref_loc = [21, 23, 24]
+
 		Machine_learning_dir = "/home/anders/Master-thesis-project/Machine_Learning" # should point to the Machine learning folder of the local directory
 		Preprocess_dir = "/home/anders/Thesis_image_cache" # This can be set wherever you want. This is where the dataloader will create the image cache after converting the training images to tensor files.
-		#No editing of the images happens in the step above, its simply the dataloader converting the original images to tensors so the whole training set can be loaded in RAM before training starts. 
 
+		#Most of these settings don't matter. They're just here to make it easier to initalize the dataloader et.al
+		#The fields that do matter are things like normalization, cuda, Do norm, Pin memory, preprocess storage, dataset loc, 
 		Settings = {
 				"epochs"                : 5,
-				"batch_size"            : 1,
+				"batch_size"            : 1, # This must be 1 for inference!
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
 				"L1_loss_weight"        : 50,
 				"BoxSet"               : [3,10], # Low/high Boxsize of the error region. The value represents for length and with.
@@ -27,6 +32,7 @@ if __name__ == '__main__':
 				"num_workers"           : 1,
 				"Data_mean"             : [0.5274, 0.4378, 0.3555],
 				"Data_std"              : [0.2842, 0.2463, 0.2103],
+            	"Do norm"               : True, #Normalization on or off 
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
@@ -65,18 +71,25 @@ if __name__ == '__main__':
 		model_inf = []
 		with open(model_state, 'r') as f:
 			model_inf = [Line for Line in f]
-		Is_old = input("Is the model pre normalization? [y/n]: ")
-		if Is_old == "y":
-			model_arch = model_inf[21].split(':')[1].strip() # 21 is the location of the model architecture in the savestate.txt
-		else:
-			model_arch = model_inf[23].split(':')[1].strip() # 23 is the location of the model architecture in the savestate.txt after introducing normalization
+
+
+		model_arch = ""
+		for modelname in Current_model_list:
+			for loc in model_ref_loc:
+				model_arch = model_inf[loc].split(':')[1].strip()
+
+				if modelname == model_arch:
+					print("found model arch!")
+					print(model_arch)
+					break
 
 		if model_arch == "Generator_Unet1":
 			Model = Generator_Unet1()
 
 		elif model_arch == "UNet_ResNet34":
 			Model = UNet_ResNet34()
-		print(model_arch)
+
+
 		if os.path.isdir(run_dir):
 				while True:
 					choice = input("The directory already exists, would you like to replace it for new inference? [y/n]: ")
@@ -84,7 +97,7 @@ if __name__ == '__main__':
 						shutil.rmtree(run_dir)
 						os.makedirs(run_dir)
 						os.makedirs(run_dir + "/output")
-						inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=modelname, run_dir=run_dir)
+						inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 						inference_run.Inference_run()
 						inference_run.CreateMetrics()
 						break
@@ -93,6 +106,6 @@ if __name__ == '__main__':
 		else:
 			os.makedirs(run_dir)
 			os.makedirs(run_dir + "/output")
-			inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=modelname, run_dir=run_dir)
+			inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 			inference_run.Inference_run()
 			inference_run.CreateMetrics()

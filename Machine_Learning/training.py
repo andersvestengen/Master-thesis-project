@@ -16,12 +16,16 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
+<<<<<<< HEAD
             "epochs"                : 60,
+=======
+            "epochs"                : 10,
+>>>>>>> CUDA_dataset_No_normalization
             "batch_size"            : 16,
             "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 50,
             "BoxSet"               : [3,10], # min/max defect, inclusive
-            "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
+            "Loss_region_Box_mult"  : 3, # How many multiples of the defect box would you like the loss to account for?
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -30,14 +34,21 @@ Settings = {
             "shuffle"               : True,
             "Data_mean"             : [0.5274, 0.4378, 0.3555],
             "Data_std"              : [0.2842, 0.2463, 0.2103],
+            "Do norm"               : False, #Normalization on or off 
             "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
+<<<<<<< HEAD
             "ModelTrainingName"     : "GAN_15_Batchnorm",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 17000, #Setting this to None makes the Dataloader use all available images.
+=======
+            "ModelTrainingName"     : "GAN_15_Batchnorm_16_No_training_set_normalization",
+            "Drop_incomplete_batch" : True,
+            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
+>>>>>>> CUDA_dataset_No_normalization
             "Pin_memory"            : True
             }
 

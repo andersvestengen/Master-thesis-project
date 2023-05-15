@@ -288,7 +288,10 @@ class Training_Framework():
     
     def FromTorchTraining(self, image):
         #Returns a trainable tensor back into a visual image.
-        return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+        if self.Settings["Do norm"]:
+            return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+        else:
+            return image.permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
 
 
 
@@ -600,7 +603,10 @@ class Model_Inference():
 
     def FromTorchTraining(self, image):
         #Returns a trainable tensor back into a visual image.
-        return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+        if self.Settings["Do norm"]:
+            return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+        else:
+            return image.permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
         
     def Inference_run(self, runs=8):
         """
