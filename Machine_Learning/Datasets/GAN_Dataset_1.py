@@ -38,13 +38,18 @@ class GAN_dataset(Dataset):
         # Set conversion transform during preproccessing
         self.ConvertToTensor = transforms.ToTensor()        
 
-        self.Image_To_Sample_Transform = torch.nn.Sequential(
-                transforms.CenterCrop(256),
+        if self.Settings["Do norm"]:
+            self.Image_To_Sample_Transform = torch.nn.Sequential(
+                    transforms.CenterCrop(256),
 
-                # Constants calculated using the Dataset_Check_Norm.py script
-                transforms.Normalize(mean=self.mean,
-                                     std=self.std),
-        )
+                    # Constants calculated using the Dataset_Check_Norm.py script
+                    transforms.Normalize(mean=self.mean,
+                                        std=self.std),
+            )
+        else:
+            self.Image_To_Sample_Transform = torch.nn.Sequential(
+                    transforms.CenterCrop(256),
+            )
 
 
         # Set incoming transform to transform
