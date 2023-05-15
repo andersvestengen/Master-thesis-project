@@ -47,9 +47,7 @@ class GAN_dataset(Dataset):
                                         std=self.std),
             )
         else:
-            self.Image_To_Sample_Transform = torch.nn.Sequential(
-                    transforms.CenterCrop(256),
-            )
+            self.Image_To_Sample_Transform = transforms.CenterCrop(256)
 
 
         # Set incoming transform to transform
