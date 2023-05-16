@@ -262,7 +262,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return loss_GAN.detach(), (loss_pixel + local_pixelloss).detach()
+        return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach()
 
     def Discriminator_updater(self, val=False):
         
@@ -324,6 +324,7 @@ class Training_Framework():
             current_GEN_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
             current_DIS_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
             pixelloss =             torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+            local_pixelloss =       torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
             Discrim_acc_real_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
             Discrim_acc_fake_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
 
@@ -351,12 +352,13 @@ class Training_Framework():
                     self.fake_B = self.Generator(self.real_A)
                     self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
-                    GEN_loss, loss_pixel = self.Generator_updater(val=True)
+                    GEN_loss, loss_pixel, loss_pixel_local = self.Generator_updater(val=True)
 
                     #Analytics
                     current_GEN_loss[num: num + self.Settings["batch_size"]] =  GEN_loss
                     current_DIS_loss[num: num + self.Settings["batch_size"]] =  DIS_loss
                     pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel
+                    local_pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel_local
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])                
@@ -374,7 +376,7 @@ class Training_Framework():
             #We're now snapping images every epoch 
             self.Generate_validation_images(epoch)
 
-            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
+            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixellos)
 
     def Trainer(self, train_loader, val_loader):
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
@@ -383,6 +385,7 @@ class Training_Framework():
                 current_GEN_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
                 current_DIS_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
                 pixelloss =             torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+                local_pixelloss =       torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
                 Discrim_acc_real_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
                 Discrim_acc_fake_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
 
@@ -404,13 +407,14 @@ class Training_Framework():
                     self.fake_B = self.Generator(self.real_A)
                     self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()
-                    GEN_loss, loss_pixel, = self.Generator_updater()
+                    GEN_loss, loss_pixel, local_loss_pixel = self.Generator_updater()
 
                     #Analytics
                     #This is all assuming batch-size stays at 1
                     current_GEN_loss[num: num + self.Settings["batch_size"]] =  GEN_loss
                     current_DIS_loss[num: num + self.Settings["batch_size"]] =  DIS_loss
                     pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel
+                    local_pixelloss[num: num + self.Settings["batch_size"]] =  local_loss_pixel
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])
@@ -419,7 +423,7 @@ class Training_Framework():
 
                 
                 #Save per epoch
-                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
+                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss)
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
             #Save Analytics to file and create images from analytics    
@@ -435,7 +439,7 @@ class Training_Framework():
                 self.transmitter.send(self.Modeldir)
                 self.transmitter.close()
 
-    def Analytics_training(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss):
+    def Analytics_training(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss):
         """
         current epoch needs to be the first argument, except when setting up training.  
         """
@@ -445,6 +449,7 @@ class Training_Framework():
             self.Discriminator_accuracy_real_training_raw = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_training_raw = np.zeros(self.Settings["epochs"])
             self.Generator_pixel_loss_training = np.zeros(self.Settings["epochs"])
+            self.Generator_local_pixel_loss_training = np.zeros(self.Settings["epochs"])
 
         else:
 
@@ -461,8 +466,9 @@ class Training_Framework():
             self.Discriminator_accuracy_real_training_raw[epoch] = Discrim_acc_real_raw.mean().item()
             self.Discriminator_accuracy_fake_training_raw[epoch] = Discrim_acc_fake_raw.mean().item()
             self.Generator_pixel_loss_training[epoch] = pixelloss.mean().item()
+            self.Generator_local_pixel_loss_training[epoch] = local_pixelloss.mean().item()
 
-    def Analytics_validation(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss):
+    def Analytics_validation(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss):
         """
         current epoch needs to be the first argument, except when setting up training. 
         """
@@ -472,6 +478,7 @@ class Training_Framework():
             self.Discriminator_accuracy_real_validation_raw = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_validation_raw = np.zeros(self.Settings["epochs"])    
             self.Generator_pixel_loss_validation = np.zeros(self.Settings["epochs"])    
+            self.Generator_local_pixel_loss_validation = np.zeros(self.Settings["epochs"])    
 
         else:
             """
@@ -486,6 +493,7 @@ class Training_Framework():
             self.Discriminator_accuracy_real_validation_raw[epoch] = Discrim_acc_real_raw.mean().item()
             self.Discriminator_accuracy_fake_validation_raw[epoch] = Discrim_acc_fake_raw.mean().item()
             self.Generator_pixel_loss_validation[epoch] = pixelloss.mean().item()
+            self.Generator_local_pixel_loss_validation[epoch] = local_pixelloss.mean().item()
 
     def Save_Analytics(self):
         np.savez(self.Modeldir + '/Analytics.npz', (self.Generator_loss_validation,
@@ -493,8 +501,10 @@ class Training_Framework():
                                 self.Discriminator_accuracy_real_validation_raw,
                                 self.Discriminator_accuracy_fake_validation_raw,
                                 self.Generator_pixel_loss_validation,
+                                self.Generator_local_pixel_loss_validation,
                                 self.Generator_loss_train,
                                 self.Generator_pixel_loss_training,
+                                self.Generator_local_pixel_loss_training,
                                 self.Discriminator_loss_train,
                                 self.Discriminator_accuracy_real_training_raw,
                                 self.Discriminator_accuracy_fake_training_raw
@@ -535,17 +545,6 @@ class Training_Framework():
         plt.savefig(self.Modeldir + "/Combined_loss_curves.png")
         plt.clf() # clear the plot
 
-        plt.plot(xaxis, self.Discriminator_accuracy_real_training*100, label="Discriminator accuracy real training")
-        plt.plot(xaxis, self.Discriminator_accuracy_fake_training*100, label="Discriminator accuracy fake training")
-        plt.plot(xaxis, self.Discriminator_accuracy_real_validation*100, label="Discriminator accuracy real validation")
-        plt.plot(xaxis, self.Discriminator_accuracy_fake_validation*100, label="Discriminator accuracy fake validation")
-        plt.xlabel("epochs")
-        plt.ylabel("Percentage [%]")
-        plt.title("Discriminator accuracy")
-        plt.legend()
-        plt.savefig(self.Modeldir + "/discriminator_accuracy_curves.png")
-        plt.clf()
-
         #Implement this in analytics
         plt.plot(xaxis, self.Discriminator_accuracy_real_training_raw, label="Discriminator accuracy real training")
         plt.plot(xaxis, self.Discriminator_accuracy_fake_training_raw, label="Discriminator accuracy fake training")
@@ -558,15 +557,23 @@ class Training_Framework():
         plt.savefig(self.Modeldir + "/discriminator_accuracy_raw_curves.png")
         plt.clf()
         #Implement this in analytics
-        plt.plot(xaxis, self.Generator_pixel_loss_training*100, label="Training")
-        plt.plot(xaxis, self.Generator_pixel_loss_validation*100, label="Validation")
+        plt.plot(xaxis, self.Generator_pixel_loss_training, label="Training")
+        plt.plot(xaxis, self.Generator_pixel_loss_validation, label="Validation")
         plt.xlabel("epochs")
         plt.ylabel("L1-loss")
         plt.title("Generator combined pixel loss")
         plt.legend()
         plt.savefig(self.Modeldir + "/generator_pixel_loss.png")
         plt.clf()
-
+        #Implement this in analytics
+        plt.plot(xaxis, self.Generator_local_pixel_loss_training, label="Training")
+        plt.plot(xaxis, self.Generator_local_pixel_loss_validation, label="Validation")
+        plt.xlabel("epochs")
+        plt.ylabel("L1-loss")
+        plt.title("Generator combined local pixel loss")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/generator_pixel_loss.png")
+        plt.clf()
 
 class Model_Inference():
     """
