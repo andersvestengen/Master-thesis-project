@@ -16,7 +16,7 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
-            "epochs"                : 40,
+            "epochs"                : 20,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
@@ -30,22 +30,18 @@ Settings = {
             "shuffle"               : True,
             "Data_mean"             : [0.3212, 0.3858, 0.2613],
             "Data_std"              : [0.2938, 0.2827, 0.2658],
-            "Do norm"               : False, #Normalization on or off 
+            "Do norm"               : True, #Normalization on or off 
             "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_15_HEMIN_40_epoch_no_norm",
+            "ModelTrainingName"     : "GAN_15_ImageNet_norm_20_epoch",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
-
-#Discovered during testing that using preprocessing gives different mean and std calculations. These are the preprocessor constants
-#Settings["Data_mean"] = [0.5274, 0.4378, 0.3555]
-#Settings["Data_std"] = [0.2842, 0.2463, 0.2103]
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(0.2),

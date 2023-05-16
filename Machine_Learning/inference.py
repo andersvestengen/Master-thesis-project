@@ -45,7 +45,6 @@ if __name__ == '__main__':
 				"Pin_memory"            : True
 				}
 
-	
 		models_loc = "Trained_Models"
 		Inference_dir = "Inference_Run"
 		models = os.listdir(models_loc)
