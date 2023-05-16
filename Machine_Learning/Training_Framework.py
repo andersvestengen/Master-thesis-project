@@ -439,8 +439,6 @@ class Training_Framework():
         if epoch == "setup":
             self.Generator_loss_train = np.zeros(self.Settings["epochs"])
             self.Discriminator_loss_train = np.zeros(self.Settings["epochs"])
-            self.Discriminator_accuracy_real_training = np.zeros(self.Settings["epochs"])
-            self.Discriminator_accuracy_fake_training = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_training_raw = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_training_raw = np.zeros(self.Settings["epochs"])
             self.Generator_pixel_loss_training = np.zeros(self.Settings["epochs"])
@@ -448,17 +446,18 @@ class Training_Framework():
         else:
 
             #Save per epoch
+            """
             current_GEN_loss_in = current_GEN_loss.mean().item()
             current_DIS_loss_in = current_DIS_loss.mean().item()
             Discrim_acc_real_in= Discrim_acc_real_raw.mean().item()
             Discrim_acc_fake_in = Discrim_acc_fake_raw.mean().item()
             pixelloss_in = pixelloss.mean().item()
-
-            self.Generator_loss_train[epoch] = current_GEN_loss_in
-            self.Discriminator_loss_train[epoch] = current_DIS_loss_in
-            self.Discriminator_accuracy_real_training_raw[epoch] = Discrim_acc_real_in
-            self.Discriminator_accuracy_fake_training_raw[epoch] = Discrim_acc_fake_in
-            self.Generator_pixel_loss_training[epoch] = pixelloss_in
+            """
+            self.Generator_loss_train[epoch] = current_GEN_loss.mean().item()
+            self.Discriminator_loss_train[epoch] = current_DIS_loss.mean().item()
+            self.Discriminator_accuracy_real_training_raw[epoch] = Discrim_acc_real_raw.mean().item()
+            self.Discriminator_accuracy_fake_training_raw[epoch] = Discrim_acc_fake_raw.mean().item()
+            self.Generator_pixel_loss_training[epoch] = pixelloss.mean().item()
 
     def Analytics_validation(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss):
         """
@@ -467,38 +466,33 @@ class Training_Framework():
         if epoch == "setup":
             self.Generator_loss_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_loss_validation = np.zeros(self.Settings["epochs"])
-            self.Discriminator_accuracy_real_validation = np.zeros(self.Settings["epochs"])
-            self.Discriminator_accuracy_fake_validation = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_real_validation_raw = np.zeros(self.Settings["epochs"])
             self.Discriminator_accuracy_fake_validation_raw = np.zeros(self.Settings["epochs"])    
             self.Generator_pixel_loss_validation = np.zeros(self.Settings["epochs"])    
 
         else:
+            """
             current_GEN_loss_in = current_GEN_loss.mean().item()
             current_DIS_loss_in = current_DIS_loss.mean().item()
             Discrim_acc_real_in = Discrim_acc_real_raw.mean().item()
-            Discrim_acc_fake__in = Discrim_acc_fake_raw.mean().item()
+            Discrim_acc_fake_in = Discrim_acc_fake_raw.mean().item()
             pixelloss_in = pixelloss.mean().item()
-
-            self.Generator_loss_validation[epoch] = current_GEN_loss_in
-            self.Discriminator_loss_validation[epoch] = current_DIS_loss_in
-            self.Discriminator_accuracy_real_validation_raw[epoch] = Discrim_acc_real_in
-            self.Discriminator_accuracy_fake_validation_raw[epoch] = Discrim_acc_real_in
-            self.Generator_pixel_loss_validation[epoch] = pixelloss_in
+            """
+            self.Generator_loss_validation[epoch] = current_GEN_loss.mean().item()
+            self.Discriminator_loss_validation[epoch] = current_DIS_loss.mean().item()
+            self.Discriminator_accuracy_real_validation_raw[epoch] = Discrim_acc_real_raw.mean().item()
+            self.Discriminator_accuracy_fake_validation_raw[epoch] = Discrim_acc_fake_raw.mean().item()
+            self.Generator_pixel_loss_validation[epoch] = pixelloss.mean().item()
 
     def Save_Analytics(self):
         np.savez(self.Modeldir + '/Analytics.npz', (self.Generator_loss_validation,
                                 self.Discriminator_loss_validation,
-                                self.Discriminator_accuracy_real_validation,
-                                self.Discriminator_accuracy_fake_validation,
                                 self.Discriminator_accuracy_real_validation_raw,
                                 self.Discriminator_accuracy_fake_validation_raw,
                                 self.Generator_pixel_loss_validation,
                                 self.Generator_loss_train,
                                 self.Generator_pixel_loss_training,
                                 self.Discriminator_loss_train,
-                                self.Discriminator_accuracy_real_training,
-                                self.Discriminator_accuracy_fake_training,
                                 self.Discriminator_accuracy_real_training_raw,
                                 self.Discriminator_accuracy_fake_training_raw
                                 ))
