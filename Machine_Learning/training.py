@@ -16,12 +16,12 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
-            "epochs"                : 10,
+            "epochs"                : 40,
             "batch_size"            : 16,
-            "L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 50,
+            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1_loss_weight"        : 100,
             "BoxSet"               : [3,10], # min/max defect, inclusive
-            "Loss_region_Box_mult"  : 2, # How many multiples of the defect box would you like the loss to account for?
+            "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -36,9 +36,9 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_15_HEMIN_batch_16",
+            "ModelTrainingName"     : "GAN_15_HEMIN_40_epoch_no_norm",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -48,11 +48,11 @@ Settings = {
 #Settings["Data_std"] = [0.2842, 0.2463, 0.2103]
 
 training_transforms = transforms.Compose([
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomVerticalFlip(),
+    transforms.RandomHorizontalFlip(0.2),
+    transforms.RandomVerticalFlip(0.2),
 ])
 
-training_transforms = None # Removing the transforms until I'm sure they're useful.
+#training_transforms = None # Removing the transforms until I'm sure they're useful.
 
 #Try with instancenorm affine, to enable learnable parameters
 
@@ -77,8 +77,8 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    Generator = UNet_ResNet34().to(device)
-    #Generator = Generator_Unet1().to(device)
+    #Generator = UNet_ResNet34().to(device)
+    Generator = Generator_Unet1().to(device)
     Generator.apply(weights_init)
 
 
