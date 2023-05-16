@@ -36,7 +36,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "TEST_DELETEME",
+            "ModelTrainingName"     : "GAN_15_HEMIN_batch_16",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 15000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -58,7 +58,8 @@ training_transforms = None # Removing the transforms until I'm sure they're usef
 
 def weights_init(m):
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if classname.find('ConvTranspose2d') != -1:
+        print("found weights")
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
         if m.bias is not None:
             torch.nn.init.constant_(m.bias.data, 1)
@@ -77,8 +78,8 @@ if __name__ == '__main__':
     #Load models
     Discriminator = Discriminator_1().to(device)
     Discriminator.apply(weights_init)
-    #Generator = UNet_ResNet34().to(device)
-    Generator = Generator_Unet1().to(device)
+    Generator = UNet_ResNet34().to(device)
+    #Generator = Generator_Unet1().to(device)
     Generator.apply(weights_init)
 
 

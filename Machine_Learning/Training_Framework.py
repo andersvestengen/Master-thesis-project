@@ -383,12 +383,12 @@ class Training_Framework():
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
-                current_GEN_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-                current_DIS_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-                pixelloss =             torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-                local_pixelloss =       torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-                Discrim_acc_real_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-                Discrim_acc_fake_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+                current_GEN_loss =      torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                current_DIS_loss =      torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                pixelloss =             torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                local_pixelloss =       torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                Discrim_acc_real_raw =  torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                Discrim_acc_fake_raw =  torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
 
                 if self.Settings["batch_size"] == 1:
                     tepoch = tqdm(train_loader, unit='image(s)', leave=False)
@@ -419,8 +419,8 @@ class Training_Framework():
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])
-                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3)).squeeze(1)
-                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3)).squeeze(1)
+                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3,0))
+                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3,0))
 
                 
                 #Save per epoch
