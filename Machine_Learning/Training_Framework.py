@@ -363,8 +363,8 @@ class Training_Framework():
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])                
-                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3)).squeeze(1)
-                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3)).squeeze(1)
+                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3,0))
+                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3,0))
 
             #Turn on propagation
             self.Generator.train()

@@ -58,8 +58,7 @@ training_transforms = None # Removing the transforms until I'm sure they're usef
 
 def weights_init(m):
     classname = m.__class__.__name__
-    if classname.find('ConvTranspose2d') != -1:
-        print("found weights")
+    if classname.find('Conv') != -1:
         torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
         if m.bias is not None:
             torch.nn.init.constant_(m.bias.data, 1)
