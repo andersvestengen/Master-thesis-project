@@ -158,7 +158,7 @@ class Training_Framework():
         self.Generator_loss = 0
         self.Discriminator_loss = 0
         self.Reverse_Normalization = NormalizeInverse(self.Settings["Data_mean"], self.Settings["Data_std"])
-        self.patch = torch.tensor((1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4), device=self.device)
+        #self.patch = torch.tensor((1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4), device=self.device)
         self.transmit = False # No reason to do file transfer in the future
 
         """
@@ -188,18 +188,19 @@ class Training_Framework():
         self.modeltraining_output               = self.Modeldir + "/training_output"
         os.makedirs(self.modeltraining_output)
 
-        self.Analytics_training("setup", 0, 0, 0, 0, 0)
-        self.Analytics_validation("setup", 0, 0, 0, 0, 0)
+        self.Analytics_training("setup", 0, 0, 0, 0, 0, 0)
+        self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0)
         
         self.train_start = time.time()
 
     def Save_Model(self, epoch):
-            if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])) or (self.Generator_pixel_loss_validation[epoch] < np.min(self.Generator_pixel_loss_validation[:epoch])):
+            if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.amin(self.Generator_loss_validation[:epoch])) or (self.Generator_pixel_loss_validation[epoch] < np.amin(self.Generator_pixel_loss_validation[:epoch])):
                 #Thinking we'll just print for now.
-                if (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
-                    print("model saved on epoch:", epoch, "Due to best GAN loss:", self.Generator_loss_validation[epoch])
-                if (self.Generator_pixel_loss_validation[epoch] < np.min(self.Generator_pixel_loss_validation[:epoch])):
-                    print("model saved on epoch:", epoch, "Due to best pixelloss:", self.Generator_pixel_loss_validation[epoch])
+                if not epoch == 0:
+                    if (self.Generator_loss_validation[epoch] < np.amin(self.Generator_loss_validation[:epoch])):
+                        print("model saved on epoch:", epoch, "Due to best GAN loss:", self.Generator_loss_validation[epoch])
+                    if (self.Generator_pixel_loss_validation[epoch] < np.amin(self.Generator_pixel_loss_validation[:epoch])):
+                        print("model saved on epoch:", epoch, "Due to best pixelloss:", self.Generator_pixel_loss_validation[epoch])
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
     def SaveState(self):
@@ -321,12 +322,12 @@ class Training_Framework():
     def validation_run(self, val_loader, epoch):
         with torch.no_grad():
 
-            current_GEN_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-            current_DIS_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-            pixelloss =             torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-            local_pixelloss =       torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-            Discrim_acc_real_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-            Discrim_acc_fake_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+            current_GEN_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            current_DIS_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            pixelloss =             torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            local_pixelloss =       torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            Discrim_acc_real_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            Discrim_acc_fake_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
 
             if self.Settings["batch_size"] == 1:
                 val_unit = "image(s)"
@@ -355,15 +356,15 @@ class Training_Framework():
                     GEN_loss, loss_pixel, loss_pixel_local = self.Generator_updater(val=True)
 
                     #Analytics
-                    current_GEN_loss[num: num + self.Settings["batch_size"]] =  GEN_loss
-                    current_DIS_loss[num: num + self.Settings["batch_size"]] =  DIS_loss
-                    pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel
-                    local_pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel_local
+                    current_GEN_loss[num] =  GEN_loss
+                    current_DIS_loss[num] =  DIS_loss
+                    pixelloss[num] =  loss_pixel
+                    local_pixelloss[num] =  loss_pixel_local
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])                
-                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3)).squeeze(1)
-                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3)).squeeze(1)
+                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3)).squeeze(1)
+                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3)).squeeze(1)
 
             #Turn on propagation
             self.Generator.train()
@@ -376,18 +377,18 @@ class Training_Framework():
             #We're now snapping images every epoch 
             self.Generate_validation_images(epoch)
 
-            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixellos)
+            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss)
 
     def Trainer(self, train_loader, val_loader):
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
-                current_GEN_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-                current_DIS_loss =      torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-                pixelloss =             torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-                local_pixelloss =       torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-                Discrim_acc_real_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
-                Discrim_acc_fake_raw =  torch.zeros(len(val_loader)*self.Settings["batch_size"], dtype=torch.float32, device=self.device)
+                current_GEN_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+                current_DIS_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+                pixelloss =             torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+                local_pixelloss =       torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+                Discrim_acc_real_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+                Discrim_acc_fake_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
 
                 if self.Settings["batch_size"] == 1:
                     tepoch = tqdm(train_loader, unit='image(s)', leave=False)
@@ -411,15 +412,15 @@ class Training_Framework():
 
                     #Analytics
                     #This is all assuming batch-size stays at 1
-                    current_GEN_loss[num: num + self.Settings["batch_size"]] =  GEN_loss
-                    current_DIS_loss[num: num + self.Settings["batch_size"]] =  DIS_loss
-                    pixelloss[num: num + self.Settings["batch_size"]] =  loss_pixel
-                    local_pixelloss[num: num + self.Settings["batch_size"]] =  local_loss_pixel
+                    current_GEN_loss[num] =  GEN_loss
+                    current_DIS_loss[num] =  DIS_loss
+                    pixelloss[num] =  loss_pixel
+                    local_pixelloss[num] =  local_loss_pixel
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])
-                    Discrim_acc_real_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_real, (2,3)).squeeze(1)
-                    Discrim_acc_fake_raw[num: num + self.Settings["batch_size"]] = torch.mean(predicted_fake, (2,3)).squeeze(1)
+                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3)).squeeze(1)
+                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3)).squeeze(1)
 
                 
                 #Save per epoch
@@ -572,7 +573,7 @@ class Training_Framework():
         plt.ylabel("L1-loss")
         plt.title("Generator combined local pixel loss")
         plt.legend()
-        plt.savefig(self.Modeldir + "/generator_pixel_loss.png")
+        plt.savefig(self.Modeldir + "/generator_local_pixel_loss.png")
         plt.clf()
 
 class Model_Inference():
