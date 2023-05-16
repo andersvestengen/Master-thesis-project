@@ -370,8 +370,9 @@ class Training_Framework():
             self.Discriminator.requires_grad=True
 
             #Snapping image from generator during validation
-            if (epoch % 10) == 0:
-                self.Generate_validation_images(epoch)
+            #if (epoch % 10) == 0:
+            #We're now snapping images every epoch 
+            self.Generate_validation_images(epoch)
 
             self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss)
 
