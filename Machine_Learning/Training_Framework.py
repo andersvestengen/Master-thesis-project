@@ -195,6 +195,11 @@ class Training_Framework():
 
     def Save_Model(self, epoch):
             if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])) or (self.Generator_pixel_loss_validation[epoch] < np.min(self.Generator_pixel_loss_validation[:epoch])):
+                #Thinking we'll just print for now.
+                if (self.Generator_loss_validation[epoch] < np.min(self.Generator_loss_validation[:epoch])):
+                    print("model saved on epoch:", epoch, "Due to best GAN loss:", self.Generator_loss_validation[epoch])
+                if (self.Generator_pixel_loss_validation[epoch] < np.min(self.Generator_pixel_loss_validation[:epoch])):
+                    print("model saved on epoch:", epoch, "Due to best pixelloss:", self.Generator_pixel_loss_validation[epoch])
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
 
     def SaveState(self):
@@ -236,7 +241,6 @@ class Training_Framework():
 
     def Generator_updater(self, val=False): 
         self.Generator.zero_grad()
-        #valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         # Generator loss
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)     
@@ -246,7 +250,7 @@ class Training_Framework():
         
         #Pixelwise loss
         SampleY, SampleX, BoxSize = self.defect_coordinates[0]
-        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device) # trying standard 30x30 loss box
+        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
         SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
         loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
         local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
@@ -261,8 +265,6 @@ class Training_Framework():
         return loss_GAN.detach(), (loss_pixel + local_pixelloss).detach()
 
     def Discriminator_updater(self, val=False):
-        #valid = torch.ones((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
-        #fake = torch.zeros((self.Settings["batch_size"], *self.patch), requires_grad=False).to(self.device)
         
         #Real loss
         real_AB = torch.cat((self.real_A, self.real_B), 1)
