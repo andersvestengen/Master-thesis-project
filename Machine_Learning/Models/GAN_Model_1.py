@@ -145,3 +145,55 @@ class Discriminator_1(nn.Module):
         #input = torch.cat((image_A, image_B), 1)
         return self.model(input)
     
+
+class PixPatchGANDiscriminator(nn.Module):
+    
+    def __init__(self, input_ch, output_filters, num_layers, norm_layer):
+        """
+        input_ch:       number of channels in the input images
+        outputfilers:   number of filters in the last output layer
+        num_layers:     number of layers in the discriminator
+        norm_layer:     which type of normalization layer is used (batch- or instance-norm) 
+        """
+        
+        super(PixPatchGANDiscriminator, self).__init__()
+        if norm_layer == "batch":
+            norm_layer = nn.BatchNorm2d
+        else:
+            norm_layer = nn.InstanceNorm2d
+
+        if norm_layer == nn.InstanceNorm2d:
+            use_bias = True
+        else:
+            use_bias = False #batchnorm has affine layers and so no need to use bias
+        
+        Layers = [nn.Conv2d(input_ch, output_filters, kernel_size=4, stride=2, padding=1), nn.LeakyReLU(0.2, True)]
+
+        number_of_filters = 1
+        prev_number_of_filters = 1
+        for n in range(1, num_layers):
+            prev_number_of_filters = number_of_filters
+            number_of_filters = min(2**n, 8)
+
+            Layers += [
+                nn.Conv2d(output_filters * prev_number_of_filters, output_filters * number_of_filters, kernel_size=4, stride=2, padding=1, bias=use_bias),
+                norm_layer(output_filters * number_of_filters),
+                nn.LeakyReLU(0.2, True)
+            ]
+        
+        prev_number_of_filters = number_of_filters
+        number_of_filters = min(2**num_layers, 8)
+
+        Layers += [
+            nn.Conv2d(output_filters * prev_number_of_filters, output_filters * number_of_filters, kernel_size=4, stride=2, padding=1, bias=use_bias),
+            norm_layer(output_filters * number_of_filters),
+            nn.LeakyReLU(0.2, True)
+        ]
+
+        Layers += [nn.Conv2d(output_filters * number_of_filters, 1, kernel_size=4, stride=1, padding=1)] # output-prediction layer
+
+    
+        self.model = nn.Sequential(*Layers) # build model
+
+    def forward(self, input):
+        return self.model(input)
