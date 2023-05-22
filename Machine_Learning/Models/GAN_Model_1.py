@@ -149,7 +149,7 @@ class Discriminator_1(nn.Module):
 
 class PixPatchGANDiscriminator(nn.Module):
     
-    def __init__(self, input_ch, output_filters, num_layers, norm_layer):
+    def __init__(self, input_ch, output_filters=64, num_layers=3, norm_layer=nn.BatchNorm2d):
         """
         input_ch:       number of channels in the input images
         outputfilers:   number of filters in the last output layer
@@ -201,12 +201,13 @@ class UnetSkipConnectionBlock(nn.Module):
     Defines the Unet sub-layer with skip connections.
     """
 
-    def __init__(self, outer_layers, inner_layers, input_layers=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
+    def __init__(self, outer_layers, inner_layers, input_layers=None, submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         """
         outer_layer:        number of filters in the outer convolutional_layer
         inner_layer:        number of filters in the inner convolutional layer
         input_layer:        number of channels in the image inputs
         outermost:          is this the outermost layer?
+        submodule:          previously defined submodules (skip connection?)
         innermost:          is this the innermost layer?
         norm_layer:         define which type of normalization layer
         use_drouput:        use dropout in this sub-module?
@@ -220,4 +221,41 @@ class UnetSkipConnectionBlock(nn.Module):
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
 
+        if input_layers is None:
+            input_layers = outer_layers
 
+        downconv    = nn.Conv2d(input_layers, inner_layers, kernel_size=4, stride=2, padding=1, bias=use_bias)
+        downrelu    = nn.LeakyReLU(0.2, True)
+        downnorm    = norm_layer(inner_layers)
+        uprelu      = nn.ReLU(True)
+        upnorm      = norm_layer(outer_layers)
+
+        if outermost:
+            upconv = nn.ConvTranspose2d(inner_layers * 2, outer_layers, kernel_size=4, stride=2, padding=1, bias=use_bias) #bias not included in the original github code, but that must be an oversight?
+            down = [downconv]
+            up = [uprelu, upconv, nn.Tanh()]
+            model = down + [submodule] + up
+
+        elif innermost:
+            upconv = nn.ConvTranspose2d(inner_layers, outer_layers, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            down = [downrelu, downconv]
+            up = [uprelu, upconv, upnorm]
+            model = down + up
+        
+        else:
+            upconv = nn.ConvTranspose2d(inner_layers * 2, outer_layers, kernel_size=4, stride=2, padding=1, bias=use_bias)
+            down = [downrelu, downconv, downnorm]
+            up = [uprelu, upconv, upnorm]
+            
+            if use_dropout:
+                model = down + [submodule] + up + [nn.Dropout(0.5)]
+            else:
+                model = down + [submodule] + up
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, input):
+        if self.outermost:
+            return self.model(input)
+        else:
+            return torch.cat([input, self.model(input)], 1)
