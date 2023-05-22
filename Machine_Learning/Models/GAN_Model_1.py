@@ -5,6 +5,7 @@
 #from xdrlib import ConversionError
 import torch
 from torch import nn
+import functools
 """
 Dev notes:
     - After the first successfull training iteration, add a local loss.
@@ -157,15 +158,10 @@ class PixPatchGANDiscriminator(nn.Module):
         """
         
         super(PixPatchGANDiscriminator, self).__init__()
-        if norm_layer == "batch":
-            norm_layer = nn.BatchNorm2d
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
-            norm_layer = nn.InstanceNorm2d
-
-        if norm_layer == nn.InstanceNorm2d:
-            use_bias = True
-        else:
-            use_bias = False #batchnorm has affine layers and so no need to use bias
+            use_bias = norm_layer == nn.InstanceNorm2d
         
         Layers = [nn.Conv2d(input_ch, output_filters, kernel_size=4, stride=2, padding=1), nn.LeakyReLU(0.2, True)]
 
@@ -197,3 +193,31 @@ class PixPatchGANDiscriminator(nn.Module):
 
     def forward(self, input):
         return self.model(input)
+    
+
+
+class UnetSkipConnectionBlock(nn.Module):
+    """
+    Defines the Unet sub-layer with skip connections.
+    """
+
+    def __init__(self, outer_layers, inner_layers, input_layers=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
+        """
+        outer_layer:        number of filters in the outer convolutional_layer
+        inner_layer:        number of filters in the inner convolutional layer
+        input_layer:        number of channels in the image inputs
+        outermost:          is this the outermost layer?
+        innermost:          is this the innermost layer?
+        norm_layer:         define which type of normalization layer
+        use_drouput:        use dropout in this sub-module?
+        """
+
+        super(UnetSkipConnectionBlock, self).__init__()
+        self.outermost = outermost
+
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm2d
+
+
