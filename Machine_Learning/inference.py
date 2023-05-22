@@ -109,7 +109,7 @@ if __name__ == '__main__':
 			Model = UNet_ResNet34()
 
 		if model_arch == "UnetGenerator":
-			Model = UnetGenerator()
+			Model = UnetGenerator(norm_layer=torch.nn.InstanceNorm2d)
 
 		if os.path.isdir(run_dir):
 				while True:

@@ -334,7 +334,7 @@ class UnetGenerator(nn.Module):
 
 class PixelDiscriminator(nn.Module):
 
-    def __init__(self, input_channels, last_conv_channels=64, norm_layer=nn.BatchNorm2d):
+    def __init__(self, input_channels=3, last_conv_channels=64, norm_layer=nn.BatchNorm2d):
 
 
         super(PixelDiscriminator, self).__init__()
