@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 import torch
-from Models.GAN_Model_1 import Generator_Unet1, Discriminator_1
+from Models.GAN_Model_1 import Generator_Unet1, Discriminator_1, UnetGenerator
 from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Datasets.GAN_Dataset_1 import GAN_dataset
 from Training_Framework import Model_Inference
@@ -10,7 +10,7 @@ import shutil
 if __name__ == '__main__':
 
 
-		Current_model_list = ["Generator_Unet1", "UNet_ResNet34"]
+		Current_model_list = ["Generator_Unet1", "UNet_ResNet34", "UnetGenerator"]
 		model_ref_loc = [21, 23, 24]
 
 		Machine_learning_dir = "/home/anders/Master-thesis-project/Machine_Learning" # should point to the Machine learning folder of the local directory
@@ -108,6 +108,8 @@ if __name__ == '__main__':
 		if model_arch == "UNet_ResNet34":
 			Model = UNet_ResNet34()
 
+		if model_arch == "UnetGenerator":
+			Model = UnetGenerator()
 
 		if os.path.isdir(run_dir):
 				while True:

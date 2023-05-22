@@ -192,6 +192,7 @@ class PixPatchGANDiscriminator(nn.Module):
         """
         
         super(PixPatchGANDiscriminator, self).__init__()
+        self.name = "PixPatchGANDiscriminator"
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
@@ -314,6 +315,8 @@ class UnetGenerator(nn.Module):
 
         super(UnetGenerator, self).__init__()
 
+        self.name = "UnetGenerator"
+
         unet_block = UnetSkipConnectionBlock(channels_last_conv * 8, channels_last_conv * 8, input_layers=None, submodule=None, norm_layer=norm_layer, innermost=True) #Defining the innermost layer first?
         for i in range(num_downsamples - 5): #Why would you subtract exactly five, this must mean there's a smallest network, which is 7?
             unet_block = UnetSkipConnectionBlock(channels_last_conv * 8, channels_last_conv * 8, input_layers=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
@@ -335,6 +338,8 @@ class PixelDiscriminator(nn.Module):
 
 
         super(PixelDiscriminator, self).__init__()
+
+        self.name = "PixelDiscriminator"
 
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d

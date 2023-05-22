@@ -36,7 +36,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "GAN_15_ImageNet_norm_20_epoch",
+            "ModelTrainingName"     : "origin_PIX_Unet_PixPatchDis",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
