@@ -1,4 +1,4 @@
-from Models.GAN_Model_1 import Discriminator_1, Generator_Unet1
+from Models.GAN_Model_1 import Discriminator_1, Generator_Unet1, UnetGenerator, PixPatchGANDiscriminator, init_weights
 from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Datasets.GAN_Dataset_1 import GAN_dataset
 import torch
@@ -18,7 +18,7 @@ Preprocess_dir = "/home/anders/Thesis_image_cache"
 Settings = {
             "epochs"                : 20,
             "batch_size"            : 16,
-            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1__local_loss_weight" : 0, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
             "BoxSet"               : [3,10], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
@@ -52,13 +52,6 @@ training_transforms = transforms.Compose([
 
 #Try with instancenorm affine, to enable learnable parameters
 
-def weights_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
-        if m.bias is not None:
-            torch.nn.init.constant_(m.bias.data, 1)
-
 
 if __name__ == '__main__':
     # Setup GPU (or not)
@@ -71,12 +64,11 @@ if __name__ == '__main__':
     device = Settings["device"]
 
     #Load models
-    Discriminator = Discriminator_1().to(device)
-    Discriminator.apply(weights_init)
+    Discriminator = PixPatchGANDiscriminator().to(device)
+    init_weights(Discriminator)
     #Generator = UNet_ResNet34().to(device)
-    Generator = Generator_Unet1().to(device)
-    Generator.apply(weights_init)
-
+    Generator = UnetGenerator(use_dropout=True).to(device)
+    init_weights(Generator)
 
     # Configure dataloaders
     Custom_dataset = GAN_dataset(Settings, transform=training_transforms, preprocess=False)
@@ -104,7 +96,7 @@ if __name__ == '__main__':
                             pin_memory      = Settings["Pin_memory"])
     
     # Loss functions
-    GAN_loss        = torch.nn.MSELoss().to(Settings["device"]) # GAN loss for GEN and DIS
+    GAN_loss        = torch.nn.BCEWithLogitsLoss().to(Settings["device"]) # GAN loss for GEN and DIS #Changed from MSELoss() because, thats the vanilla config for Pix2Pix
     pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
 
     Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"], betas=[0.5, 0.999])

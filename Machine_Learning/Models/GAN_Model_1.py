@@ -13,6 +13,40 @@ Dev notes:
 """
 #sizes and functions based on the pix2pix paper and github codebase
 
+
+def init_weights(net, init_type="normal", init_gain=0.02):
+    """
+    weight initialization function to automate different init-schemes.
+
+    net:        Network to be initialized
+    init_type:  Different init schemes: normal, xavier, kaiming
+    init_gain:  scaling factor for init of normal and xavier schemes
+    """
+
+    #Cool
+    def init_func(m):
+        classname = m.__class__.__name__
+        if hasattr(m, "weight") and (classname.find("Conv") != -1 or classname.find("Linear") != -1):
+            if init_type == "normal":
+                 nn.init.normal_(m.weight.data, 0.0, init_gain)
+            elif init_type == 'xavier':
+                nn.init.xavier_normal_(m.weight.data, gain=init_gain)
+            elif init_type == 'kaiming':
+                nn.init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+                           
+            if hasattr(m, 'bias') and m.bias is not None:
+                nn.init.constant_(m.bias.data, 0.0)
+
+        elif classname.find('BatchNorm2d') != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
+            nn.init.normal_(m.weight.data, 1.0, init_gain)
+            nn.init.constant_(m.bias.data, 0.0)
+
+    print("initialize network with", init_type)
+    net.apply(init_func) 
+
+
+
+
 # Unet structure for the GAN
 class UnetEncoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, normalize=True, dropout=0.0):
@@ -149,7 +183,7 @@ class Discriminator_1(nn.Module):
 
 class PixPatchGANDiscriminator(nn.Module):
     
-    def __init__(self, input_ch, output_filters=64, num_layers=3, norm_layer=nn.BatchNorm2d):
+    def __init__(self, input_ch=3, output_filters=64, num_layers=3, norm_layer=nn.BatchNorm2d):
         """
         input_ch:       number of channels in the input images
         outputfilers:   number of filters in the last output layer
@@ -268,7 +302,7 @@ class UnetGenerator(nn.Module):
     pix2pix discription says that it constructs the U-net from the innermost layer to the outermost layer and that this is a recursive process, which.. yeah.
     """
 
-    def __init__(self, input_channels, output_channels, num_downsamples=8, channels_last_conv=64, norm_layer=nn.BatchNorm2d, use_dropout=False):
+    def __init__(self, input_channels=3, output_channels=3, num_downsamples=8, channels_last_conv=64, norm_layer=nn.BatchNorm2d, use_dropout=False):
         """
         input_channels:         number of channels in the input images
         output_channels:        number of channels in the output images
@@ -282,7 +316,7 @@ class UnetGenerator(nn.Module):
 
         unet_block = UnetSkipConnectionBlock(channels_last_conv * 8, channels_last_conv * 8, input_layers=None, submodule=None, norm_layer=norm_layer, innermost=True) #Defining the innermost layer first?
         for i in range(num_downsamples - 5): #Why would you subtract exactly five, this must mean there's a smallest network, which is 7?
-            unet_block = UnetSkipConnectionBlock(channels_last_conv * 8, channels_last_conv * 8, input_layers=None, submodule=unet_block, norm_layer=norm_layer)
+            unet_block = UnetSkipConnectionBlock(channels_last_conv * 8, channels_last_conv * 8, input_layers=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
         
         unet_block = UnetSkipConnectionBlock(channels_last_conv * 4, channels_last_conv * 8, input_layers=None, submodule=unet_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(channels_last_conv * 2, channels_last_conv * 4, input_layers=None, submodule=unet_block, norm_layer=norm_layer)
@@ -318,5 +352,5 @@ class PixelDiscriminator(nn.Module):
 
         self.model = nn.Sequential(*model)
 
-    def forward(self. input):
+    def forward(self, input):
         return self.model(input)
