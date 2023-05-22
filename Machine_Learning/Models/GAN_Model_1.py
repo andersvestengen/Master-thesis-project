@@ -163,7 +163,7 @@ class PixPatchGANDiscriminator(nn.Module):
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
         
-        Layers = [nn.Conv2d(input_ch, output_filters, kernel_size=4, stride=2, padding=1), nn.LeakyReLU(0.2, True)]
+        Layers = [nn.Conv2d(input_ch*2, output_filters, kernel_size=4, stride=2, padding=1), nn.LeakyReLU(0.2, True)]
 
         number_of_filters = 1
         prev_number_of_filters = 1
@@ -231,7 +231,7 @@ class UnetSkipConnectionBlock(nn.Module):
         upnorm      = norm_layer(outer_layers)
 
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_layers * 2, outer_layers, kernel_size=4, stride=2, padding=1, bias=use_bias) #bias not included in the original github code, but that must be an oversight?
+            upconv = nn.ConvTranspose2d(inner_layers * 2, outer_layers, kernel_size=4, stride=2, padding=1) #bias not included in the original github code, but that must be an oversight?
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
@@ -259,3 +259,64 @@ class UnetSkipConnectionBlock(nn.Module):
             return self.model(input)
         else:
             return torch.cat([input, self.model(input)], 1)
+        
+
+class UnetGenerator(nn.Module):
+    """
+    Creates the Pix2Pix U-net style Generator 
+
+    pix2pix discription says that it constructs the U-net from the innermost layer to the outermost layer and that this is a recursive process, which.. yeah.
+    """
+
+    def __init__(self, input_channels, output_channels, num_downsamples=8, channels_last_conv=64, norm_layer=nn.BatchNorm2d, use_dropout=False):
+        """
+        input_channels:         number of channels in the input images
+        output_channels:        number of channels in the output images
+        num_downsamples:        multiplicative deciding by how much the images gets downsampled as they traverse to the bottom of the U-net. Deciding on 8 layers as our input is 256x256 in size
+        channels_last_conv:     number of channels in the output layer
+        norm_layers:            defines which function to be used for the normalization layers
+        """
+
+
+        super(UnetGenerator, self).__init__()
+
+        unet_block = UnetSkipConnectionBlock(channels_last_conv * 8, channels_last_conv * 8, input_layers=None, submodule=None, norm_layer=norm_layer, innermost=True) #Defining the innermost layer first?
+        for i in range(num_downsamples - 5): #Why would you subtract exactly five, this must mean there's a smallest network, which is 7?
+            unet_block = UnetSkipConnectionBlock(channels_last_conv * 8, channels_last_conv * 8, input_layers=None, submodule=unet_block, norm_layer=norm_layer)
+        
+        unet_block = UnetSkipConnectionBlock(channels_last_conv * 4, channels_last_conv * 8, input_layers=None, submodule=unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(channels_last_conv * 2, channels_last_conv * 4, input_layers=None, submodule=unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(channels_last_conv, channels_last_conv * 2, input_layers=None, submodule=unet_block, norm_layer=norm_layer)
+
+        self.model = UnetSkipConnectionBlock(output_channels, channels_last_conv, input_layers=input_channels, submodule=unet_block, outermost=True, norm_layer=norm_layer)
+
+    def forward(self, input):
+        return self.model(input)
+
+
+
+class PixelDiscriminator(nn.Module):
+
+    def __init__(self, input_channels, last_conv_channels=64, norm_layer=nn.BatchNorm2d):
+
+
+        super(PixelDiscriminator, self).__init__()
+
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm2d
+
+        model = [
+            nn.Conv2d(input_channels*2, last_conv_channels, kernel_size=1, stride=1, padding=0),
+            nn.LeakyReLU(0.2, True),
+            nn.Conv2d(last_conv_channels, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+            norm_layer(last_conv_channels * 2),
+            nn.LeakyReLU(0.2, True),
+            nn.Conv2d(last_conv_channels * 2, 1, kernel_size=1, stride=1, padding=0, bias=use_bias)
+        ]
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self. input):
+        return self.model(input)
