@@ -30,8 +30,8 @@ if __name__ == '__main__':
 				"preprocess_storage"    : Preprocess_dir,
 				"seed"                  : 172, # random training seed
 				"num_workers"           : 1,
-            "Data_mean"             : [0.3212, 0.3858, 0.2613],
-            "Data_std"              : [0.2938, 0.2827, 0.2658],
+            	"Data_mean"             : [0.3212, 0.3858, 0.2613],
+            	"Data_std"              : [0.2938, 0.2827, 0.2658],
             	"Do norm"               : True, #Normalization on or off 
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
@@ -75,6 +75,9 @@ if __name__ == '__main__':
 			print("Model detected without normalization")
 			Settings["Do norm"] = False
 
+
+		Settings["Do norm"] = False # Forcing it to false for some testing of the network 
+		print("forcing no norm. Do norm is:", Settings["Do norm"])
 
 		Custom_dataset = GAN_dataset(Settings, preprocess=False)
 

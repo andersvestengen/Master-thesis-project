@@ -19,9 +19,9 @@ Settings = {
             "epochs"                : 20,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 100,
+            "L1_loss_weight"        : 0,
             "BoxSet"               : [3,10], # min/max defect, inclusive
-            "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
+            "Loss_region_Box_mult"  : 3, # How many multiples of the defect box would you like the loss to account for?
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -30,13 +30,13 @@ Settings = {
             "shuffle"               : True,
             "Data_mean"             : [0.3212, 0.3858, 0.2613],
             "Data_std"              : [0.2938, 0.2827, 0.2658],
-            "Do norm"               : False, #Normalization on or off 
+            "Do norm"               : True, #Normalization on or off 
             "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "origin_Instancenorm_batch16_PIX_Unet_PixelDis_no_norm",
+            "ModelTrainingName"     : "DIS_PixelPatch_GEN_UnetGenerator_Instancenorm_batch16_only_localloss",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     device = Settings["device"]
 
     #Load models
-    Discriminator = PixelDiscriminator().to(device)
+    Discriminator = PixPatchGANDiscriminator().to(device)
     init_weights(Discriminator)
     Generator = UnetGenerator(norm_layer=torch.nn.InstanceNorm2d, use_dropout=True).to(device)
     init_weights(Generator)
