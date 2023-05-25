@@ -235,7 +235,7 @@ class Training_Framework():
         if bool_val:
             label_tensor = torch.tensor(1, device=self.device, dtype=torch.float32, requires_grad=False)
         else:
-            label_tensor = torch.tensor(0, device=self.device, dtype=torch.float32)
+            label_tensor = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=False)
 
         return label_tensor.expand_as(tensor_size)
 
