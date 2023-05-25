@@ -93,7 +93,26 @@ class ConvRelu(nn.Module):
     
     def forward(self, input):
         return self.model(input)
-    
+
+
+
+"""
+Based on:
+https://towardsdatascience.com/building-your-own-self-attention-gans-e8c9b9fe8e51
+https://jonathan-hui.medium.com/gan-self-attention-generative-adversarial-networks-sagan-923fccde790c
+https://arxiv.org/pdf/1805.08318.pdf
+"""
+class AttentionLayer(nn.Module):
+    def __init__(self, channel_in, channel_out):
+        super(AttentionLayer, self).__init__()
+
+        k_layer = nn.Conv2d(channel_in, channel_in // 2,kernel_size=1)
+
+
+
+
+
+
 
 #Pix2pix Unet type, with optimized values from the papers github page, with help from Hemin.
 class Generator_Unet1(nn.Module):

@@ -76,8 +76,6 @@ if __name__ == '__main__':
 			Settings["Do norm"] = False
 
 
-		Settings["Do norm"] = False # Forcing it to false for some testing of the network 
-		print("forcing no norm. Do norm is:", Settings["Do norm"])
 
 		Custom_dataset = GAN_dataset(Settings, preprocess=False)
 
