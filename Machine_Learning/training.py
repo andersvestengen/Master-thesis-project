@@ -18,10 +18,12 @@ Preprocess_dir = "/home/anders/Thesis_image_cache"
 Settings = {
             "epochs"                : 20,
             "batch_size"            : 16,
-            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1__local_loss_weight" : 0, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
-            "BoxSet"               : [3,10], # min/max defect, inclusive
+            "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
+            "Blockmode"             : True, #Should the defects be random artifacts or solid chunks?
+            "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
             "preprocess_storage"    : Preprocess_dir,
@@ -30,13 +32,13 @@ Settings = {
             "shuffle"               : True,
             "Data_mean"             : [0.3212, 0.3858, 0.2613],
             "Data_std"              : [0.2938, 0.2827, 0.2658],
-            "Do norm"               : True, #Normalization on or off 
+            "Do norm"               : False, #Normalization on or off 
             "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "DIS_PixelPatch_GEN_UnetGenerator_Discrimim_instancenorm_batch16",
+            "ModelTrainingName"     : "PixelpatchDIS_UNETGEN_Blockstyle",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True

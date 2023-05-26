@@ -27,6 +27,21 @@ class GAN_dataset(Dataset):
             self.defect_seed.manual_seed()            
         self.BoxSet = self.Settings["BoxSet"]
         self.device = self.Settings["device"]
+        self.Blockmode = self.Settings["Blockmode"]
+
+        #Define wether defects are blacked out, whited out or both
+        self.BlackWhite = torch.tensor(self.Settings["BlackorWhite"], dtype=torch.int8)
+        if self.Settings["BlackorWhite"][0] == True:
+            self.BlackWhite[0] = 0
+        else:
+            self.BlackWhite[0] = 1
+
+        if self.Settings["BlackorWhite"][1] == True:
+            # values are +1, due to torch.randint 'high' being exclusive, while low is inclusive
+            self.BlackWhite[1] = 2
+        else:
+            self.BlackWhite[1] = 1
+
         self.mean = self.Settings["Data_mean"]
         self.std = self.Settings["Data_std"]
         self.imagefolder="/Images/"
@@ -168,11 +183,18 @@ class GAN_dataset(Dataset):
         ImageX = imageMatrix.size(2) # Vertical
         SampleY = self.getSample(ImageY, self.BoxSet[1])
         SampleX = self.getSample(ImageX, self.BoxSet[1])
+        #This is just for the practice run, remember to remove afterwards
+        SampleY = torch.tensor(124, dtype=torch.int8)
+        SampleX = torch.tensor(124, dtype=torch.int8)
         intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
         mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
-        color = torch.randint(0,2, (1,), generator=self.defect_seed)
+        color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
         r = torch.full((intSample.size()), color.item()).float()
-        intSample[:,mask] = r[:,mask] 
+        if self.Blockmode:
+            intSample = r 
+        else:
+            intSample[:,mask] = r[:,mask] 
+
         imageMatrix[:,SampleY:SampleY+BoxSize,SampleX:SampleX+BoxSize] = intSample
 
         return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize])
