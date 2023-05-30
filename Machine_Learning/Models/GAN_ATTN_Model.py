@@ -40,8 +40,8 @@ class AttentionLayer(nn.Module):
 class UnetDecoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, dropout=0.0):
         super(UnetDecoderLayer, self).__init__()
-        layers = [nn.ConvTranspose2d(channel_in, channel_in, 4, 2, 1, bias=False),
-                  nn.InstanceNorm2d(channel_in),
+        layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
+                  nn.InstanceNorm2d(channel_out),
                   nn.ReLU(inplace=True),
         ]
         if dropout:
@@ -49,7 +49,7 @@ class UnetDecoderLayer(nn.Module):
             
         self.model = nn.Sequential(*layers)       
         
-        self.attn_layer = AttentionLayer(channel_in)
+        self.attn_layer = AttentionLayer(channel_out)
 
     def forward(self, input, skip_input):
         print("input size:", input.size())
@@ -116,12 +116,17 @@ class Generator_Unet_Attention(nn.Module):
         
         #Center
         #Can look to add more dilated convolutions in the future
+        print("running center")
         e6 = self.center(e5)
 
         #Decoder
+        print("running decode 1")
         d1 = self.decode_layer_1(e6, e5)
+        print("running decode 2")
         d2 = self.decode_layer_2(d1, e4)
+        print("running decode 3")
         d3 = self.decode_layer_3(d2, e3)
+        print("running decode 4")
         d4 = self.decode_layer_4(d3, e2)
         
         return self.final_decoder_layer(d4)
