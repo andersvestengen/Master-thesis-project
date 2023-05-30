@@ -38,12 +38,17 @@ class AttentionLayer(nn.Module):
     
 
 class UnetDecoderLayer(nn.Module):
-    def __init__(self, channel_in, channel_out, dropout=0.0):
+    def __init__(self, channel_in, channel_out, dropout=0.0, normalize=False):
         super(UnetDecoderLayer, self).__init__()
-        layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
-                  nn.InstanceNorm2d(channel_out),
-                  nn.ReLU(inplace=True),
-        ]
+        if normalize:
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
+                    nn.InstanceNorm2d(channel_out),
+                    nn.ELU(inplace=True),
+            ]
+        else:
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
+                    nn.ELU(inplace=True),
+            ]
         if dropout:
             layers.append(nn.Dropout(dropout))
             
@@ -89,7 +94,7 @@ class Generator_Unet_Attention(nn.Module):
         self.center = nn.Sequential(
             nn.Conv2d(512, 512, 1, dilation=1),
             nn.InstanceNorm2d(512),
-            nn.ReLU(inplace=True),
+            nn.ELU(inplace=True),
             )
 
         #Decoder structure

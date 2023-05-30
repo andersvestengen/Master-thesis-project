@@ -1,5 +1,6 @@
 from Models.GAN_Model_1 import Discriminator_1, Generator_Unet1, UnetGenerator, PixPatchGANDiscriminator, init_weights, PixelDiscriminator
 from Models.GAN_REF_HEMIN import UNet_ResNet34
+from Models.GAN_ATTN_Model import Generator_Unet_Attention
 from Datasets.GAN_Dataset_1 import GAN_dataset
 import torch
 from torch.utils.data import DataLoader
@@ -38,7 +39,7 @@ Settings = {
             "ImageHW"               : 256,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "PixelpatchDIS_UNETGEN_Blockstyle",
+            "ModelTrainingName"     : "PixelDiscriminator_Attn_Generator_test_",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -68,7 +69,7 @@ if __name__ == '__main__':
     #Load models
     Discriminator = PixPatchGANDiscriminator(norm_layer=torch.nn.InstanceNorm2d).to(device)
     init_weights(Discriminator)
-    Generator = UnetGenerator(norm_layer=torch.nn.InstanceNorm2d, use_dropout=True).to(device)
+    Generator = Generator_Unet_Attention().to(device)
     init_weights(Generator)
 
 
