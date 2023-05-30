@@ -55,15 +55,14 @@ class GAN_dataset(Dataset):
 
         if self.Settings["Do norm"]:
             self.Image_To_Sample_Transform = torch.nn.Sequential(
-                    transforms.CenterCrop(256),
-
                     # Constants calculated using the Dataset_Check_Norm.py script
                     transforms.Normalize(mean=self.mean,
                                         std=self.std),
+                    transforms.CenterCrop(self.Settings["ImageHW"]),
             )
         else:
             print("Dataset: Normalization is off")
-            self.Image_To_Sample_Transform = transforms.CenterCrop(256)
+            self.Image_To_Sample_Transform = transforms.CenterCrop(self.Settings["ImageHW"])
 
 
         # Set incoming transform to transform
@@ -179,17 +178,17 @@ class GAN_dataset(Dataset):
         
         """
         BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed).to(torch.uint8)
-        ImageY = imageMatrix.size(1) # Horizontal
-        ImageX = imageMatrix.size(2) # Vertical
+        ImageY = torch.tensor(imageMatrix.size(1), requires_grad=False) # Height
+        ImageX = torch.tensor(imageMatrix.size(2), requires_grad=False) # Width
         SampleY = self.getSample(ImageY, self.BoxSet[1])
         SampleX = self.getSample(ImageX, self.BoxSet[1])
         #This is just for the practice run, remember to remove afterwards
-        SampleY = torch.tensor(124, dtype=torch.int8)
-        SampleX = torch.tensor(124, dtype=torch.int8)
+        SampleY = ImageY.clone() // 2
+        SampleX = ImageX.clone() // 2
         intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
         mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
-        color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
-        r = torch.full((intSample.size()), color.item()).float()
+        #color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
+        r = torch.full((intSample.size()), 0).float()
         if self.Blockmode:
             intSample = r 
         else:

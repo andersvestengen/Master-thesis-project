@@ -37,16 +37,32 @@ class AttentionLayer(nn.Module):
         return output
     
 
+class UnetEncoderLayer(nn.Module):
+    def __init__(self, channel_in, channel_out, normalize=False, dropout=0.0):
+        super(UnetEncoderLayer, self).__init__()
+        layers = [nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)]
+        if normalize:
+            layers.append(nn.InstanceNorm2d(channel_out))
+        layers.append(nn.ELU(inplace=True))
+        if dropout:
+            layers.append(nn.Dropout(dropout))
+        self.model = nn.Sequential(*layers)       
+        
+        
+    def forward(self, input):
+        output = self.model(input)
+        return output
+
 class UnetDecoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, dropout=0.0, normalize=False):
         super(UnetDecoderLayer, self).__init__()
         if normalize:
-            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
                     nn.InstanceNorm2d(channel_out),
                     nn.ELU(inplace=True),
             ]
         else:
-            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=False),
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
                     nn.ELU(inplace=True),
             ]
         if dropout:
@@ -57,14 +73,9 @@ class UnetDecoderLayer(nn.Module):
         self.attn_layer = AttentionLayer(channel_out)
 
     def forward(self, input, skip_input):
-        print("input size:", input.size())
-        print("skip size:", skip_input.size())
         modelinput = torch.cat((input, skip_input), 1)
-        print("modelinput:", modelinput.size())
         modelout = self.model(modelinput)
-        print("modeloutput:", modelout.size())
         attn_out = self.attn_layer(modelout)
-        print("attn out:", attn_out.size())
         return attn_out
     
 
@@ -75,6 +86,7 @@ class Generator_Unet_Attention(nn.Module):
         super(Generator_Unet_Attention, self).__init__()
         #Encoder structure
         self.name = "Generator_Unet_Attention"
+        """
         self.pool = nn.MaxPool2d(2, 2)
         self.encoder = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
         # five encoder layers then center, then five decoder layers
@@ -90,6 +102,12 @@ class Generator_Unet_Attention(nn.Module):
         self.conv4 = self.encoder.layer3 # (128, 256)
 
         self.conv5 = self.encoder.layer4 # (256, 512)
+        """
+        self.conv1 = UnetEncoderLayer(input_channels, 64, normalize=False)
+        self.conv2 = UnetEncoderLayer(64, 64)
+        self.conv3 = UnetEncoderLayer(64, 128, dropout=0.25)
+        self.conv4 = UnetEncoderLayer(128, 256, dropout=0.25)
+        self.conv5 = UnetEncoderLayer(256, 512, dropout=0.25)
         
         self.center = nn.Sequential(
             nn.Conv2d(512, 512, 1, dilation=1),
@@ -121,17 +139,12 @@ class Generator_Unet_Attention(nn.Module):
         
         #Center
         #Can look to add more dilated convolutions in the future
-        print("running center")
         e6 = self.center(e5)
 
         #Decoder
-        print("running decode 1")
         d1 = self.decode_layer_1(e6, e5)
-        print("running decode 2")
         d2 = self.decode_layer_2(d1, e4)
-        print("running decode 3")
         d3 = self.decode_layer_3(d2, e3)
-        print("running decode 4")
         d4 = self.decode_layer_4(d3, e2)
         
         return self.final_decoder_layer(d4)

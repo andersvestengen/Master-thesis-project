@@ -17,9 +17,9 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 
 Settings = {
-            "epochs"                : 20,
+            "epochs"                : 40,
             "batch_size"            : 16,
-            "L1__local_loss_weight" : 0, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
@@ -36,10 +36,10 @@ Settings = {
             "Do norm"               : False, #Normalization on or off 
             "Datasplit"             : 0.8,
             "device"                : "cuda",
-            "ImageHW"               : 256,
+            "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "PixelDiscriminator_Attn_Generator_test_",
+            "ModelTrainingName"     : "PixelDiscriminator_Attn_Generator_test_40_epochs",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
