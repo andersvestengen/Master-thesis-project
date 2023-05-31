@@ -1,4 +1,5 @@
-from Models.GAN_Model_1 import Discriminator_1, Generator_Unet1, UnetGenerator, PixPatchGANDiscriminator, init_weights, PixelDiscriminator
+from Models.GAN_Model_1 import Generator_Unet1, UnetGenerator, init_weights
+from Models.Discriminators import Discriminator_1, PixPatchGANDiscriminator, PixelDiscriminator
 from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Models.GAN_ATTN_Model import Generator_Unet_Attention
 from Datasets.GAN_Dataset_1 import GAN_dataset
@@ -23,6 +24,8 @@ Settings = {
             "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
+            "n_crit"                : 5,
+            "lambda_gp"             : 10,
             "Blockmode"             : True, #Should the defects be random artifacts or solid chunks?
             "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
             "CenterDefect"          : True, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
@@ -40,7 +43,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Dummy run",
+            "ModelTrainingName"     : "WGANGP_LOSS_ATTNGenerator_PixelDiscrim",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -68,7 +71,7 @@ if __name__ == '__main__':
     device = Settings["device"]
 
     #Load models
-    Discriminator = PixPatchGANDiscriminator(norm_layer=torch.nn.InstanceNorm2d).to(device)
+    Discriminator = PixelDiscriminator(norm_layer=None).to(device)
     init_weights(Discriminator)
     Generator = Generator_Unet_Attention().to(device)
     init_weights(Generator)
