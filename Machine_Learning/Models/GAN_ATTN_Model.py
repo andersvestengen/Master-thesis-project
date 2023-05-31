@@ -86,23 +86,7 @@ class Generator_Unet_Attention(nn.Module):
         super(Generator_Unet_Attention, self).__init__()
         #Encoder structure
         self.name = "Generator_Unet_Attention"
-        """
-        self.pool = nn.MaxPool2d(2, 2)
-        self.encoder = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
-        # five encoder layers then center, then five decoder layers
-        self.conv1 = nn.Sequential(self.encoder.conv1,
-                                self.encoder.bn1,
-                                self.encoder.relu,
-                                self.pool) # (3,64)
 
-        self.conv2 = self.encoder.layer1 # (64, 64)
-
-        self.conv3 = self.encoder.layer2 # (64, 128)
-
-        self.conv4 = self.encoder.layer3 # (128, 256)
-
-        self.conv5 = self.encoder.layer4 # (256, 512)
-        """
         self.conv1 = UnetEncoderLayer(input_channels, 64, normalize=False)
         self.conv2 = UnetEncoderLayer(64, 64)
         self.conv3 = UnetEncoderLayer(64, 128, dropout=0.25)

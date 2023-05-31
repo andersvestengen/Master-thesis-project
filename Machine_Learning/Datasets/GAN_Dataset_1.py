@@ -24,10 +24,11 @@ class GAN_dataset(Dataset):
         else:
             self.rng = np.random.default_rng()
             self.defect_seed = torch.Generator()
-            self.defect_seed.manual_seed()            
+            self.defect_seed.manual_seed()
         self.BoxSet = self.Settings["BoxSet"]
         self.device = self.Settings["device"]
         self.Blockmode = self.Settings["Blockmode"]
+        self.CenterDefect = self.Settings["CenterDefect"]
 
         #Define wether defects are blacked out, whited out or both
         self.BlackWhite = torch.tensor(self.Settings["BlackorWhite"], dtype=torch.int8)
@@ -97,6 +98,7 @@ class GAN_dataset(Dataset):
 
             print("Number of images is:", len(self.OriginalImagesList))
 
+        #Legacy conditions (delete?)
         #Create preprocess storage if condition is met 
         self.preprocess = preprocess
         if self.preprocess:
@@ -126,6 +128,7 @@ class GAN_dataset(Dataset):
                     os.remove(self.preprocess_cache)
                     self.ImagePreprocessor()
 
+    #Legacy (delete?)
     def ImagePreprocessor(self):
         with tqdm(self.OriginalImagesList, unit='images') as Prepoch:
             for num, imagedir in enumerate(Prepoch):
@@ -178,17 +181,19 @@ class GAN_dataset(Dataset):
         
         """
         BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed).to(torch.uint8)
-        ImageY = torch.tensor(imageMatrix.size(1), requires_grad=False) # Height
-        ImageX = torch.tensor(imageMatrix.size(2), requires_grad=False) # Width
-        SampleY = self.getSample(ImageY, self.BoxSet[1])
-        SampleX = self.getSample(ImageX, self.BoxSet[1])
-        #This is just for the practice run, remember to remove afterwards
-        SampleY = ImageY.clone() // 2
-        SampleX = ImageX.clone() // 2
+        ImageY = imageMatrix.size(1) # Height
+        ImageX = imageMatrix.size(2) # Width
+        if self.CenterDefect:
+            SampleY = int(ImageY // 2)
+            SampleX = int(ImageX // 2)
+        else:
+            SampleY = self.getSample(ImageY, self.BoxSet[1])
+            SampleX = self.getSample(ImageX, self.BoxSet[1])
+
         intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
         mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
-        #color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
-        r = torch.full((intSample.size()), 0).float()
+        color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
+        r = torch.full((intSample.size()), color.item()).float()
         if self.Blockmode:
             intSample = r 
         else:
@@ -198,16 +203,19 @@ class GAN_dataset(Dataset):
 
         return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize])
     
+
     def __len__(self):
         if self.preprocess:
             return self.data.size(0)
         else:
             return len(self.OriginalImagesList)
 
+    #Legacy (delete?)
     def resize_im(self, image): # REDUNDANT
         sizes = [256, 256]
         return cv2.resize(image, sizes, interpolation= cv2.INTER_LINEAR)
 
+    #Legacy (delete?)
     def CenterCrop(self, image, val=256): # Redundant
         center = image.shape
         if center[0] < 256 or center[1] < 256:
@@ -219,6 +227,7 @@ class GAN_dataset(Dataset):
         return image[y:y+val, x:x+val]
 
 
+    #Legacy (delete?)
     def load_image(self, path):
         #imread returns X,Y,C
         image = self.CenterCrop(cv2.imread(str(path)))
