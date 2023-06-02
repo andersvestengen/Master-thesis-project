@@ -16,10 +16,12 @@ Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine_Learning/Tr
 #Desk_dir = "G:/Master-thesis-project/Machine_Learning"
 Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
+Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 
 Settings = {
-            "epochs"                : 40,
+            "epochs"                : 7,
             "batch_size"            : 16,
+            "Dataset_loc"           : Celeb_A_Dataset,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
@@ -43,7 +45,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "WGANGP_LOSS_ATTNGenerator_PixelDiscrim",
+            "ModelTrainingName"     : "WGANGP_LOSS_ATTNGenerator_PixPatchDiscrim_7_epoch_Celeb_A",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     device = Settings["device"]
 
     #Load models
-    Discriminator = PixelDiscriminator(norm_layer=None).to(device)
+    Discriminator = PixPatchGANDiscriminator(norm_layer=None).to(device)
     init_weights(Discriminator)
     Generator = Generator_Unet_Attention().to(device)
     init_weights(Generator)

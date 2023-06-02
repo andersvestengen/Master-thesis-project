@@ -1,6 +1,6 @@
 from torch.utils.data import DataLoader
 import torch
-from Models.GAN_Model_1 import Generator_Unet1, Discriminator_1, UnetGenerator
+from Models.GAN_Model_1 import Generator_Unet1, UnetGenerator
 from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Models.GAN_ATTN_Model import Generator_Unet_Attention
 from Datasets.GAN_Dataset_1 import GAN_dataset
@@ -16,11 +16,13 @@ if __name__ == '__main__':
 
 		Machine_learning_dir = "/home/anders/Master-thesis-project/Machine_Learning" # should point to the Machine learning folder of the local directory
 		Preprocess_dir = "/home/anders/Thesis_image_cache" # This can be set wherever you want. This is where the dataloader will create the image cache after converting the training images to tensor files.
-
+		Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"	
+		Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 		#Most of these settings don't matter. They're just here to make it easier to initalize the dataloader et.al
 		#The fields that do matter are things like normalization, cuda, Do norm, Pin memory, preprocess storage, dataset loc, 
 		Settings = {
 				"epochs"                : 5,
+				"Dataset_loc"           : Standard_training_Set,
 				"batch_size"            : 1, # This must be 1 for inference!
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
 				"BoxSet"               : [8,8], # min/max defect, inclusive

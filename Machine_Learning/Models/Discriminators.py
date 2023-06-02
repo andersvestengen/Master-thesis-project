@@ -58,20 +58,32 @@ class PixPatchGANDiscriminator(nn.Module):
             prev_number_of_filters = number_of_filters
             number_of_filters = min(2**n, 8)
 
+            if norm_layer is not None:
+                Layers += [
+                    nn.Conv2d(output_filters * prev_number_of_filters, output_filters * number_of_filters, kernel_size=4, stride=2, padding=1, bias=use_bias),
+                    norm_layer(output_filters * number_of_filters),
+                    nn.LeakyReLU(0.2, True)
+                ]
+            else:
+                Layers += [
+                    nn.Conv2d(output_filters * prev_number_of_filters, output_filters * number_of_filters, kernel_size=4, stride=2, padding=1, bias=use_bias),
+                    nn.LeakyReLU(0.2, True)
+                ]
+        
+        prev_number_of_filters = number_of_filters
+        number_of_filters = min(2**num_layers, 8)
+
+        if norm_layer is not None:
             Layers += [
                 nn.Conv2d(output_filters * prev_number_of_filters, output_filters * number_of_filters, kernel_size=4, stride=2, padding=1, bias=use_bias),
                 norm_layer(output_filters * number_of_filters),
                 nn.LeakyReLU(0.2, True)
             ]
-        
-        prev_number_of_filters = number_of_filters
-        number_of_filters = min(2**num_layers, 8)
-
-        Layers += [
-            nn.Conv2d(output_filters * prev_number_of_filters, output_filters * number_of_filters, kernel_size=4, stride=2, padding=1, bias=use_bias),
-            norm_layer(output_filters * number_of_filters),
-            nn.LeakyReLU(0.2, True)
-        ]
+        else:
+            Layers += [
+                nn.Conv2d(output_filters * prev_number_of_filters, output_filters * number_of_filters, kernel_size=4, stride=2, padding=1, bias=use_bias),
+                nn.LeakyReLU(0.2, True)
+            ]
 
         Layers += [nn.Conv2d(output_filters * number_of_filters, 1, kernel_size=4, stride=1, padding=1)] # output-prediction layer
 

@@ -45,7 +45,8 @@ class GAN_dataset(Dataset):
 
         self.mean = self.Settings["Data_mean"]
         self.std = self.Settings["Data_std"]
-        self.imagefolder="/Images/"
+        self.imagefolder = self.Settings["Dataset_loc"]
+
         if preprocess:
             self.name = "GAN_Dataset_1_GAN_dataset_caching"
         else:
@@ -77,7 +78,7 @@ class GAN_dataset(Dataset):
         self.workingdir = os.getcwd() if self.Settings["dataset_loc"] == None else self.Settings["dataset_loc"]
         
         #Setting up list of images
-        self.OriginalImagePathglob = self.workingdir + self.imagefolder + "**/*.jpg"
+        self.OriginalImagePathglob = self.imagefolder + "**/*.jpg"
         self.OriginalImagesList = sorted(glob.glob(self.OriginalImagePathglob, recursive=True))
                 
         if training_samples is None:

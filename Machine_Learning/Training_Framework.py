@@ -271,16 +271,12 @@ class Training_Framework():
 
     def Gradient_Penalty(self, real_AB, fake_AB):
         #Create interpolation term
-        alpha = torch.rand((self.Settings["batch_size"], 1, 1, 1))
-
-
-        fake = torch.tensor((real_AB.shape[0], 1)).fill_(1.0).requires_grad_(True)
+        alpha = torch.rand((self.Settings["batch_size"], 1, 1, 1), device=self.device)
 
         #Create interpolates
-
         interpolates = (alpha * real_AB + ((1 - alpha)* fake_AB)).requires_grad_(True)
         Discriminator_interpolates = self.Discriminator(interpolates)
-
+        fake = torch.ones(Discriminator_interpolates.size(), device=self.device).requires_grad_(True)
         #get gradients w.r.t interpolates
 
         gradients = torch.autograd.grad(
@@ -290,15 +286,15 @@ class Training_Framework():
             create_graph=True,
             retain_graph=True,
             only_inputs=True,
-        )[0]
-
-        gradients = gradients.view(gradients.size(0), -1)
-        gradient_penalty = ((gradients.norm(2, dim=1) -1) ** 2).mean()
+        )
+        #Flatten array
+        gradients = gradients[0].view(real_AB.size(0), -1)
+        # Calculate and return GP
+        gradient_penalty = (((gradients + 1e-16).norm(2, dim=1) -1) ** 2).mean() * self.lambda_gp
         return gradient_penalty
     
     def Generator_WGANGP_updater(self, val=False): 
-        self.Generator.zero_grad()
-        
+        self.Generator.zero_grad()       
         # Generator loss
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)     
         predicted_fake = self.Discriminator(fake_AB)
@@ -323,22 +319,22 @@ class Training_Framework():
         return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach()
 
     def Discriminator_WGANGP_updater(self, val=False):
+        self.Discriminator.zero_grad()
         #Get Critique scores
         real_AB = torch.cat((self.real_A, self.real_B), 1)
         score_real = self.Discriminator(real_AB)
         
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)        
-        score_fake = self.Discriminator(fake_AB.detach())
-
-        GP_term = self.Gradient_Penalty(real_AB, fake_AB)
-    
-        Discriminator_loss = -torch.mean(score_real) + torch.mean(score_fake) + self.lambda_gp * GP_term
-        #Total loss and backprop
-        if not val: 
-            Discriminator_loss.backward() # backward run        
+        score_fake = self.Discriminator(fake_AB)
+        if not val:
+            GP_term = self.Gradient_Penalty(real_AB, fake_AB)
+            Discriminator_loss = -torch.mean(score_real) + torch.mean(score_fake) + GP_term
+            Discriminator_loss.backward(retain_graph=True) # backward run        
             self.Discriminator_optimizer.step() # step
-            
-        self.Generator.zero_grad()
+            self.Generator.zero_grad()
+        else:
+            Discriminator_loss = -torch.mean(score_real) + torch.mean(score_fake)
+
         return Discriminator_loss.detach(), score_real.detach(), score_fake.detach()
 
 
