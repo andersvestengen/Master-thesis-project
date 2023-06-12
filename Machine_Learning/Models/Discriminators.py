@@ -97,18 +97,18 @@ class PixPatchGANDiscriminator(nn.Module):
 
 class PixelDiscriminator(nn.Module):
 
-    def __init__(self, input_channels=3, last_conv_channels=64, norm_layer=nn.BatchNorm2d):
+    def __init__(self, input_channels=3, last_conv_channels=64, norm_layer=nn.BatchNorm2d, use_bias=False):
 
 
         super(PixelDiscriminator, self).__init__()
 
         self.name = "PixelDiscriminator"
-
+        """
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
-
+        """
         if norm_layer is not None:
             model = [
                 nn.Conv2d(input_channels*2, last_conv_channels, kernel_size=1, stride=1, padding=0),
@@ -124,10 +124,55 @@ class PixelDiscriminator(nn.Module):
                 nn.LeakyReLU(0.2, True),
                 nn.Conv2d(last_conv_channels, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
                 nn.LeakyReLU(0.2, True),
+                nn.Conv2d(last_conv_channels * 2, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+                nn.LeakyReLU(0.2, True),
+                nn.Conv2d(last_conv_channels * 2, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+                nn.LeakyReLU(0.2, True),
+                nn.Conv2d(last_conv_channels * 2, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+                nn.LeakyReLU(0.2, True),
                 nn.Conv2d(last_conv_channels * 2, 1, kernel_size=1, stride=1, padding=0, bias=use_bias)
             ]
 
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
-        return self.model(input)
+        return torch.flatten(self.model(input))
+
+
+class Spectral_Conv_layer(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(Spectral_Conv_layer, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)
+        self.conv = nn.utils.parametrizations.spectral_norm(self.conv)
+        self.act = nn.ELU(True)
+        self.dropout = nn.Dropout(0.25)
+
+    def forward(self, input):
+        return self.dropout(self.act(self.conv(input)))
+
+class SpectralDiscriminator(nn.Module):
+
+    def __init__(self, input_channels=3):
+
+
+        super(SpectralDiscriminator, self).__init__()
+
+        self.name = "SpectralPixelDiscriminator"
+        self.layer1 = Spectral_Conv_layer(input_channels*2, 64)
+        self.layer2 = Spectral_Conv_layer(64, 128)
+        self.layer3 = Spectral_Conv_layer(128, 256)
+        self.layer4 = Spectral_Conv_layer(256, 256)
+        self.layer5 = Spectral_Conv_layer(256, 256)
+        self.layer6 = Spectral_Conv_layer(256, 1)
+        self.activation = nn.Sigmoid()
+        
+
+    def forward(self, input):
+        output = self.layer1(input)
+        output = self.layer2(output)
+        output = self.layer3(output)
+        output = self.layer4(output)
+        output = self.layer5(output)
+        output = self.layer6(output)
+        return torch.flatten(self.activation(output))
+        

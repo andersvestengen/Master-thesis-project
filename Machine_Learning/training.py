@@ -1,5 +1,5 @@
 from Models.GAN_Model_1 import Generator_Unet1, UnetGenerator, init_weights
-from Models.Discriminators import Discriminator_1, PixPatchGANDiscriminator, PixelDiscriminator
+from Models.Discriminators import Discriminator_1, PixPatchGANDiscriminator, PixelDiscriminator, SpectralDiscriminator
 from Models.GAN_REF_HEMIN import UNet_ResNet34
 from Models.GAN_ATTN_Model import Generator_Unet_Attention
 from Datasets.GAN_Dataset_1 import GAN_dataset
@@ -17,17 +17,18 @@ Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine_Learning/Tr
 Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
+Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 
 Settings = {
-            "epochs"                : 7,
+            "epochs"                : 40,
             "batch_size"            : 16,
-            "Dataset_loc"           : Celeb_A_Dataset,
+            "Dataset_loc"           : Standard_training_Set,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
-            "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
+            "Loss_region_Box_mult"  : 3, # How many multiples of the defect box would you like the loss to account for?
             "n_crit"                : 5,
-            "lambda_gp"             : 10,
+            "lambda_gp"             : 10, #WGAN-GP constant
             "Blockmode"             : True, #Should the defects be random artifacts or solid chunks?
             "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
             "CenterDefect"          : True, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
@@ -45,7 +46,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "WGANGP_LOSS_ATTNGenerator_PixPatchDiscrim_7_epoch_Celeb_A",
+            "ModelTrainingName"     : "WGANGP_LOSS_ATTNGenerator_4_dilated_SpectralDiscrim_with_sigmoid_drouput_and_MSE_L1_Switched",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     device = Settings["device"]
 
     #Load models
-    Discriminator = PixPatchGANDiscriminator(norm_layer=None).to(device)
+    Discriminator = SpectralDiscriminator().to(device)
     init_weights(Discriminator)
     Generator = Generator_Unet_Attention().to(device)
     init_weights(Generator)
@@ -106,11 +107,12 @@ if __name__ == '__main__':
     
     # Loss functions
     GAN_loss        = torch.nn.BCEWithLogitsLoss().to(Settings["device"]) # GAN loss for GEN and DIS #Changed from MSELoss() because, thats the vanilla config for Pix2Pix
-    pixelwise_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
+    pixelwise_local_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
+    pixelwise_loss  = torch.nn.MSELoss().to(Settings["device"]) # loss for the local patch around the defect
 
     Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"], betas=[0.5, 0.999])
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"]*0.5, betas=[0.5, 0.999])
 
     #Training
-    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, Discriminator)
+    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, pixelwise_local_loss, Discriminator)
     trainer.Trainer(train_loader, val_loader)

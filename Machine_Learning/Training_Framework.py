@@ -143,7 +143,7 @@ class Training_Framework():
     Legos and less like a novel.
     """
 
-    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, Discriminator):
+    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, pixelwise_local_loss, Discriminator):
         torch.manual_seed(Settings["seed"])
         np.random.seed(Settings["seed"])
         self.Settings = Settings
@@ -155,6 +155,7 @@ class Training_Framework():
         self.image_transform = transforms.ToPILImage()
         self.Discriminator_optimizer = D_opt
         self.device = self.Settings["device"]
+        self.pixelwise_local_loss = pixelwise_local_loss
         self.Generator_loss = 0
         self.n_crit = self.Settings["n_crit"]
         self.lambda_gp = self.Settings["lambda_gp"]
@@ -307,7 +308,7 @@ class Training_Framework():
         SampleY, SampleX, BoxSize = self.defect_coordinates[0]
         L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
         SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
-        local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
+        local_pixelloss = self.pixelwise_local_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
@@ -327,9 +328,9 @@ class Training_Framework():
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)        
         score_fake = self.Discriminator(fake_AB)
         if not val:
-            GP_term = self.Gradient_Penalty(real_AB, fake_AB)
-            Discriminator_loss = -torch.mean(score_real) + torch.mean(score_fake) + GP_term
-            Discriminator_loss.backward(retain_graph=True) # backward run        
+            #GP_term = self.Gradient_Penalty(real_AB, fake_AB) #Running without GP to test Spectral normalization
+            Discriminator_loss = -torch.mean(score_real) + torch.mean(score_fake) #+ GP_term
+            Discriminator_loss.backward(retain_graph=True) # backward run. Also trying without retain_graph=True while GP is off to test if this is still necessary  
             self.Discriminator_optimizer.step() # step
             self.Generator.zero_grad()
         else:
@@ -437,8 +438,8 @@ class Training_Framework():
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])                
-                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3,0))
-                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3,0))
+                    Discrim_acc_real_raw[num] = torch.mean(predicted_real)
+                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake)
 
             #Turn on propagation
             self.Generator.train()
@@ -497,8 +498,8 @@ class Training_Framework():
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])
-                    Discrim_acc_real_raw[num] = torch.mean(predicted_real, (2,3,0))
-                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake, (2,3,0))
+                    Discrim_acc_real_raw[num] = torch.mean(predicted_real)
+                    Discrim_acc_fake_raw[num] = torch.mean(predicted_fake)
 
                 
                 #Save per epoch
