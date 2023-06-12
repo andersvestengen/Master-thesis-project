@@ -164,7 +164,6 @@ class SpectralDiscriminator(nn.Module):
         self.layer4 = Spectral_Conv_layer(256, 256)
         self.layer5 = Spectral_Conv_layer(256, 256)
         self.layer6 = Spectral_Conv_layer(256, 1)
-        self.activation = nn.Sigmoid()
         
 
     def forward(self, input):
@@ -174,5 +173,5 @@ class SpectralDiscriminator(nn.Module):
         output = self.layer4(output)
         output = self.layer5(output)
         output = self.layer6(output)
-        return torch.flatten(self.activation(output))
+        return torch.flatten(output)
         

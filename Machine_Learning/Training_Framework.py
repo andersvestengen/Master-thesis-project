@@ -269,6 +269,11 @@ class Training_Framework():
         return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach()
     
 
+    def Hinge_loss_Discriminator(self, predicted_real, predicted_fake):
+        return torch.mean(torch.relu(1 - predicted_real)) + torch.mean(torch.relu(1 + predicted_fake))
+    
+    def Hinge_loss_Generator(self, predicted_fake):
+        return -torch.mean(predicted_fake)
 
     def Gradient_Penalty(self, real_AB, fake_AB):
         #Create interpolation term
@@ -299,7 +304,7 @@ class Training_Framework():
         # Generator loss
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)     
         predicted_fake = self.Discriminator(fake_AB)
-        loss_GAN = -torch.mean(predicted_fake)
+        loss_GAN = self.Hinge_loss_Generator(predicted_fake)
         
         #Pixelwise loss
         loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
@@ -329,7 +334,7 @@ class Training_Framework():
         score_fake = self.Discriminator(fake_AB)
         if not val:
             #GP_term = self.Gradient_Penalty(real_AB, fake_AB) #Running without GP to test Spectral normalization
-            Discriminator_loss = -torch.mean(score_real) + torch.mean(score_fake) #+ GP_term
+            Discriminator_loss = self.Hinge_loss_Discriminator(score_real, score_fake) #-torch.mean(score_real) + torch.mean(score_fake) #+ GP_term
             Discriminator_loss.backward(retain_graph=True) # backward run. Also trying without retain_graph=True while GP is off to test if this is still necessary  
             self.Discriminator_optimizer.step() # step
             self.Generator.zero_grad()
