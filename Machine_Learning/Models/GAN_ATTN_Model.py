@@ -29,9 +29,11 @@ class AttentionLayer(nn.Module):
         query_layer = self.q_layer(input).view(B, -1, W*H).permute(0,2,1) #Changes input from 4 tensor to 3 tensor, combining W*H, then permutes input so size is now [B,N,C]
         key_layer = self.k_layer(input).view(B,-1, W*H) # simply truncates 4-dim input tensor to [B,C,N]
         value_layer = self.v_layer(input).view(B,-1,W*H) # simply truncates 4-dim input tensor to [B,C,N]
+
         attn_energy = torch.bmm(query_layer, key_layer) #BMM [B,N,C] . [B,C,N] -> [B,N,N]
         attn_map = self.softmax(attn_energy)
-        attn_weight = torch.bmm(value_layer, attn_map).view(B,C,W,H) # Original code does attnmap.view(0,2,1) (which would switch tensor shape from BNN to BNN??), but there's no difference to the output so I'm not including it
+        attn_weight = torch.bmm(value_layer, attn_map.permute(0,2,1)).view(B,C,W,H) # Original code does attnmap.view(0,2,1) (which would switch tensor shape from BNN to BNN??), but there's no difference to the output so I'm not including it
+        #attn_weight = torch.bmm(value_layer, attn_map).view(B,C,W,H) # Original code does attnmap.view(0,2,1) (which would switch tensor shape from BNN to BNN??), but there's no difference to the output so I'm not including it
         output = torch.add(self.gamma * attn_weight, input)
 
         return output
@@ -40,10 +42,9 @@ class AttentionLayer(nn.Module):
 class UnetEncoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, normalize=False, dropout=0.0):
         super(UnetEncoderLayer, self).__init__()
-        layers = [nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)]
+        layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True))]
         if normalize:
-            layers.append(nn.InstanceNorm2d(channel_out))
-        layers.append(nn.ELU(inplace=True))
+            layers.append(nn.ELU(inplace=True))
         if dropout:
             layers.append(nn.Dropout(dropout))
         self.model = nn.Sequential(*layers)       
@@ -57,11 +58,11 @@ class UnetDecoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, dropout=0.0, normalize=False):
         super(UnetDecoderLayer, self).__init__()
         if normalize:
-            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
+            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
                     nn.ELU(inplace=True),
             ]
         else:
-            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
+            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
                     nn.ELU(inplace=True),
             ]
         if dropout:
