@@ -18,9 +18,9 @@ Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
 Preprocess_dir = "/home/anders/Thesis_image_cache"
 Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
-
+losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 40,
+            "epochs"                : 1,
             "batch_size"            : 16,
             "Dataset_loc"           : Standard_training_Set,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
@@ -34,6 +34,7 @@ Settings = {
             "CenterDefect"          : True, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
             "lr"                    : 0.0002,
             "dataset_loc"           : Server_dir,
+            "Loss"                  : losses[0], # Which GAN loss to train with?
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 172, # random training seed
             "num_workers"           : 4,
@@ -46,7 +47,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "WGANGP_LOSS_ATTNGenerator_4_dilated_SpectralDiscrim_with_sigmoid_drouput_and_MSE_L1_Switched",
+            "ModelTrainingName"     : "DELETEME",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -106,13 +107,10 @@ if __name__ == '__main__':
                             pin_memory      = Settings["Pin_memory"])
     
     # Loss functions
-    GAN_loss        = torch.nn.BCEWithLogitsLoss().to(Settings["device"]) # GAN loss for GEN and DIS #Changed from MSELoss() because, thats the vanilla config for Pix2Pix
-    pixelwise_local_loss  = torch.nn.L1Loss().to(Settings["device"]) # loss for the local patch around the defect
-    pixelwise_loss  = torch.nn.MSELoss().to(Settings["device"]) # loss for the local patch around the defect
 
     Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"], betas=[0.5, 0.999])
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"]*0.5, betas=[0.5, 0.999])
 
     #Training
-    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, GAN_loss, pixelwise_loss, pixelwise_local_loss, Discriminator)
+    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, Discriminator)
     trainer.Trainer(train_loader, val_loader)

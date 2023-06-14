@@ -9,6 +9,7 @@ from tqdm import tqdm
 from PIL import Image
 from skimage.metrics import peak_signal_noise_ratio as PSNR
 from skimage.metrics import structural_similarity as SSIM
+from Losses.Losses import LossFunctions
 import time
 import sys
 
@@ -143,19 +144,16 @@ class Training_Framework():
     Legos and less like a novel.
     """
 
-    def __init__(self, Settings, Generator, G_opt, D_opt, GAN_loss, pixelwise_loss, pixelwise_local_loss, Discriminator):
+    def __init__(self, Settings, Generator, G_opt, D_opt, Discriminator):
         torch.manual_seed(Settings["seed"])
         np.random.seed(Settings["seed"])
         self.Settings = Settings
         self.Generator = Generator
         self.Generator_optimizer = G_opt
-        self.GAN_loss = GAN_loss
-        self.pixelwise_loss = pixelwise_loss
         self.Discriminator = Discriminator
         self.image_transform = transforms.ToPILImage()
         self.Discriminator_optimizer = D_opt
         self.device = self.Settings["device"]
-        self.pixelwise_local_loss = pixelwise_local_loss
         self.Generator_loss = 0
         self.n_crit = self.Settings["n_crit"]
         self.lambda_gp = self.Settings["lambda_gp"]
@@ -163,14 +161,30 @@ class Training_Framework():
         self.Reverse_Normalization = NormalizeInverse(self.Settings["Data_mean"], self.Settings["Data_std"])
         #self.patch = torch.tensor((1, self.Settings["ImageHW"] // 2 ** 4, self.Settings["ImageHW"] // 2 ** 4), device=self.device)
         self.transmit = False # No reason to do file transfer in the future
+        
+        
+        #Initialize loss functions
+        losses = LossFunctions(self.device, Discriminator, Settings)
 
-        """
-         decision = input("would you like to send model to server? [y/n]: ")
+        if Settings["Loss"] == "Hinge_loss":
+            self.Discriminator_loss     = losses.Hinge_loss_Discriminator
+            self.Generator_loss         = losses.Hinge_loss_Generator
+            self.Generator_pixelloss    = losses.Generator_Pixelloss
+        if Settings["Loss"] == "WGAN":
+            self.Discriminator_loss     = losses.WGAN_Discriminator
+            self.Generator_loss         = losses.WGAN_Generator
+            self.Generator_pixelloss    = losses.Generator_Pixelloss
+        if Settings["Loss"] == "CGAN":
+            self.Discriminator_loss     = losses.CGAN_Discriminator
+            self.Generator_loss         = losses.CGAN_Generator
+            self.Generator_pixelloss    = losses.Generator_Pixelloss
+        if Settings["Loss"] == "WGANGP":
+            self.Discriminator_loss     = losses.WGAN_Discriminator
+            self.Generator_loss         = losses.WGAN_Generator
+            self.Generator_pixelloss    = losses.Generator_Pixelloss
 
-        if decision == "y":
-            self.transmit = True
-            self.transmitter = FileSender()       
-        """
+
+
         # Set the working Directory
         if not self.Settings["dataset_loc"]:
             self.workingdir = os.getcwd()
@@ -219,101 +233,17 @@ class Training_Framework():
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
             f.write("Total training time: " + str(hours) + " hours " + str(minutes) + " minutes \n")
 
-    def CenteringAlgorithm(self, BoxSize, BoundingBox, Y, X):
-        """
-        Returns a larger bounding box centered on the defect block
-        """
 
-        x = torch.round(X + 0.5*BoxSize - 0.5*BoundingBox).to(self.device, torch.uint8).clamp(0, 256 - BoundingBox)
-        y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(self.device, torch.uint8).clamp(0, 256 - BoundingBox)
-
-        return y,x
-
-
-    def Make_Label_Tensor(self, tensor_size, bool_val):
-        """
-        Return a label tensor with size tensor_size and values bool_val
-        """       
-
-        if bool_val:
-            label_tensor = torch.tensor(1, device=self.device, dtype=torch.float32, requires_grad=False)
-        else:
-            label_tensor = torch.tensor(0, device=self.device, dtype=torch.float32, requires_grad=False)
-
-        return label_tensor.expand_as(tensor_size)
-
-
+    
     def Generator_updater(self, val=False): 
-        self.Generator.zero_grad()
-        
-        # Generator loss
-        fake_AB = torch.cat((self.real_A, self.fake_B), 1)     
-        predicted_fake = self.Discriminator(fake_AB)
-        valid = self.Make_Label_Tensor(predicted_fake, True)
-        loss_GAN = self.GAN_loss(predicted_fake, valid)
-        
-        #Pixelwise loss
-        SampleY, SampleX, BoxSize = self.defect_coordinates[0]
-        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
-        SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
-        loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
-        local_pixelloss = self.pixelwise_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
-        
-        #Total loss
-        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
-        
-        if not val:
-            Total_loss_Generator.backward()
-            self.Generator_optimizer.step()
-
-        return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach()
-    
-
-    def Hinge_loss_Discriminator(self, predicted_real, predicted_fake):
-        return torch.mean(torch.relu(1 - predicted_real)) + torch.mean(torch.relu(1 + predicted_fake))
-    
-    def Hinge_loss_Generator(self, predicted_fake):
-        return -torch.mean(predicted_fake)
-
-    def Gradient_Penalty(self, real_AB, fake_AB):
-        #Create interpolation term
-        alpha = torch.rand((self.Settings["batch_size"], 1, 1, 1), device=self.device)
-
-        #Create interpolates
-        interpolates = (alpha * real_AB + ((1 - alpha)* fake_AB)).requires_grad_(True)
-        Discriminator_interpolates = self.Discriminator(interpolates)
-        fake = torch.ones(Discriminator_interpolates.size(), device=self.device).requires_grad_(True)
-        #get gradients w.r.t interpolates
-
-        gradients = torch.autograd.grad(
-            outputs=Discriminator_interpolates,
-            inputs=interpolates,
-            grad_outputs=fake,
-            create_graph=True,
-            retain_graph=True,
-            only_inputs=True,
-        )
-        #Flatten array
-        gradients = gradients[0].view(real_AB.size(0), -1)
-        # Calculate and return GP
-        gradient_penalty = (((gradients + 1e-16).norm(2, dim=1) -1) ** 2).mean() * self.lambda_gp
-        return gradient_penalty
-    
-    def Generator_WGANGP_updater(self, val=False): 
         self.Generator.zero_grad()       
         # Generator loss
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)     
         predicted_fake = self.Discriminator(fake_AB)
-        loss_GAN = self.Hinge_loss_Generator(predicted_fake)
+        loss_GAN = self.Generator_loss(predicted_fake)
         
         #Pixelwise loss
-        loss_pixel = self.pixelwise_loss(self.fake_B, self.real_B)
-
-        #Local Pixellos
-        SampleY, SampleX, BoxSize = self.defect_coordinates[0]
-        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
-        SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
-        local_pixelloss = self.pixelwise_local_loss(self.fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], self.real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
+        loss_pixel, local_pixelloss =  self.Generator_pixelloss(self.real_B, self.fake_B, self.defect_coordinates)
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
@@ -324,7 +254,7 @@ class Training_Framework():
 
         return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach()
 
-    def Discriminator_WGANGP_updater(self, val=False):
+    def Discriminator_updater(self, val=False):
         self.Discriminator.zero_grad()
         #Get Critique scores
         real_AB = torch.cat((self.real_A, self.real_B), 1)
@@ -333,40 +263,14 @@ class Training_Framework():
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)        
         score_fake = self.Discriminator(fake_AB)
         if not val:
-            #GP_term = self.Gradient_Penalty(real_AB, fake_AB) #Running without GP to test Spectral normalization
-            Discriminator_loss = self.Hinge_loss_Discriminator(score_real, score_fake) #-torch.mean(score_real) + torch.mean(score_fake) #+ GP_term
+            Discriminator_loss = self.Discriminator_loss(score_real, score_fake) #-torch.mean(score_real) + torch.mean(score_fake) #+ GP_term
             Discriminator_loss.backward(retain_graph=True) # backward run. Also trying without retain_graph=True while GP is off to test if this is still necessary  
             self.Discriminator_optimizer.step() # step
             self.Generator.zero_grad()
         else:
-            Discriminator_loss = -torch.mean(score_real) + torch.mean(score_fake)
+            Discriminator_loss = self.Discriminator_loss(score_real, score_fake)
 
         return Discriminator_loss.detach(), score_real.detach(), score_fake.detach()
-
-
-
-    def Discriminator_updater(self, val=False):
-        
-        #Real loss
-        real_AB = torch.cat((self.real_A, self.real_B), 1)
-        predicted_real = self.Discriminator(real_AB)
-        
-        valid = self.Make_Label_Tensor(predicted_real, True)
-        fake = self.Make_Label_Tensor(predicted_real, False)
-        loss_real = self.GAN_loss(predicted_real, valid)
-
-        #Fake loss
-        fake_AB = torch.cat((self.real_A, self.fake_B), 1)        
-        predicted_fake = self.Discriminator(fake_AB.detach())
-        loss_fake = self.GAN_loss(predicted_fake, fake)
-
-        #Total loss and backprop
-        Total_loss_Discriminator = 0.5 * (loss_real + loss_fake)
-        if not val: 
-            Total_loss_Discriminator.backward() # backward run        
-            self.Discriminator_optimizer.step() # step
-
-        return Total_loss_Discriminator.detach(), predicted_real.detach(), predicted_fake.detach()
 
     
     def FromTorchTraining(self, image):
@@ -432,8 +336,8 @@ class Training_Framework():
                     self.real_B = images.to(self.device) #Target
                     self.fake_B = self.Generator(self.real_A)
                     self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
-                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_WGANGP_updater(val=True)
-                    GEN_loss, loss_pixel, loss_pixel_local = self.Generator_WGANGP_updater(val=True)
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
+                    GEN_loss, loss_pixel, loss_pixel_local = self.Generator_updater(val=True)
 
                     #Analytics
                     current_GEN_loss[num] =  GEN_loss
@@ -488,10 +392,10 @@ class Training_Framework():
                     self.fake_B = self.Generator(self.real_A)
                     self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
 
-                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_WGANGP_updater()
+                    DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()
 
                     if num % self.n_crit == 0:
-                        GEN_loss, loss_pixel, local_loss_pixel = self.Generator_WGANGP_updater()
+                        GEN_loss, loss_pixel, local_loss_pixel = self.Generator_updater()
 
 
                     #Analytics
