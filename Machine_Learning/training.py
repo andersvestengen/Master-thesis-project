@@ -20,7 +20,7 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 5,
+            "epochs"                : 3,
             "batch_size"            : 16,
             "Dataset_loc"           : Celeb_A_Dataset,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
@@ -32,7 +32,7 @@ Settings = {
             "Blockmode"             : True, #Should the defects be random artifacts or solid chunks?
             "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
             "CenterDefect"          : True, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
-            "lr"                    : 0.0002,
+            "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
             "Loss"                  : losses[0], # Which GAN loss to train with?
             "preprocess_storage"    : Preprocess_dir,
@@ -44,10 +44,10 @@ Settings = {
             "Do norm"               : False, #Normalization on or off 
             "Datasplit"             : 0.8,
             "device"                : "cuda",
-            "ImageHW"               : 128,
+            "ImageHW"               : 64,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Hinge_loss_Sagan_like",
+            "ModelTrainingName"     : "Hinge_loss_SAGAN_like",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -108,8 +108,8 @@ if __name__ == '__main__':
     
     # Loss functions
 
-    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"], betas=[0.5, 0.999])
-    Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"]*0.5, betas=[0.5, 0.999])
+    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]*0.25, betas=[0, 0.999])
+    Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"], betas=[0, 0.999])
 
     #Training
     trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, Discriminator)

@@ -174,8 +174,7 @@ class Spectral_Conv_layer(nn.Module):
 
         self.layer = nn.Sequential(
             nn.utils.parametrizations.spectral_norm(nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)),
-            nn.ELU(inplace=True),
-            nn.Dropout(0.25),
+            nn.LeakyReLU(0.1),
         )
 
     def forward(self, input):
@@ -192,11 +191,11 @@ class SpectralDiscriminator(nn.Module):
         self.layer1 = Spectral_Conv_layer(input_channels*2, 64)
         self.layer2 = Spectral_Conv_layer(64, 128)
         self.layer3 = Spectral_Conv_layer(128, 256)
-        self.layer4 = Spectral_Conv_layer(256, 256)
-        self.layer6 = Spectral_Conv_layer(256, 1)
+        self.layer4 = Spectral_Conv_layer(256, 512)
+        self.layer6 = Spectral_Conv_layer(512, 1)
 
         self.attn1 = AttentionLayer(256)
-        self.attn2 = AttentionLayer(256)
+        self.attn2 = AttentionLayer(512)
         
 
     def forward(self, input):
@@ -207,5 +206,5 @@ class SpectralDiscriminator(nn.Module):
         output = self.layer4(output)
         output = self.attn2(output)
         output = self.layer6(output)
-        return torch.flatten(output)
+        return output.squeeze()
         

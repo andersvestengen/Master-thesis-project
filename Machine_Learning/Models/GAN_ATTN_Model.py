@@ -40,13 +40,11 @@ class AttentionLayer(nn.Module):
     
 
 class UnetEncoderLayer(nn.Module):
-    def __init__(self, channel_in, channel_out, normalize=False, dropout=0.0):
+    def __init__(self, channel_in, channel_out):
         super(UnetEncoderLayer, self).__init__()
-        layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True))]
-        if normalize:
-            layers.append(nn.LeakyReLU(0.1))
-        if dropout:
-            layers.append(nn.Dropout(dropout))
+        layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                  nn.ReLU(),
+                  ]
         self.model = nn.Sequential(*layers)       
         
         
@@ -55,29 +53,23 @@ class UnetEncoderLayer(nn.Module):
         return output
 
 class UnetDecoderLayer(nn.Module):
-    def __init__(self, channel_in, channel_out, dropout=0.0, normalize=False, attention=False):
+    def __init__(self, channel_in, channel_out, attention=False):
         super(UnetDecoderLayer, self).__init__()
-        if normalize:
-            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                    nn.LeakyReLU(0.1),
-            ]
-        else:
-            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                    nn.LeakyReLU(0.1),
-            ]
-        if dropout:
-            layers.append(nn.Dropout(dropout))
-            
+        layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                nn.ReLU(),
+        ]
+        self.attention = attention     
         if attention:
-            layers.append(AttentionLayer(channel_out))
+            self.attn = AttentionLayer(channel_out)
         self.model = nn.Sequential(*layers)       
         
         
 
-    def forward(self, input, skip_input):
-        modelinput = torch.cat((input, skip_input), 1)
-        modelout = self.model(modelinput)
-        return modelout
+    def forward(self, input):
+        output = self.model(input)
+        if self.attention:
+            output = self.attn(output)
+        return output
     
 
 #Modified Pix2Pix Unet now with attention layers,skip connections and pretrained Encoder-side.
@@ -85,27 +77,24 @@ class UnetDecoderLayer(nn.Module):
 class Generator_Unet_Attention(nn.Module):
     def __init__(self, input_channels=3, output_channels=3):
         super(Generator_Unet_Attention, self).__init__()
+
         #Encoder structure
         self.name = "Generator_Unet_Attention"
 
-        self.conv1 = UnetEncoderLayer(input_channels, 64)
-        self.conv2 = UnetEncoderLayer(64, 64)
-        self.conv3 = UnetEncoderLayer(64, 128, dropout=0.25)
-        self.conv4 = UnetEncoderLayer(128, 256, dropout=0.25)
-        self.conv5 = UnetEncoderLayer(256, 512, dropout=0.25)
+        self.conv1 = UnetEncoderLayer(input_channels, 64) #64
+        self.conv2 = UnetEncoderLayer(64, 128) # 32
+        self.conv3 = UnetEncoderLayer(128, 256) # 16
+        self.conv4 = UnetEncoderLayer(256, 512) # 8
         
-        self.dilation_layer = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 1, dilation=1, bias=True)))
+        
         #Decoder structure
-        self.decode_layer_1 = UnetDecoderLayer(1024, 256, dropout=0.25) # 512 + 512
-        self.decode_layer_2 = UnetDecoderLayer(512,  128, dropout=0.25) # 256 + 256
-        self.decode_layer_3 = UnetDecoderLayer(256, 64, dropout=0.25, attention=True) # 128 + 128
-        self.decode_layer_4 = UnetDecoderLayer(128, 64, attention=True) # 64 + 64
+        self.decode_layer_1 = UnetDecoderLayer(512,  256) # 256 + 256
+        self.decode_layer_2 = UnetDecoderLayer(256, 128, attention=True) # 128 + 128
+        self.decode_layer_3 = UnetDecoderLayer(128, 64, attention=True) # 64 + 64
 
 
         self.final_decoder_layer = nn.Sequential(
-            nn.Upsample(scale_factor=2),
-            nn.ZeroPad2d((1, 0 , 1, 0)),
-            nn.Conv2d(64, output_channels, 4, padding=1),
+            nn.ConvTranspose2d(64, output_channels, 4, 2, 1),
             nn.Tanh(),
         )
 
@@ -116,18 +105,14 @@ class Generator_Unet_Attention(nn.Module):
         e2 = self.conv2(e1)
         e3 = self.conv3(e2)
         e4 = self.conv4(e3)
-        e5 = self.conv5(e4)
-
-        center = self.dilation_layer(e5)
-        #Center
-        #Can look to add more dilated convolutions in the future
-        #Decoder
-        d1 = self.decode_layer_1(center, e5)
-        d2 = self.decode_layer_2(d1, e4)
-        d3 = self.decode_layer_3(d2, e3)
-        d4 = self.decode_layer_4(d3, e2)
         
-        return self.final_decoder_layer(d4)
+
+        #Decoder
+        d1 = self.decode_layer_1(e4)
+        d2 = self.decode_layer_2(d1)
+        d3 = self.decode_layer_3(d2)
+        
+        return self.final_decoder_layer(d3)
 
 
 
