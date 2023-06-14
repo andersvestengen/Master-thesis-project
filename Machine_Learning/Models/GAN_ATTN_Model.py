@@ -88,17 +88,13 @@ class Generator_Unet_Attention(nn.Module):
         #Encoder structure
         self.name = "Generator_Unet_Attention"
 
-        dilation_layer = [nn.Conv2d(512, 512, 1, dilation=1),
-                        nn.ELU(inplace=True),
-                        ]
-
         self.conv1 = UnetEncoderLayer(input_channels, 64)
         self.conv2 = UnetEncoderLayer(64, 64)
         self.conv3 = UnetEncoderLayer(64, 128, dropout=0.25)
         self.conv4 = UnetEncoderLayer(128, 256, dropout=0.25)
         self.conv5 = UnetEncoderLayer(256, 512, dropout=0.25)
         
-
+        self.dilation_layer = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 1, dilation=1, bias=True)))
         #Decoder structure
         self.decode_layer_1 = UnetDecoderLayer(1024, 256, dropout=0.25) # 512 + 512
         self.decode_layer_2 = UnetDecoderLayer(512,  128, dropout=0.25) # 256 + 256
@@ -122,14 +118,14 @@ class Generator_Unet_Attention(nn.Module):
         e4 = self.conv4(e3)
         e5 = self.conv5(e4)
 
-        
+        center = self.dilation_layer(e5)
         #Center
         #Can look to add more dilated convolutions in the future
         #Decoder
-        d1 = self.decode_layer_1(e5, e4)
-        d2 = self.decode_layer_2(d1, e3)
-        d3 = self.decode_layer_3(d2, e2)
-        d4 = self.decode_layer_4(d3, e1)
+        d1 = self.decode_layer_1(center, e5)
+        d2 = self.decode_layer_2(d1, e4)
+        d3 = self.decode_layer_3(d2, e3)
+        d4 = self.decode_layer_4(d3, e2)
         
         return self.final_decoder_layer(d4)
 
