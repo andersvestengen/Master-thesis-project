@@ -20,14 +20,14 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 3,
-            "batch_size"            : 16,
+            "epochs"                : 9,
+            "batch_size"            : 28,
             "Dataset_loc"           : Celeb_A_Dataset,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 3, # How many multiples of the defect box would you like the loss to account for?
-            "n_crit"                : 5,
+            "n_crit"                : 2,
             "lambda_gp"             : 10, #WGAN-GP constant
             "Blockmode"             : True, #Should the defects be random artifacts or solid chunks?
             "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     
     # Loss functions
 
-    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]*0.25, betas=[0, 0.999])
+    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]*0.5, betas=[0, 0.999])
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"], betas=[0, 0.999])
 
     #Training

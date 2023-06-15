@@ -39,9 +39,9 @@ class AttentionLayer(nn.Module):
         return output
     
 
-class UnetEncoderLayer(nn.Module):
+class UnetAttentionEncoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out):
-        super(UnetEncoderLayer, self).__init__()
+        super(UnetAttentionEncoderLayer, self).__init__()
         layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)),
                   nn.ReLU(),
                   ]
@@ -52,9 +52,9 @@ class UnetEncoderLayer(nn.Module):
         output = self.model(input)
         return output
 
-class UnetDecoderLayer(nn.Module):
+class UnetAttentionDecoderLayer(nn.Module):
     def __init__(self, channel_in, channel_out, attention=False):
-        super(UnetDecoderLayer, self).__init__()
+        super(UnetAttentionDecoderLayer, self).__init__()
         layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
                 nn.ReLU(),
         ]
@@ -81,16 +81,16 @@ class Generator_Unet_Attention(nn.Module):
         #Encoder structure
         self.name = "Generator_Unet_Attention"
 
-        self.conv1 = UnetEncoderLayer(input_channels, 64) #64
-        self.conv2 = UnetEncoderLayer(64, 128) # 32
-        self.conv3 = UnetEncoderLayer(128, 256) # 16
-        self.conv4 = UnetEncoderLayer(256, 512) # 8
+        self.conv1 = UnetAttentionEncoderLayer(input_channels, 64) #64
+        self.conv2 = UnetAttentionEncoderLayer(64, 128) # 32
+        self.conv3 = UnetAttentionEncoderLayer(128, 256) # 16
+        self.conv4 = UnetAttentionEncoderLayer(256, 512) # 8
         
         
         #Decoder structure
-        self.decode_layer_1 = UnetDecoderLayer(512,  256) # 256 + 256
-        self.decode_layer_2 = UnetDecoderLayer(256, 128, attention=True) # 128 + 128
-        self.decode_layer_3 = UnetDecoderLayer(128, 64, attention=True) # 64 + 64
+        self.decode_layer_1 = UnetAttentionDecoderLayer(512,  256) # 256 + 256
+        self.decode_layer_2 = UnetAttentionDecoderLayer(256, 128, attention=True) # 128 + 128
+        self.decode_layer_3 = UnetAttentionDecoderLayer(128, 64, attention=True) # 64 + 64
 
 
         self.final_decoder_layer = nn.Sequential(
@@ -126,10 +126,10 @@ class Generator_Unet_Window_Attention(nn.Module):
                         nn.ELU(inplace=True),
                         ]
 
-        self.conv1 = UnetEncoderLayer(input_channels, 64)
-        self.conv2 = UnetEncoderLayer(64, 64)
-        self.conv3 = UnetEncoderLayer(64, 128, dropout=0.25)
-        self.conv4 = UnetEncoderLayer(128, 256, dropout=0.25)
+        self.conv1 = UnetAttentionEncoderLayer(input_channels, 64)
+        self.conv2 = UnetAttentionEncoderLayer(64, 64)
+        self.conv3 = UnetAttentionEncoderLayer(64, 128, dropout=0.25)
+        self.conv4 = UnetAttentionEncoderLayer(128, 256, dropout=0.25)
         
         self.dilation_1 = nn.Sequential(*dilation_layer)
         
@@ -140,9 +140,9 @@ class Generator_Unet_Window_Attention(nn.Module):
         self.dilation_4 = nn.Sequential(*dilation_layer)
 
         #Decoder structure
-        self.decode_layer_1 = UnetDecoderLayer(512,  128, dropout=0.25) # 256 + 256
-        self.decode_layer_2 = UnetDecoderLayer(256, 64, dropout=0.25) # 128 + 128
-        self.decode_layer_3 = UnetDecoderLayer(128, 64) # 64 + 64
+        self.decode_layer_1 = UnetAttentionDecoderLayer(512,  128, dropout=0.25) # 256 + 256
+        self.decode_layer_2 = UnetAttentionDecoderLayer(256, 64, dropout=0.25) # 128 + 128
+        self.decode_layer_3 = UnetAttentionDecoderLayer(128, 64) # 64 + 64
 
         self.final_decoder_layer = nn.Sequential(
             nn.Upsample(scale_factor=2),
