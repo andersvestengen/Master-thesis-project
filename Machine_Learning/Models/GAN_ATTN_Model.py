@@ -172,3 +172,85 @@ class Generator_Unet_Window_Attention(nn.Module):
         d3 = self.decode_layer_3(d2, e2)
         
         return self.final_decoder_layer(d3)
+    
+
+
+class Defect_GAN_Encoder_Layer(nn.Module):
+    def __init__(self, channel_in, channel_out):
+        super(Defect_GAN_Encoder_Layer, self).__init__()
+        layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                  nn.ReLU(),
+                  ]
+        self.model = nn.Sequential(*layers)       
+        
+        
+    def forward(self, input):
+        output = self.model(input)
+        return output
+
+
+class Defect_GAN_Decoder_Layer(nn.Module):
+    def __init__(self, channel_in, channel_out, attention=False):
+        super(Defect_GAN_Decoder_Layer, self).__init__()
+        layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                nn.ReLU(),
+        ]
+        #Might consider adding conditional batchnorm to this layer? Does it interfere with spectral norm, or influence skip connections the wrong way? 
+        self.model = nn.Sequential(*layers)       
+        
+        
+
+    def forward(self, input, skip_connection):
+        return self.model(input) + skip_connection
+
+
+class Defect_GAN_Final_Layer(nn.Module):
+    def __init__(self, channel_in, channel_out, attention=False):
+        super(Defect_GAN_Final_Layer, self).__init__()
+        layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                nn.Tanh(),
+        ]
+        #Might consider adding conditional batchnorm to this layer? Does it interfere with spectral norm, or influence skip connections the wrong way? 
+        self.model = nn.Sequential(*layers)       
+        
+        
+
+    def forward(self, input, skip_connection):
+        return self.model(input) + skip_connection
+
+#Unet structure with SN and Sagan improvements along with skip connections. Structure also follows some of the DAM-GAN principles
+class Generator_Defect_GAN(nn.Module):
+    def __init__(self, input_channels=3, output_channels=3):
+        super(Generator_Unet_Attention, self).__init__()
+
+        #Encoder layers
+        self.encoder1 = Defect_GAN_Encoder_Layer(input_channels, 64) # 128
+        self.encoder2 = Defect_GAN_Encoder_Layer(64, 128) # 64
+        self.encoder3 = Defect_GAN_Encoder_Layer(128, 256) # 32
+        self.encoder4 = Defect_GAN_Encoder_Layer(256, 512) # 16
+
+        #Dilation (center) layers
+        self.center = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 4, 2, 1, bias=True)), # 8
+                  nn.ReLU())
+
+        #Decoder layers
+        self.decoder1 = Defect_GAN_Decoder_Layer(512, 256) # 8 -> 16
+        self.decoder2 = Defect_GAN_Decoder_Layer(256, 128) # 16 -> 32
+        self.decoder3 = Defect_GAN_Decoder_Layer(128, 64) # 32 -> 64
+
+        # output
+        self.final_layer = Defect_GAN_Final_Layer(64, output_channels) # 64 -> 128
+
+    def forward(self, input):
+        e1 = self.encoder1(input)
+        e2 = self.encoder2(e1)
+        e3 = self.encoder3(e2)
+        e4 = self.encoder4(e3)
+
+        center = self.center(e4)
+
+        d1 = self.decoder1(center, e4)
+        d2 = self.decoder2(d1, e3)
+        d3 = self.decoder3(d2, e2)
+
+        return self.final_layer(d3, e1)
