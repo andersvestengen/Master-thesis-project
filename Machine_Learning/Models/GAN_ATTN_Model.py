@@ -190,7 +190,7 @@ class Defect_GAN_Encoder_Layer(nn.Module):
 
 
 class Defect_GAN_Decoder_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out, attention=False):
+    def __init__(self, channel_in, channel_out):
         super(Defect_GAN_Decoder_Layer, self).__init__()
         layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
                 nn.ReLU(),
@@ -201,11 +201,12 @@ class Defect_GAN_Decoder_Layer(nn.Module):
         
 
     def forward(self, input, skip_connection):
-        return self.model(input) + skip_connection
+        output =  self.model(input)
+        return output + skip_connection
 
 
 class Defect_GAN_Final_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out, attention=False):
+    def __init__(self, channel_in, channel_out):
         super(Defect_GAN_Final_Layer, self).__init__()
         layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
                 nn.Tanh(),
@@ -221,7 +222,7 @@ class Defect_GAN_Final_Layer(nn.Module):
 #Unet structure with SN and Sagan improvements along with skip connections. Structure also follows some of the DAM-GAN principles
 class Generator_Defect_GAN(nn.Module):
     def __init__(self, input_channels=3, output_channels=3):
-        super(Generator_Unet_Attention, self).__init__()
+        super(Generator_Defect_GAN, self).__init__()
 
         #Encoder layers
         self.encoder1 = Defect_GAN_Encoder_Layer(input_channels, 64) # 128
@@ -229,18 +230,20 @@ class Generator_Defect_GAN(nn.Module):
         self.encoder3 = Defect_GAN_Encoder_Layer(128, 256) # 32
         self.encoder4 = Defect_GAN_Encoder_Layer(256, 512) # 16
 
-        #Dilation (center) layers
-        self.center = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 4, 2, 1, bias=True)), # 8
+        #Center layer
+        self.center = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 1, dilation=1, bias=True)), # 16
                   nn.ReLU())
 
         #Decoder layers
-        self.decoder1 = Defect_GAN_Decoder_Layer(512, 256) # 8 -> 16
-        self.decoder2 = Defect_GAN_Decoder_Layer(256, 128) # 16 -> 32
+        self.decoder1 = Defect_GAN_Decoder_Layer(512, 256) # 16 -> 32
+        self.decoder2 = Defect_GAN_Decoder_Layer(256, 128) # 32 -> 64
         self.decoder3 = Defect_GAN_Decoder_Layer(128, 64) # 32 -> 64
 
         # output
-        self.final_layer = Defect_GAN_Final_Layer(64, output_channels) # 64 -> 128
-
+        self.final_layer = nn.Sequential(
+            nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(64, output_channels, 4, 2, 1, bias=True)),
+            nn.Tanh() # 64 -> 128
+        )
     def forward(self, input):
         e1 = self.encoder1(input)
         e2 = self.encoder2(e1)
@@ -249,8 +252,8 @@ class Generator_Defect_GAN(nn.Module):
 
         center = self.center(e4)
 
-        d1 = self.decoder1(center, e4)
-        d2 = self.decoder2(d1, e3)
-        d3 = self.decoder3(d2, e2)
+        d1 = self.decoder1(center, e3)
+        d2 = self.decoder2(d1, e2)
+        d3 = self.decoder3(d2, e1)
 
-        return self.final_layer(d3, e1)
+        return self.final_layer(d3)

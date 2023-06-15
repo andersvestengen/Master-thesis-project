@@ -179,7 +179,7 @@ class Training_Framework():
             self.Generator_loss         = losses.CGAN_Generator
             self.Generator_pixelloss    = losses.Generator_Pixelloss
         if Settings["Loss"] == "WGANGP":
-            self.Discriminator_loss     = losses.WGAN_Discriminator
+            self.Discriminator_loss     = losses.WGANGP_Discriminator
             self.Generator_loss         = losses.WGAN_Generator
             self.Generator_pixelloss    = losses.Generator_Pixelloss
 

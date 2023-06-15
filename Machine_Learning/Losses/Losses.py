@@ -52,16 +52,21 @@ class LossFunctions(nn.Module):
         return label_tensor.expand_as(tensor_size)
     
     
-    def WGAN_Discriminator(self, *args, GP=False):
+    def WGAN_Discriminator(self, *args):
+        real_pred, fake_pred = args
+
+        loss_real = - torch.mean(real_pred)
+        loss_fake = torch.mean(fake_pred)
+
+        return loss_real + loss_fake
+
+    def WGANGP_Discriminator(self, *args):
         real_pred, fake_pred, real_AB, fake_AB = args
         loss_real = - torch.mean(real_pred)
         loss_fake = torch.mean(fake_pred)
 
-        if GP:
-            gp_term = self.Gradient_Penalty(real_AB, fake_AB)
-            return loss_real + loss_fake + gp_term
-        else:
-            return loss_real + loss_fake
+        gp_term = self.Gradient_Penalty(real_AB, fake_AB)
+        return loss_real + loss_fake + gp_term
 
 
     def WGAN_Generator(self, fake_pred):

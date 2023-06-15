@@ -1,7 +1,7 @@
 from Models.GAN_Model_1 import Generator_Unet1, UnetGenerator, init_weights
 from Models.Discriminators import Discriminator_1, PixPatchGANDiscriminator, PixelDiscriminator, SpectralDiscriminator
 from Models.GAN_REF_HEMIN import UNet_ResNet34
-from Models.GAN_ATTN_Model import Generator_Unet_Attention
+from Models.GAN_ATTN_Model import Generator_Unet_Attention, Generator_Defect_GAN
 from Datasets.GAN_Dataset_1 import GAN_dataset
 import torch
 from torch.utils.data import DataLoader
@@ -21,7 +21,7 @@ Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Ima
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
             "epochs"                : 9,
-            "batch_size"            : 28,
+            "batch_size"            : 16,
             "Dataset_loc"           : Celeb_A_Dataset,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
@@ -34,7 +34,7 @@ Settings = {
             "CenterDefect"          : True, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
-            "Loss"                  : losses[0], # Which GAN loss to train with?
+            "Loss"                  : losses[1], # Which GAN loss to train with?
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 172, # random training seed
             "num_workers"           : 4,
@@ -44,10 +44,10 @@ Settings = {
             "Do norm"               : False, #Normalization on or off 
             "Datasplit"             : 0.8,
             "device"                : "cuda",
-            "ImageHW"               : 64,
+            "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Hinge_loss_SAGAN_like",
+            "ModelTrainingName"     : "Defect_GAN_PixelDiscrim_WGAN",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
@@ -75,9 +75,9 @@ if __name__ == '__main__':
     device = Settings["device"]
 
     #Load models
-    Discriminator = SpectralDiscriminator().to(device)
+    Discriminator = PixelDiscriminator().to(device)
     init_weights(Discriminator)
-    Generator = Generator_Unet_Attention().to(device)
+    Generator = Generator_Defect_GAN().to(device)
     init_weights(Generator)
 
 

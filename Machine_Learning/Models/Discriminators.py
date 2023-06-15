@@ -126,7 +126,7 @@ class PixPatchGANDiscriminator(nn.Module):
 
 class PixelDiscriminator(nn.Module):
 
-    def __init__(self, input_channels=3, last_conv_channels=64, norm_layer=nn.BatchNorm2d, use_bias=False):
+    def __init__(self, input_channels=3, norm_layer=True, use_bias=False):
 
 
         super(PixelDiscriminator, self).__init__()
@@ -140,14 +140,20 @@ class PixelDiscriminator(nn.Module):
         """
         if norm_layer is not None:
             model = [
-                nn.Conv2d(input_channels*2, last_conv_channels, kernel_size=1, stride=1, padding=0),
+                nn.utils.parametrizations.spectral_norm(nn.Conv2d(input_channels*2, 32, kernel_size=1, stride=1, padding=0)),
                 nn.LeakyReLU(0.2, True),
-                nn.Conv2d(last_conv_channels, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
-                norm_layer(last_conv_channels * 2),
+                nn.utils.parametrizations.spectral_norm(nn.Conv2d(32, 64, kernel_size=1, stride=1, padding=0)),
                 nn.LeakyReLU(0.2, True),
-                nn.Conv2d(last_conv_channels * 2, 1, kernel_size=1, stride=1, padding=0, bias=use_bias)
+                nn.utils.parametrizations.spectral_norm(nn.Conv2d(64, 128, kernel_size=1, stride=1, padding=0)),
+                nn.LeakyReLU(0.2, True),
+                nn.utils.parametrizations.spectral_norm(nn.Conv2d(128, 256, kernel_size=1, stride=1, padding=0)),
+                nn.LeakyReLU(0.2, True),
+                nn.utils.parametrizations.spectral_norm(nn.Conv2d(256, 512, kernel_size=1, stride=1, padding=0)),
+                nn.LeakyReLU(0.2, True),
+                nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 1, kernel_size=1, stride=1, padding=0)),
             ]
         else:
+            last_conv_channels=64
             model = [
                 nn.Conv2d(input_channels*2, last_conv_channels, kernel_size=1, stride=1, padding=0),
                 nn.LeakyReLU(0.2, True),
@@ -165,7 +171,8 @@ class PixelDiscriminator(nn.Module):
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
-        return torch.flatten(self.model(input))
+        output = self.model(input)
+        return output.squeeze()
 
 
 class Spectral_Conv_layer(nn.Module):
