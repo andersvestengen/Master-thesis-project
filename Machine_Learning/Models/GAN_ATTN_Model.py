@@ -4,9 +4,8 @@ import functools
 from torchvision.models import resnet34, ResNet34_Weights
 
 """
-Based on:
-https://towardsdatascience.com/building-your-own-self-attention-gans-e8c9b9fe8e51
-https://jonathan-hui.medium.com/gan-self-attention-generative-adversarial-networks-sagan-923fccde790c
+Attention layer was Based on:
+https://github.com/heykeetae/Self-Attention-GAN/blob/master/sagan_models.py
 https://arxiv.org/pdf/1805.08318.pdf
 """
 
@@ -223,7 +222,7 @@ class Defect_GAN_Final_Layer(nn.Module):
 class Generator_Defect_GAN(nn.Module):
     def __init__(self, input_channels=3, output_channels=3):
         super(Generator_Defect_GAN, self).__init__()
-
+        self.name = "Generator_Defect_GAN"
         #Encoder layers
         self.encoder1 = Defect_GAN_Encoder_Layer(input_channels, 64) # 128
         self.encoder2 = Defect_GAN_Encoder_Layer(64, 128) # 64
