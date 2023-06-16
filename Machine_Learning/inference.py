@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 import torch
 from Models.GAN_Model_1 import Generator_Unet1, UnetGenerator
 from Models.GAN_REF_HEMIN import UNet_ResNet34
-from Models.GAN_ATTN_Model import Generator_Unet_Attention
+from Models.GAN_ATTN_Model import Generator_Unet_Attention, Generator_Defect_GAN
 from Datasets.GAN_Dataset_1 import GAN_dataset
 from Training_Framework import Model_Inference
 import os
@@ -11,7 +11,7 @@ import shutil
 if __name__ == '__main__':
 
 
-		Current_model_list = ["Generator_Unet1", "UNet_ResNet34", "UnetGenerator", "Generator_Unet_Attention"]
+		Current_model_list = ["Generator_Unet1", "UNet_ResNet34", "UnetGenerator", "Generator_Unet_Attention", "Generator_Defect_GAN"]
 		model_ref_loc = [21, 23, 24]
 
 		Machine_learning_dir = "/home/anders/Master-thesis-project/Machine_Learning" # should point to the Machine learning folder of the local directory
@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		#The fields that do matter are things like normalization, cuda, Do norm, Pin memory, preprocess storage, dataset loc, 
 		Settings = {
 				"epochs"                : 5,
-				"Dataset_loc"           : Standard_training_Set,
+				"Dataset_loc"           : Celeb_A_Dataset,
 				"batch_size"            : 1, # This must be 1 for inference!
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
 				"BoxSet"               : [8,8], # min/max defect, inclusive
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
-				"ImageHW"               : 256,
+				"ImageHW"               : 128,
 				"RestoreModel"          : False,
 				#No spaces in the model name, please use '_'
 				"ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
@@ -116,6 +116,9 @@ if __name__ == '__main__':
 
 		if model_arch == "Generator_Unet_Attention":
 			Model = Generator_Unet_Attention()
+
+		if model_arch == "Generator_Defect_GAN":
+			Model = Generator_Defect_GAN()
 
 		if model_arch == "UnetGenerator":
 			Model = UnetGenerator(norm_layer=torch.nn.InstanceNorm2d)
