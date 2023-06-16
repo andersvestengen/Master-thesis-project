@@ -23,6 +23,7 @@ Settings = {
             "epochs"                : 4,
             "batch_size"            : 16,
             "Dataset_loc"           : Celeb_A_Dataset,
+            "Defect_mode"			: "Training", # [Training, Inference]. If Training the dataset will return training mask, if Inference dataset will return defect coordinates
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
@@ -47,7 +48,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_PixelDiscrim_WGAN_Combined_masked_loss",
+            "ModelTrainingName"     : "Defect_GAN_PixelDiscrim_WGAN_Dual_L1_Loss",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True

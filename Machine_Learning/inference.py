@@ -23,6 +23,7 @@ if __name__ == '__main__':
 		Settings = {
 				"epochs"                : 5,
 				"Dataset_loc"           : Celeb_A_Dataset,
+				"Defect_mode"			: "Inference", # [Training, Inference]. If Training the dataset will return training mask, if Inference dataset will return defect coordinates
 				"batch_size"            : 1, # This must be 1 for inference!
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
 				"BoxSet"               : [8,8], # min/max defect, inclusive

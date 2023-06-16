@@ -215,8 +215,6 @@ class Training_Framework():
             if (epoch == 0) or ((self.Generator_pixel_loss_validation[epoch] + self.Generator_local_pixel_loss_validation[epoch]) < (np.amin(self.Generator_pixel_loss_validation[:epoch]) + np.amin(self.Generator_local_pixel_loss_validation[:epoch]))):
                 #Thinking we'll just print for now.
                 if not epoch == 0:
-                    if (self.Generator_loss_validation[epoch] < np.amin(self.Generator_loss_validation[:epoch])):
-                        print("model saved on epoch:", epoch, "Due to best GAN loss:", self.Generator_loss_validation[epoch])
                     if (self.Generator_pixel_loss_validation[epoch] < np.amin(self.Generator_pixel_loss_validation[:epoch])):
                         print("model saved on epoch:", epoch, "Due to best pixelloss:", self.Generator_pixel_loss_validation[epoch])
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
@@ -661,13 +659,12 @@ class Model_Inference():
                 fake_B = self.FromTorchTraining(fake_B.squeeze(0))
     
                 #Getting patch coordinates
-                SampleY, SampleX, BoxSize = coordinates[0]
+                SampleY, SampleX, BoxSize = coordinates
                 #BoxSize = self.BoxSet[1] * int(self.Settings["Loss_region_Box_mult"])
                 if BoxSize < 7:
                     L1_loss_region = 7
                 else:
                     L1_loss_region = BoxSize
-                SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
                 for channel in range(3):
                     PSNR_real_values[num, channel]       = PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                     PSNR_fake_values[num, channel]       = PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)

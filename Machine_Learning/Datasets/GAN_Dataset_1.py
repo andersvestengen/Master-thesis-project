@@ -29,7 +29,10 @@ class GAN_dataset(Dataset):
         self.device = self.Settings["device"]
         self.Blockmode = self.Settings["Blockmode"]
         self.CenterDefect = self.Settings["CenterDefect"]
-
+        if Settings["Defect_mode"] == "Inference":
+            self.InferenceMode = True
+        else:
+            self.InferenceMode = False
         #Define wether defects are blacked out, whited out or both
         self.BlackWhite = torch.tensor(self.Settings["BlackorWhite"], dtype=torch.int8)
         if self.Settings["BlackorWhite"][0] == True:
@@ -199,7 +202,6 @@ class GAN_dataset(Dataset):
             imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = minimask
             Mask = torch.ones(imageMatrix.size())
             Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
-            return imageMatrix, Mask
         else:
             #Create a more complex defect in the image
             defect_mask = torch.randint(0,2, ((BoxSize, BoxSize)), generator=self.defect_seed).bool()
@@ -210,8 +212,10 @@ class GAN_dataset(Dataset):
             Mask = torch.ones(imageMatrix.size)
             Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
 
-
-        return imageMatrix, Mask
+        if self.InferenceMode:
+            return imageMatrix, [SampleY, SampleX, BoxSize.item()]
+        else:
+            return imageMatrix, Mask
     
 
     def __len__(self):
