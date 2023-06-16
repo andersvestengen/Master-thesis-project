@@ -183,6 +183,8 @@ class Training_Framework():
             self.Generator_loss         = losses.WGAN_Generator
             self.Generator_pixelloss    = losses.Generator_Pixelloss
 
+        self.Generator_Deep_Feature_Loss = losses.DeepFeatureLoss
+
 
 
         # Set the working Directory
@@ -244,8 +246,13 @@ class Training_Framework():
         #Pixelwise loss
         loss_pixel, local_pixelloss =  self.Generator_pixelloss(self.real_B, self.fake_B, self.mask)
         
+
+        #DeepFeatureLoss
+        _, self.Deep_features_gt = self.Generator(self.real_B)
+        DeepFeatureLoss = self.Generator_Deep_Feature_Loss(self.Deep_features, self.Deep_features_gt)
+
         #Total loss
-        Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
+        Total_loss_Generator = loss_GAN + DeepFeatureLoss + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
         
         if not val:
             Total_loss_Generator.backward()
@@ -388,7 +395,7 @@ class Training_Framework():
                     
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_B = self.Generator(self.real_A)
+                    self.fake_B, self.Deep_features = self.Generator(self.real_A)
                     self.mask = mask.to(self.device) # local loss coordinates
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()

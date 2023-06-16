@@ -255,4 +255,4 @@ class Generator_Defect_GAN(nn.Module):
         d2 = self.decoder2(d1, e2)
         d3 = self.decoder3(d2, e1)
 
-        return self.final_layer(d3)
+        return self.final_layer(d3), center
