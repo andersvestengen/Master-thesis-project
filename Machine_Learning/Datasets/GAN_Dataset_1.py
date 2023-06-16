@@ -191,18 +191,27 @@ class GAN_dataset(Dataset):
             SampleY = self.getSample(ImageY, self.BoxSet[1])
             SampleX = self.getSample(ImageX, self.BoxSet[1])
 
-        intSample = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] 
-        mask = torch.randint(0,2, (intSample.size()[1:]), generator=self.defect_seed).bool()
-        color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
-        r = torch.full((intSample.size()), color.item()).float()
+        #color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
+        #Doing black for now
         if self.Blockmode:
-            intSample = r 
+            #Create a solid block in the image, used in eatly training
+            minimask = torch.full((BoxSize, BoxSize), 0).float()
+            imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = minimask
+            Mask = torch.ones(imageMatrix.size())
+            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
+            return imageMatrix, Mask
         else:
-            intSample[:,mask] = r[:,mask] 
+            #Create a more complex defect in the image
+            defect_mask = torch.randint(0,2, ((BoxSize, BoxSize)), generator=self.defect_seed).bool()
+            Cutout = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize]
+            r = torch.full(((BoxSize, BoxSize)), 0).float()
+            Cutout[:defect_mask] = r[:,defect_mask]
+            imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = Cutout
+            Mask = torch.ones(imageMatrix.size)
+            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
 
-        imageMatrix[:,SampleY:SampleY+BoxSize,SampleX:SampleX+BoxSize] = intSample
 
-        return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize])
+        return imageMatrix, Mask
     
 
     def __len__(self):
@@ -256,9 +265,9 @@ class GAN_dataset(Dataset):
             else:
                 target = self.Image_To_Sample_Transform(self.load_torch_image(self.OriginalImagesList[idx]))
 
-        defect, arr = self.DefectGenerator(target.clone())
+        defect, mask = self.DefectGenerator(target.clone())
 
-        return target, defect, arr
+        return target, defect, mask
 
 
 

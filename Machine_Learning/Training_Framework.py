@@ -211,7 +211,8 @@ class Training_Framework():
         self.train_start = time.time()
 
     def Save_Model(self, epoch):
-            if (epoch == 0) or (self.Generator_loss_validation[epoch] < np.amin(self.Generator_loss_validation[:epoch])) or (self.Generator_pixel_loss_validation[epoch] < np.amin(self.Generator_pixel_loss_validation[:epoch])):
+            #Assuming local and global improvements work in tandem.
+            if (epoch == 0) or ((self.Generator_pixel_loss_validation[epoch] + self.Generator_local_pixel_loss_validation[epoch]) < (np.amin(self.Generator_pixel_loss_validation[:epoch]) + np.amin(self.Generator_local_pixel_loss_validation[:epoch]))):
                 #Thinking we'll just print for now.
                 if not epoch == 0:
                     if (self.Generator_loss_validation[epoch] < np.amin(self.Generator_loss_validation[:epoch])):
@@ -243,7 +244,7 @@ class Training_Framework():
         loss_GAN = self.Generator_loss(predicted_fake)
         
         #Pixelwise loss
-        loss_pixel, local_pixelloss =  self.Generator_pixelloss(self.real_B, self.fake_B, self.defect_coordinates)
+        loss_pixel, local_pixelloss =  self.Generator_pixelloss(self.real_B, self.fake_B, self.mask)
         
         #Total loss
         Total_loss_Generator = loss_GAN + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
@@ -326,7 +327,7 @@ class Training_Framework():
             
             with tqdm(val_loader, unit=val_unit, leave=False) as tepoch:
                 for num, data in enumerate(tepoch):
-                    images, defect_images, defect_coordinates = data
+                    images, defect_images, mask = data
                     if epoch == 0:
                         tepoch.set_description(f"Validation run on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
@@ -335,7 +336,7 @@ class Training_Framework():
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
                     self.fake_B = self.Generator(self.real_A)
-                    self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
+                    self.mask = mask.to(self.device) # local loss coordinates
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
                     GEN_loss, loss_pixel, loss_pixel_local = self.Generator_updater(val=True)
 
@@ -380,7 +381,7 @@ class Training_Framework():
                     tepoch = tqdm(train_loader, unit='batch(s)', leave=False)
 
                 for num, data in enumerate(tepoch):
-                    images, defect_images, defect_coordinates = data
+                    images, defect_images, mask = data
                     if epoch == 0:
                         tepoch.set_description(f"Training on Epoch {epoch}/{self.Settings['epochs']}")
                     elif epoch > 0:
@@ -390,7 +391,7 @@ class Training_Framework():
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
                     self.fake_B = self.Generator(self.real_A)
-                    self.defect_coordinates = defect_coordinates.to(self.device) # local loss coordinates
+                    self.mask = mask.to(self.device) # local loss coordinates
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()
 

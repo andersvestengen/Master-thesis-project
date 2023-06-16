@@ -11,7 +11,8 @@ class LossFunctions(nn.Module):
         self.Discriminator = Discriminator
         if Settings["Loss"] == "CGAN":
             self.CGAN_loss = nn.BCEWithLogitsLoss().to(self.device)
-        self.pixelwise_loss = nn.MSELoss().to(self.device)
+        self.pixelwise_loss = nn.L1Loss().to(self.device)
+        self.pixelwise_local_loss = nn.MSELoss().to(self.device)
         self.lambda_gp = Settings["lambda_gp"]
 
     def CenteringAlgorithm(self, BoxSize, BoundingBox, Y, X):
@@ -25,20 +26,14 @@ class LossFunctions(nn.Module):
         return y,x
     
 
-    def Generator_Pixelloss(self, real_B, fake_B, defect_coordinates, local=True):
-        SampleY, SampleX, BoxSize = defect_coordinates[0]
-
-        loss_pixel = self.pixelwise_loss(fake_B, real_B)
-        
-        if local:
-            L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
-            SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
-            local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
-            return loss_pixel, local_pixelloss
-        else:
-            return loss_pixel
+    def Generator_Pixelloss(self, real_B, fake_B, mask):
 
 
+        General_pixelloss = self.pixelwise_loss(torch.mul((mask), fake_B), torch.mul(mask, real_B))
+        local_pixelloss = self.pixelwise_local_loss(torch.mul((1 - mask), fake_B), torch.mul((1 - mask), real_B))
+
+        return General_pixelloss, local_pixelloss
+    
     def Make_Label_Tensor(self, tensor_size, bool_val):
         """
         Return a label tensor with size tensor_size and values bool_val

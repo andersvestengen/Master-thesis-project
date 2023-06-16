@@ -24,7 +24,7 @@ Settings = {
             "batch_size"            : 16,
             "Dataset_loc"           : Celeb_A_Dataset,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 0,
+            "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "n_crit"                : 2,
@@ -47,7 +47,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_PixelDiscrim_WGAN_NoGloball1_localMSE",
+            "ModelTrainingName"     : "Defect_GAN_PixelDiscrim_WGAN_Combined_masked_loss",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
