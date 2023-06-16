@@ -20,13 +20,13 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 9,
+            "epochs"                : 4,
             "batch_size"            : 16,
             "Dataset_loc"           : Celeb_A_Dataset,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 100,
+            "L1_loss_weight"        : 0,
             "BoxSet"               : [8,8], # min/max defect, inclusive
-            "Loss_region_Box_mult"  : 3, # How many multiples of the defect box would you like the loss to account for?
+            "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "n_crit"                : 2,
             "lambda_gp"             : 10, #WGAN-GP constant
             "Blockmode"             : True, #Should the defects be random artifacts or solid chunks?
@@ -47,7 +47,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_PixelDiscrim_WGAN",
+            "ModelTrainingName"     : "Defect_GAN_PixelDiscrim_WGAN_NoGloball1_localMSE",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
