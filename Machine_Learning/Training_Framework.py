@@ -220,6 +220,7 @@ class Training_Framework():
                     if (self.Generator_pixel_loss_validation[epoch] < np.amin(self.Generator_pixel_loss_validation[:epoch])):
                         print("model saved on epoch:", epoch, "Due to best pixelloss:", self.Generator_pixel_loss_validation[epoch])
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
+                torch.save(self.Discriminator.state_dict(), str( self.Modeldir + "/dis_model.pt"))
 
     def SaveState(self):
         training_time_seconds = time.time() - self.train_start
