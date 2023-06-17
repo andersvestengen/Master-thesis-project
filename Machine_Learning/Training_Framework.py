@@ -551,6 +551,15 @@ class Training_Framework():
         plt.savefig(self.Modeldir + "/Combined_loss_curves.png")
         plt.clf() # clear the plot
 
+        plt.plot(xaxis, self.Generator_DeepFeatureLoss_training, label="Training")
+        plt.plot(xaxis, self.Generator_DeepFeatureLoss_validation, label="Validation")
+        plt.xlabel("epochs")
+        plt.ylabel("Loss ")
+        plt.title("Deep Feature Loss ")
+        plt.legend()
+        plt.savefig(self.Modeldir + "/DeepFeatureLoss.png")
+        plt.clf() # clear the plot
+
         #Implement this in analytics
         plt.plot(xaxis, self.Discriminator_accuracy_real_training_raw, label="Discriminator accuracy real training")
         plt.plot(xaxis, self.Discriminator_accuracy_fake_training_raw, label="Discriminator accuracy fake training")
