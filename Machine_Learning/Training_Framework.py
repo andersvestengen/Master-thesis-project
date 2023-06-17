@@ -207,8 +207,8 @@ class Training_Framework():
         self.modeltraining_output               = self.Modeldir + "/training_output"
         os.makedirs(self.modeltraining_output)
 
-        self.Analytics_training("setup", 0, 0, 0, 0, 0, 0)
-        self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0)
+        self.Analytics_training("setup", 0, 0, 0, 0, 0, 0, 0)
+        self.Analytics_validation("setup", 0, 0, 0, 0, 0, 0, 0)
         
         self.train_start = time.time()
 
@@ -258,7 +258,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach()
+        return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach(), DeepFeatureLoss.detach()
 
     def Discriminator_updater(self, val=False):
         self.Discriminator.zero_grad()
@@ -298,11 +298,11 @@ class Training_Framework():
 
         with torch.no_grad():
             if self.real_A.size(0) > 1:
-                fake_B = self.Generator(real_im.clone().unsqueeze(0))
+                fake_B, _ = self.Generator(real_im.clone().unsqueeze(0))
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im))
             else:
-                fake_B = self.Generator(real_im.clone())
+                fake_B, _ = self.Generator(real_im.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im.squeeze(0)))
             PIL_concatenate_h(co, im).save(self.modeltraining_output + "/" + "Image_" + str(epoch) + ".jpg", "JPEG")
@@ -312,12 +312,13 @@ class Training_Framework():
     def validation_run(self, val_loader, epoch):
         with torch.no_grad():
 
-            current_GEN_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-            current_DIS_loss =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-            pixelloss =             torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-            local_pixelloss =       torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-            Discrim_acc_real_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
-            Discrim_acc_fake_raw =  torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            current_GEN_loss =          torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            DeepFeatureloss_arr =       torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            current_DIS_loss =          torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            pixelloss =                 torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            local_pixelloss =           torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            Discrim_acc_real_raw =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
+            Discrim_acc_fake_raw =      torch.zeros(len(val_loader), dtype=torch.float32, device=self.device)
 
             if self.Settings["batch_size"] == 1:
                 val_unit = "image(s)"
@@ -340,16 +341,17 @@ class Training_Framework():
 
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_B = self.Generator(self.real_A)
+                    self.fake_B, _ = self.Generator(self.real_A)
                     self.mask = mask.to(self.device) # local loss coordinates
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
-                    GEN_loss, loss_pixel, loss_pixel_local = self.Generator_updater(val=True)
+                    GEN_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
 
                     #Analytics
                     current_GEN_loss[num] =  GEN_loss
                     current_DIS_loss[num] =  DIS_loss
                     pixelloss[num] =  loss_pixel
                     local_pixelloss[num] =  loss_pixel_local
+                    DeepFeatureloss_arr[num] = DeepFeatureLoss
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])                
@@ -367,18 +369,20 @@ class Training_Framework():
             #We're now snapping images every epoch 
             self.Generate_validation_images(epoch)
 
-            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss)
+            self.Analytics_validation(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss, DeepFeatureloss_arr)
 
     def Trainer(self, train_loader, val_loader):
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
-                current_GEN_loss =      torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
-                current_DIS_loss =      torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
-                pixelloss =             torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
-                local_pixelloss =       torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
-                Discrim_acc_real_raw =  torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
-                Discrim_acc_fake_raw =  torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                
+                current_GEN_loss =              torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                DeepFeatureloss_arr =           torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                current_DIS_loss =              torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                pixelloss =                     torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                local_pixelloss =               torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                Discrim_acc_real_raw =          torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
+                Discrim_acc_fake_raw =          torch.zeros(len(train_loader), dtype=torch.float32, device=self.device)
 
                 if self.Settings["batch_size"] == 1:
                     tepoch = tqdm(train_loader, unit='image(s)', leave=False)
@@ -401,7 +405,7 @@ class Training_Framework():
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()
 
                     if num % self.n_crit == 0:
-                        GEN_loss, loss_pixel, local_loss_pixel = self.Generator_updater()
+                        GEN_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
 
 
                     #Analytics
@@ -410,6 +414,7 @@ class Training_Framework():
                     current_DIS_loss[num] =  DIS_loss
                     pixelloss[num] =  loss_pixel
                     local_pixelloss[num] =  local_loss_pixel
+                    DeepFeatureloss_arr[num] = DeepFeatureloss
 
                     #Self.patch size is torch.size([3])
                     #self.predicted_real size is: torch.size([16, 1, 16, 16])
@@ -418,7 +423,7 @@ class Training_Framework():
 
                 
                 #Save per epoch
-                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss)
+                self.Analytics_training(epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss, DeepFeatureloss_arr)
                 self.validation_run(val_loader, epoch)
                 self.Save_Model(epoch)
             #Save Analytics to file and create images from analytics    
@@ -434,7 +439,7 @@ class Training_Framework():
                 self.transmitter.send(self.Modeldir)
                 self.transmitter.close()
 
-    def Analytics_training(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss):
+    def Analytics_training(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss, DeepFeatureloss_arr):
         """
         current epoch needs to be the first argument, except when setting up training.  
         """
@@ -445,6 +450,8 @@ class Training_Framework():
             self.Discriminator_accuracy_fake_training_raw = np.zeros(self.Settings["epochs"])
             self.Generator_pixel_loss_training = np.zeros(self.Settings["epochs"])
             self.Generator_local_pixel_loss_training = np.zeros(self.Settings["epochs"])
+            self.Generator_DeepFeatureLoss_training = np.zeros(self.Settings["epochs"])    
+
 
         else:
 
@@ -462,8 +469,10 @@ class Training_Framework():
             self.Discriminator_accuracy_fake_training_raw[epoch] = Discrim_acc_fake_raw.mean().item()
             self.Generator_pixel_loss_training[epoch] = pixelloss.mean().item()
             self.Generator_local_pixel_loss_training[epoch] = local_pixelloss.mean().item()
+            self.Generator_DeepFeatureLoss_training[epoch] = DeepFeatureloss_arr.mean().item()
 
-    def Analytics_validation(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss):
+
+    def Analytics_validation(self, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss, DeepFeatureloss_arr):
         """
         current epoch needs to be the first argument, except when setting up training. 
         """
@@ -474,6 +483,7 @@ class Training_Framework():
             self.Discriminator_accuracy_fake_validation_raw = np.zeros(self.Settings["epochs"])    
             self.Generator_pixel_loss_validation = np.zeros(self.Settings["epochs"])    
             self.Generator_local_pixel_loss_validation = np.zeros(self.Settings["epochs"])    
+            self.Generator_DeepFeatureLoss_validation = np.zeros(self.Settings["epochs"])    
 
         else:
             """
@@ -489,6 +499,7 @@ class Training_Framework():
             self.Discriminator_accuracy_fake_validation_raw[epoch] = Discrim_acc_fake_raw.mean().item()
             self.Generator_pixel_loss_validation[epoch] = pixelloss.mean().item()
             self.Generator_local_pixel_loss_validation[epoch] = local_pixelloss.mean().item()
+            self.Generator_DeepFeatureLoss_validation[epoch] = DeepFeatureloss_arr.mean().item()
 
     def Save_Analytics(self):
         np.savez(self.Modeldir + '/Analytics.npz', (self.Generator_loss_validation,
@@ -497,6 +508,8 @@ class Training_Framework():
                                 self.Discriminator_accuracy_fake_validation_raw,
                                 self.Generator_pixel_loss_validation,
                                 self.Generator_local_pixel_loss_validation,
+                                self.Generator_DeepFeatureLoss_validation,
+                                self.Generator_DeepFeatureLoss_training,
                                 self.Generator_loss_train,
                                 self.Generator_pixel_loss_training,
                                 self.Generator_local_pixel_loss_training,
@@ -616,7 +629,7 @@ class Model_Inference():
                 loader.set_description(f"Running {run+1}/{runs} images completed")
                 _ , defect_image, _ = next(iter(self.dataloader))
                 real_A = defect_image.to(self.device)
-                fake_B = self.model(real_A.clone())
+                fake_B, _ = self.model(real_A.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
                 PIL_concatenate_h(co, im).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
@@ -659,7 +672,7 @@ class Model_Inference():
                 
                 real_A = defect_images.to(self.device) #Defect
                 real_B = images.to(self.device) #Target 
-                fake_B = self.model(real_A.clone())
+                fake_B, _ = self.model(real_A.clone())
 
                 real_A = self.FromTorchTraining(real_A.squeeze(0))
                 real_B = self.FromTorchTraining(real_B.squeeze(0))
