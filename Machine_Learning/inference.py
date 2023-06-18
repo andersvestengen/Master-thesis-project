@@ -28,7 +28,7 @@ if __name__ == '__main__':
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
 				"BoxSet"               : [8,8], # min/max defect, inclusive
 				"Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
-				"Blockmode"             : True, #Should the defects be random artifacts or solid chunks?
+				"Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
 				"BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
             	"CenterDefect"          : True, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
 				"lr"                    : 0.0002,

@@ -18,7 +18,7 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 20,
+            "epochs"                : 12,
             "batch_size"            : 16,
             "Dataset_loc"           : Celeb_A_Dataset,
             "Defect_mode"			: "Training", # [Training, Inference]. If Training the dataset will return training mask, if Inference dataset will return defect coordinates
@@ -46,7 +46,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_DeepF_localL1_20_epoch_CELEBA_NonBLockTrain",
+            "ModelTrainingName"     : "Defect_GAN_DeepF_localandDeepMSELoss_From_scratch",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
