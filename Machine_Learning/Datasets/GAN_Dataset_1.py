@@ -206,11 +206,14 @@ class GAN_dataset(Dataset):
             #Create a more complex defect in the image
             defect_mask = torch.randint(0,2, ((BoxSize, BoxSize)), generator=self.defect_seed).bool()
             Cutout = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize]
-            r = torch.full(((BoxSize, BoxSize)), 0).float()
-            Cutout[:defect_mask] = r[:,defect_mask]
+            r = torch.full(((3, BoxSize, BoxSize)), 0).float()[:,defect_mask]
+            Cutout[:,defect_mask] = r
             imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = Cutout
-            Mask = torch.ones(imageMatrix.size)
-            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
+            #Create Mask
+            Mask = torch.ones(imageMatrix.size())
+            MCutout = torch.ones((3, BoxSize, BoxSize))
+            MCutout[:,defect_mask] = r
+            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = MCutout
 
         if self.InferenceMode:
             return imageMatrix, [SampleY, SampleX, BoxSize.item()]
