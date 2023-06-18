@@ -5,13 +5,11 @@ from Models.GAN_ATTN_Model import Generator_Unet_Attention, Generator_Defect_GAN
 from Datasets.GAN_Dataset_1 import GAN_dataset
 import torch
 from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
-import numpy as np
 from torch.optim import Adam
 from Training_Framework import Training_Framework
 from torchvision import transforms
 from time import time
-
+import os
 Laptop_dir = "C:/Users/ander/Documents/Master-thesis-project/Machine_Learning/TrainingImageGenerator"
 #Desk_dir = "G:/Master-thesis-project/Machine_Learning"
 Server_dir = "/home/anders/Master-thesis-project/Machine_Learning"
@@ -48,9 +46,9 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_DeepF_localL1_20_epoch_CELEBA",
+            "ModelTrainingName"     : "ModelloadTESTDELETEME",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : 5000, #Setting this to None makes the Dataloader use all available images.
             "Pin_memory"            : True
             }
 
@@ -64,6 +62,25 @@ training_transforms = transforms.Compose([
 
 #Try with instancenorm affine, to enable learnable parameters
 
+def Get_name(in_list, SaveStateList):
+    for model_name in in_list:
+        for line in SaveStateList:
+            try:
+                model_arch = line.split(':')[1].strip()
+            except:
+                pass
+
+            if model_name == model_arch:
+                return model_arch
+        else:
+            continue
+        break
+    print("Found no compatible modelnames")
+
+def RestoreModel(model, modeldir):
+    model.load_state_dict(torch.load(modeldir, map_location=torch.device(device)))
+    model.to(device)
+    print("Succesfully loaded model")
 
 if __name__ == '__main__':
     # Setup GPU (or not)
@@ -74,12 +91,49 @@ if __name__ == '__main__':
     
 
     device = Settings["device"]
+    if input("Would you like to load a previous model[y/n] ?: ") == "y":
+        models_loc = Server_dir +  "/Trained_Models"
+        #Get dir list of all the current trained models
+        models = os.listdir(models_loc)
 
-    #Load models
-    Discriminator = PixelDiscriminator().to(device)
-    init_weights(Discriminator)
-    Generator = Generator_Defect_GAN().to(device)
-    init_weights(Generator)
+        for num, model in enumerate(models):
+            choice = "[" + str(num) + "]    " + model
+            print(choice)
+
+        choice  = int(input("please input modelnum: "))
+
+        #Get model choice to be loaded 
+        Generator_dir = models_loc + "/"  + models[choice] + "/model.pt"
+        Discriminator_dir = models_loc + "/"  + models[choice] + "/dis_model.pt"
+
+        modelname = models[choice]
+        model_state = models_loc + "/"  + models[choice] + "/Savestate.txt"
+        model_inf = []
+        with open(model_state, 'r') as f:
+            model_inf = [Line for Line in f]
+
+        #Get actual model and load them 
+        Gen_arch = ""
+        Gen_list = ["Generator_Defect_GAN"]
+        Dis_arch = ""
+        Dis_list = ["PixelDiscriminator"]
+
+        Gen_arch = Get_name(Gen_list, model_inf)
+        Dis_arch = Get_name(Dis_list, model_inf)
+
+        if Gen_arch == "Generator_Defect_GAN":
+            Generator = Generator_Defect_GAN()
+            RestoreModel(Generator, Generator_dir)
+
+
+        if Dis_arch == "PixelDiscriminator":
+            Discriminator = PixelDiscriminator()
+            RestoreModel(Discriminator, Discriminator_dir)
+    else:
+        Discriminator = PixelDiscriminator().to(device)
+        init_weights(Discriminator)
+        Generator = Generator_Defect_GAN().to(device)
+        init_weights(Generator)
 
 
     # Configure dataloaders
