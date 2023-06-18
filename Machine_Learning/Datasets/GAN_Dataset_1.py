@@ -175,7 +175,7 @@ class GAN_dataset(Dataset):
         returns a random sample between the minimum Boxsize and the Total_length (height/width)
         """
         margin = torch.tensor(BoxSize * self.Settings["Loss_region_Box_mult"]).to(torch.uint8)
-        sample = ((Total_length - margin) * torch.rand(1, generator=self.defect_seed)).to(torch.uint8).clamp(margin)
+        sample = ((Total_length - margin) * torch.rand(1)).to(torch.uint8).clamp(margin)
 
         return sample
 
@@ -184,7 +184,7 @@ class GAN_dataset(Dataset):
         Takes a matrix-converted image and returns a training sample of that image with a randomly degraded [Boxsize * Boxsize] square, and coordinates for loss function.
         
         """
-        BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,), generator=self.defect_seed).to(torch.uint8)
+        BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,)).to(torch.uint8)
         ImageY = imageMatrix.size(1) # Height
         ImageX = imageMatrix.size(2) # Width
         if self.CenterDefect:
@@ -204,7 +204,7 @@ class GAN_dataset(Dataset):
             Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
         else:
             #Create a more complex defect in the image
-            defect_mask = torch.randint(0,2, ((BoxSize, BoxSize)), generator=self.defect_seed).bool()
+            defect_mask = torch.randint(0,2, ((BoxSize, BoxSize))).bool()
             Cutout = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize]
             r = torch.full(((3, BoxSize, BoxSize)), 0).float()[:,defect_mask]
             Cutout[:,defect_mask] = r
