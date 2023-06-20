@@ -173,7 +173,7 @@ class Training_Framework():
         if Settings["Loss"] == "WGAN":
             self.Discriminator_loss     = losses.WGAN_Discriminator
             self.Generator_loss         = losses.WGAN_Generator
-            self.Generator_pixelloss    = losses.Generator_Pixelloss
+            self.Generator_pixelloss    = losses.Generator_Coordinate_Pixelloss
         if Settings["Loss"] == "CGAN":
             self.Discriminator_loss     = losses.CGAN_Discriminator
             self.Generator_loss         = losses.CGAN_Generator
@@ -689,7 +689,7 @@ class Model_Inference():
                 fake_B = self.FromTorchTraining(fake_B.squeeze(0))
     
                 #Getting patch coordinates
-                SampleY, SampleX, BoxSize = coordinates
+                SampleY, SampleX, BoxSize = coordinates[0].numpy()
                 #BoxSize = self.BoxSet[1] * int(self.Settings["Loss_region_Box_mult"])
                 if BoxSize < 7:
                     L1_loss_region = 7

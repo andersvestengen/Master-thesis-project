@@ -226,7 +226,7 @@ class GAN_dataset(Dataset):
             Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = MCutout
 
         if self.InferenceMode:
-            return imageMatrix, [SampleY, SampleX, BoxSize.item()]
+            return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize])
         else:
             return imageMatrix, Mask.bool()
     

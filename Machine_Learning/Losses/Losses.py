@@ -11,7 +11,7 @@ class LossFunctions(nn.Module):
         self.Discriminator = Discriminator
         if Settings["Loss"] == "CGAN":
             self.CGAN_loss = nn.BCEWithLogitsLoss().to(self.device)
-        self.pixelwise_loss = nn.L1Loss().to(self.device)
+        self.pixelwise_loss = nn.MSELoss().to(self.device)
         self.Deep_Feature_Criterion = nn.MSELoss().to(self.device)
         self.lambda_gp = Settings["lambda_gp"]
 
@@ -24,7 +24,18 @@ class LossFunctions(nn.Module):
         y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(self.device, torch.uint8).clamp(0, 256 - BoundingBox)
 
         return y,x
-    
+
+    def Generator_Coordinate_Pixelloss(self, real_B, fake_B, defect_coordinates):
+        SampleY, SampleX, BoxSize = defect_coordinates[0]
+
+        loss_pixel = self.pixelwise_loss(fake_B, real_B)
+        
+        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
+        SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
+        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
+        
+        return loss_pixel, local_pixelloss
+
 
     def Generator_Pixelloss(self, real_B, fake_B, mask):
 
