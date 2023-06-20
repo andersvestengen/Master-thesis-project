@@ -8,13 +8,23 @@ import numpy as np
 import torch
 from tqdm import tqdm
 import cv2
+
+
+def Readfile(dir):
+    ReadList = []
+    with open(dir, 'r') as reader:
+        for line in reader:
+            imagename = line[:-1]
+            ReadList.append(imagename)
+    return ReadList
+
 class GAN_dataset(Dataset):
     """
     TODO: 
         - update the Description
     """
 
-    def __init__(self, Settings, transform=None, preprocess=True):
+    def __init__(self, Settings, dataset_location_file, transform=None, preprocess=True):
         super(GAN_dataset, self).__init__()
         self.Settings = Settings
         if not self.Settings["seed"] == None:
@@ -48,7 +58,6 @@ class GAN_dataset(Dataset):
 
         self.mean = self.Settings["Data_mean"]
         self.std = self.Settings["Data_std"]
-        self.imagefolder = self.Settings["Dataset_loc"]
 
         if preprocess:
             self.name = "GAN_Dataset_1_GAN_dataset_caching"
@@ -79,10 +88,10 @@ class GAN_dataset(Dataset):
         
         #Setting up the directories
         self.workingdir = os.getcwd() if self.Settings["dataset_loc"] == None else self.Settings["dataset_loc"]
+
         
         #Setting up list of images
-        self.OriginalImagePathglob = self.imagefolder + "**/*.jpg"
-        self.OriginalImagesList = sorted(glob.glob(self.OriginalImagePathglob, recursive=True))
+        self.OriginalImagesList = Readfile(dataset_location_file)
                 
         if training_samples is None:
             print("training samples is none")
@@ -96,6 +105,7 @@ class GAN_dataset(Dataset):
             if training_samples != len(self.OriginalImagesList):
                 print("number of images does not equal input parameter [",(len(self.OriginalImagesList)),"/",training_samples,"] adjusting")
                 if len(self.OriginalImagesList) > training_samples:
+                    training_samples = int(int(len(self.OriginalImagesList)) * training_samples)
                     self.OriginalImagesList = self.OriginalImagesList[:training_samples]
                 else:
                     print(f"Number of desired training images is bigger than number of available images \n {len(self.OriginalImagesList)} < {training_samples}")
@@ -218,7 +228,7 @@ class GAN_dataset(Dataset):
         if self.InferenceMode:
             return imageMatrix, [SampleY, SampleX, BoxSize.item()]
         else:
-            return imageMatrix, Mask
+            return imageMatrix, Mask.bool()
     
 
     def __len__(self):

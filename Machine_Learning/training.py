@@ -20,7 +20,6 @@ losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one
 Settings = {
             "epochs"                : 12,
             "batch_size"            : 16,
-            "Dataset_loc"           : Celeb_A_Dataset,
             "Defect_mode"			: "Training", # [Training, Inference]. If Training the dataset will return training mask, if Inference dataset will return defect coordinates
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 0,
@@ -46,9 +45,9 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_DeepF_localandDeepMSELoss_From_scratch",
+            "ModelTrainingName"     : "Defect_GAN_testedmasked_DeepFeature_Loss",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None, #Setting this to None makes the Dataloader use all available images.
+            "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 
@@ -137,14 +136,12 @@ if __name__ == '__main__':
 
 
     # Configure dataloaders
-    Custom_dataset = GAN_dataset(Settings, transform=training_transforms, preprocess=False)
+    train_dataset_file = "/home/anders/Master-thesis-project/Machine_Learning/CELEBA_Training_split"
+    validation_dataset_file = "/home/anders/Master-thesis-project/Machine_Learning/CELEBA_Validation_split"
 
-    Settings["Dataset_name"] = Custom_dataset.name 
-    dataset_len = len(Custom_dataset)
-    train_split = int(dataset_len*Settings["Datasplit"])
-    val_split = int(dataset_len - train_split)
+    train_set = GAN_dataset(Settings, train_dataset_file, transform=training_transforms, preprocess=False)
+    val_set = GAN_dataset(Settings, validation_dataset_file, preprocess=False)
 
-    train_set, val_set = torch.utils.data.random_split(Custom_dataset, [train_split, val_split])
 
     train_loader = DataLoader(train_set,
                             num_workers     = Settings["num_workers"],

@@ -28,9 +28,8 @@ class LossFunctions(nn.Module):
 
     def Generator_Pixelloss(self, real_B, fake_B, mask):
 
-
-        General_pixelloss = self.pixelwise_loss(torch.mul((mask), fake_B), torch.mul(mask, real_B))
-        local_pixelloss = self.pixelwise_loss(torch.mul((1 - mask), fake_B), torch.mul((1 - mask), real_B))
+        local_pixelloss = self.pixelwise_loss(torch.where(mask, 0, fake_B), torch.where(mask, 0, real_B)) # defect-region
+        General_pixelloss = self.pixelwise_loss(torch.where(~mask, 0, fake_B), torch.where(~mask, 0, real_B)) # everywhere else
 
         return General_pixelloss, local_pixelloss
     
