@@ -45,7 +45,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_tested_coordinates_local_MSE_DeepFeature_Loss_30_epoch",
+            "ModelTrainingName"     : "Defect_GAN_tested_coordinates_local_MSE_Then_L1_DeepFeature_Global_L1_10",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True

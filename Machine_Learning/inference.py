@@ -41,7 +41,7 @@ if __name__ == '__main__':
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
-				"ImageHW"               : 128,
+				"ImageHW"               : 256,
 				"RestoreModel"          : False,
 				#No spaces in the model name, please use '_'
 				"ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",

@@ -11,7 +11,7 @@ class LossFunctions(nn.Module):
         self.Discriminator = Discriminator
         if Settings["Loss"] == "CGAN":
             self.CGAN_loss = nn.BCEWithLogitsLoss().to(self.device)
-        self.pixelwise_loss = nn.MSELoss().to(self.device)
+        self.pixelwise_loss = nn.L1Loss().to(self.device)
         self.Deep_Feature_Criterion = nn.MSELoss().to(self.device)
         self.lambda_gp = Settings["lambda_gp"]
 
