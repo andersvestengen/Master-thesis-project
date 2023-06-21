@@ -173,7 +173,7 @@ class Training_Framework():
         if Settings["Loss"] == "WGAN":
             self.Discriminator_loss     = losses.WGAN_Discriminator
             self.Generator_loss         = losses.WGAN_Generator
-            self.Generator_pixelloss    = losses.Generator_Coordinate_Pixelloss
+            self.Generator_pixelloss    = losses.Generator_Pixelloss
         if Settings["Loss"] == "CGAN":
             self.Discriminator_loss     = losses.CGAN_Discriminator
             self.Generator_loss         = losses.CGAN_Generator
@@ -236,48 +236,58 @@ class Training_Framework():
             f.write("Total training time: " + str(hours) + " hours " + str(minutes) + " minutes \n")
 
 
-    
     def Generator_updater(self, val=False): 
         self.Generator.zero_grad()       
-        # Generator loss
-        fake_AB = torch.cat((self.real_A, self.fake_B), 1)     
-        predicted_fake = self.Discriminator(fake_AB)
-        loss_GAN = self.Generator_loss(predicted_fake)
+        # Generator GAN loss
+        fake_BA = torch.cat((self.fake_BA, self.real_B), 1)     
+        fake_BB = torch.cat((self.fake_BB, self.real_B), 1)     
+        predicted_fake_BA = self.Discriminator(fake_BA)
+        predicted_fake_BB = self.Discriminator(fake_BB)
+
+
+        loss_GAN_BA = self.Generator_loss(predicted_fake_BA)
+        loss_GAN_BB = self.Generator_loss(predicted_fake_BB)
         
         #Pixelwise loss
-        loss_pixel, local_pixelloss =  self.Generator_pixelloss(self.real_B, self.fake_B, self.mask)
-        
+        loss_pixel_BA, local_pixelloss_BA =  self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
+        loss_pixel_BB, local_pixelloss_BB =  self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
 
-        #DeepFeatureLoss
-        _, self.Deep_features_gt = self.Generator(self.real_B)
-        DeepFeatureLoss = self.Generator_Deep_Feature_Loss(self.Deep_features, self.Deep_features_gt)
+        total_pixelloss_BA = loss_pixel_BA * self.Settings["L1_loss_weight"] + local_pixelloss_BA * self.Settings["L1__local_loss_weight"]
+        total_pixelloss_BB = loss_pixel_BB * self.Settings["L1_loss_weight"] + local_pixelloss_BB * self.Settings["L1__local_loss_weight"]
+        
+        
+        #Latent Feature loss
+        LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)
 
         #Total loss
-        Total_loss_Generator = loss_GAN + DeepFeatureLoss + self.Settings["L1_loss_weight"] * loss_pixel + self.Settings["L1__local_loss_weight"] * local_pixelloss
+        Total_loss_Generator = loss_GAN_BA + loss_GAN_BB + LatentLoss + total_pixelloss_BA + total_pixelloss_BB
         
         if not val:
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return loss_GAN.detach(), loss_pixel.detach(), local_pixelloss.detach(), DeepFeatureLoss.detach()
+        return (loss_GAN_BA + loss_GAN_BB).detach(), (loss_pixel_BA + loss_pixel_BB).detach(), (local_pixelloss_BA + local_pixelloss_BB).detach(), LatentLoss.detach()
 
     def Discriminator_updater(self, val=False):
         self.Discriminator.zero_grad()
         #Get Critique scores
-        real_AB = torch.cat((self.real_A, self.real_B), 1)
-        score_real = self.Discriminator(real_AB)
-        
-        fake_AB = torch.cat((self.real_A, self.fake_B), 1)        
-        score_fake = self.Discriminator(fake_AB)
-        if not val:
-            Discriminator_loss = self.Discriminator_loss(score_real, score_fake) #-torch.mean(score_real) + torch.mean(score_fake) #+ GP_term
-            Discriminator_loss.backward(retain_graph=True) # backward run. Also trying without retain_graph=True while GP is off to test if this is still necessary  
-            self.Discriminator_optimizer.step() # step
-            self.Generator.zero_grad()
-        else:
-            Discriminator_loss = self.Discriminator_loss(score_real, score_fake)
+        fake_BA = torch.cat((self.fake_BA, self.real_B), 1)     
+        fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
+        real_AB = torch.cat((self.real_A, self.real_B), 1)     
+        pred_fake_AB = self.Discriminator(fake_BA)
+        pred_fake_BB = self.Discriminator(fake_BB)
+        pred_real_AB = self.Discriminator(real_AB)
+        total_pred_fake = pred_fake_AB + pred_fake_BB
 
-        return Discriminator_loss.detach(), score_real.detach(), score_fake.detach()
+        #Calculate loss
+        Discriminator_loss = self.Discriminator_loss(pred_real_AB, (total_pred_fake))
+
+        if not val:
+            Discriminator_loss.backward(retain_graph=True)
+            self.Discriminator_optimizer.step()
+            self.Generator.zero_grad()
+
+        return Discriminator_loss.detach(), pred_real_AB.detach(), total_pred_fake.detach()
 
     
     def FromTorchTraining(self, image):
@@ -342,7 +352,8 @@ class Training_Framework():
 
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_B, _ = self.Generator(self.real_A)
+                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
+                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
                     self.mask = mask.to(self.device) # local loss coordinates
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
                     GEN_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
@@ -400,7 +411,8 @@ class Training_Framework():
                     
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_B, self.Deep_features = self.Generator(self.real_A)
+                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
+                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
                     self.mask = mask.to(self.device) # local loss coordinates
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()
