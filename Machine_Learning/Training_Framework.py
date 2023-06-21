@@ -274,20 +274,24 @@ class Training_Framework():
         fake_BA = torch.cat((self.fake_BA, self.real_B), 1)     
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
         real_AB = torch.cat((self.real_A, self.real_B), 1)     
-        pred_fake_AB = self.Discriminator(fake_BA)
-        pred_fake_BB = self.Discriminator(fake_BB)
+        pred_fake_BA = self.Discriminator(fake_BA.detach())
+        pred_fake_BB = self.Discriminator(fake_BB.detach())
         pred_real_AB = self.Discriminator(real_AB)
-        total_pred_fake = pred_fake_AB + pred_fake_BB
 
-        #Calculate loss
-        Discriminator_loss = self.Discriminator_loss(pred_real_AB, (total_pred_fake))
+        #Calculate loss # loss_real = - torch.mean(real_pred) loss_fake = torch.mean(fake_pred)
+
+        loss_fake_BA = torch.mean(pred_fake_BA)
+        loss_fake_BB = torch.mean(pred_fake_BB)
+        loss_real_AB = - torch.mean(pred_real_AB)
+
+        Discriminator_loss = loss_fake_BA + loss_fake_BB + loss_real_AB
 
         if not val:
             Discriminator_loss.backward(retain_graph=True)
             self.Discriminator_optimizer.step()
             self.Generator.zero_grad()
 
-        return Discriminator_loss.detach(), pred_real_AB.detach(), total_pred_fake.detach()
+        return Discriminator_loss.detach(), pred_real_AB.detach(), (pred_fake_BB + pred_fake_BA).detach()
 
     
     def FromTorchTraining(self, image):
@@ -309,11 +313,11 @@ class Training_Framework():
 
         with torch.no_grad():
             if self.real_A.size(0) > 1:
-                fake_B, _ = self.Generator(real_im.clone().unsqueeze(0))
+                fake_B, _ = self.Generator(real_im.unsqueeze(0))
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im))
             else:
-                fake_B, _ = self.Generator(real_im.clone())
+                fake_B, _ = self.Generator(real_im)
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im.squeeze(0)))
             PIL_concatenate_h(co, im).save(self.modeltraining_output + "/" + "Image_" + str(epoch) + ".jpg", "JPEG")
@@ -352,8 +356,8 @@ class Training_Framework():
 
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
-                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
+                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A.clone())
+                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B.clone())
                     self.mask = mask.to(self.device) # local loss coordinates
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
                     GEN_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
@@ -411,8 +415,8 @@ class Training_Framework():
                     
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
-                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
+                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A.clone())
+                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B.clone())
                     self.mask = mask.to(self.device) # local loss coordinates
 
                     DIS_loss, predicted_real, predicted_fake = self.Discriminator_updater()

@@ -226,7 +226,7 @@ class GAN_dataset(Dataset):
         if self.InferenceMode:
             return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize])
         else:
-            return imageMatrix, Mask.bool()
+            return imageMatrix, Mask.bool() # MASK IS WRONG
     
 
     def __len__(self):

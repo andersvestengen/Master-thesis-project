@@ -18,9 +18,9 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 10,
+            "epochs"                : 100,
             "batch_size"            : 16,
-            "Defect_mode"			: "Inference", # [Training, Inference]. If [Training] the dataset will return training mask, if [Inference] dataset will return defect coordinates
+            "Defect_mode"			: "Training", # [Training, Inference]. If [Training] the dataset will return training mask, if [Inference] dataset will return defect coordinates
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 0,
             "BoxSet"               : [8,8], # min/max defect, inclusive
@@ -45,9 +45,9 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_Autoencoder_inpating",
+            "ModelTrainingName"     : "Stupid_problem",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
+            "Num_training_samples"  : 0.10, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 
