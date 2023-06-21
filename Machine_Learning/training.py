@@ -22,7 +22,7 @@ Settings = {
             "batch_size"            : 16,
             "Defect_mode"			: "Training", # [Training, Inference]. If [Training] the dataset will return training mask, if [Inference] dataset will return defect coordinates
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 0,
+            "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "n_crit"                : 2,
@@ -47,7 +47,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "Stupid_problem",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 0.10, #[None] for all available images or float [0,1] for a fraction of total images
+            "Num_training_samples"  : 0.02, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 

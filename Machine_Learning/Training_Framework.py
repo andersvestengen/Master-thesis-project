@@ -266,7 +266,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return (loss_GAN_BA + loss_GAN_BB).detach(), (loss_pixel_BA + loss_pixel_BB).detach(), (local_pixelloss_BA + local_pixelloss_BB).detach(), LatentLoss.detach()
+        return (loss_GAN_BA).detach(), (loss_pixel_BA).detach(), (local_pixelloss_BA).detach(), LatentLoss.detach()
 
     def Discriminator_updater(self, val=False):
         self.Discriminator.zero_grad()
@@ -285,13 +285,14 @@ class Training_Framework():
         loss_real_AB = - torch.mean(pred_real_AB)
 
         Discriminator_loss = loss_fake_BA + loss_fake_BB + loss_real_AB
+        Discriminator_rep_loss = loss_fake_BA + loss_real_AB
 
         if not val:
             Discriminator_loss.backward(retain_graph=True)
             self.Discriminator_optimizer.step()
             self.Generator.zero_grad()
 
-        return Discriminator_loss.detach(), pred_real_AB.detach(), (pred_fake_BB + pred_fake_BA).detach()
+        return Discriminator_rep_loss.detach(), pred_real_AB.detach(), (pred_fake_BA).detach()
 
     
     def FromTorchTraining(self, image):
