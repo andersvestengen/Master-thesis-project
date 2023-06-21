@@ -29,12 +29,12 @@ Settings = {
             "lambda_gp"             : 10, #WGAN-GP constant
             "Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
             "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
-            "CenterDefect"          : True, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
+            "CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
             "Loss"                  : losses[1], # Which GAN loss to train with?
             "preprocess_storage"    : Preprocess_dir,
-            "seed"                  : 172, # random training seed
+            "seed"                  : 362, # random training seed # 172
             "num_workers"           : 4,
             "shuffle"               : True,
             "Data_mean"             : [0.3212, 0.3858, 0.2613],
@@ -45,7 +45,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Defect_GAN_tested_coordinates_local_MSE_Then_L1_DeepFeature_Global_L1_10",
+            "ModelTrainingName"     : "Defect_GAN_Autoencoder_inpating",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True

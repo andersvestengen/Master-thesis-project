@@ -221,9 +221,7 @@ class GAN_dataset(Dataset):
             imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = Cutout
             #Create Mask
             Mask = torch.ones(imageMatrix.size())
-            MCutout = torch.ones((3, BoxSize, BoxSize))
-            MCutout[:,defect_mask] = r
-            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = MCutout
+            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
 
         if self.InferenceMode:
             return imageMatrix, torch.tensor([SampleY, SampleX, BoxSize])
