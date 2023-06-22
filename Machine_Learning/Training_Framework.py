@@ -653,16 +653,6 @@ class Training_Framework():
         plt.savefig(self.Modeldir + "/Generator_AutoEncoder_loss.png")
         plt.clf() # clear the plot
 
-
-        plt.plot(xaxis, self.Generator_auto_pixel_loss_training, label="Training")
-        plt.plot(xaxis, self.Generator_auto_pixel_loss_validation, label="Validation")
-        plt.xlabel("epochs")
-        plt.ylabel("Loss ")
-        plt.title("Generator Autoencoder Pixelloss ")
-        plt.legend()
-        plt.savefig(self.Modeldir + "/Generator_AutoEncoder_Pixelloss.png")
-        plt.clf() # clear the plot
-
         #Implement this in analytics
         plt.plot(xaxis, self.Discriminator_accuracy_real_training_raw, label="Discriminator accuracy real training")
         plt.plot(xaxis, self.Discriminator_accuracy_fake_training_raw, label="Discriminator accuracy fake training")
