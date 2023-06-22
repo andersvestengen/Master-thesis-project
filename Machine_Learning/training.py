@@ -18,7 +18,7 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 100,
+            "epochs"                : 60,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
@@ -44,9 +44,9 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Stupid_problem",
+            "ModelTrainingName"     : "AutoEncoderCheck",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 0.02, #[None] for all available images or float [0,1] for a fraction of total images
+            "Num_training_samples"  : 0.11, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     
     # Loss functions
 
-    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]*0.5, betas=[0, 0.999])
+    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]*0.25, betas=[0, 0.999])
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"], betas=[0, 0.999])
 
     #Training
