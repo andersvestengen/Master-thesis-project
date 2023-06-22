@@ -471,7 +471,8 @@ class Training_Framework():
                     # Discriminator return Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
                     #Generator    return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
                     DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater()
-                    GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
+                    if num % self.n_crit == 0:
+                        GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
 
                     #Analytics
                     #This is all assuming batch-size stays at 1
