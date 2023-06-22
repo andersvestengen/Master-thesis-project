@@ -12,6 +12,7 @@ class LossFunctions(nn.Module):
         if Settings["Loss"] == "CGAN":
             self.CGAN_loss = nn.BCEWithLogitsLoss().to(self.device)
         self.pixelwise_loss = nn.L1Loss().to(self.device)
+        self.pixelwise_local_loss = nn.MSELoss().to(self.device)
         self.Deep_Feature_Criterion = nn.MSELoss().to(self.device)
         self.lambda_gp = Settings["lambda_gp"]
 
@@ -39,7 +40,7 @@ class LossFunctions(nn.Module):
 
     def Generator_Pixelloss(self, real_B, fake_B, mask):
 
-        local_pixelloss = self.pixelwise_loss(torch.where(mask, 0, fake_B), torch.where(mask, 0, real_B)) # defect-region
+        local_pixelloss = self.pixelwise_local_loss(torch.where(mask, 0, fake_B), torch.where(mask, 0, real_B)) # defect-region
         General_pixelloss = self.pixelwise_loss(torch.where(~mask, 0, fake_B), torch.where(~mask, 0, real_B)) # everywhere else
 
         return General_pixelloss, local_pixelloss
