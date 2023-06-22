@@ -20,7 +20,6 @@ losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one
 Settings = {
             "epochs"                : 100,
             "batch_size"            : 16,
-            "Defect_mode"			: "Training", # [Training, Inference]. If [Training] the dataset will return training mask, if [Inference] dataset will return defect coordinates
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive

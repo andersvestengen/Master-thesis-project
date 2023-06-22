@@ -14,10 +14,11 @@ import time
 import sys
 
 #---------------- Helper functions ----------------------
-def PIL_concatenate_h(im1, im2):
-    out = Image.new('RGB', (im1.width + im2.width, im1.height))
+def PIL_concatenate_h(im1, im2, im3):
+    out = Image.new('RGB', (im1.width + im2.width + im3.width, im1.height))
     out.paste(im1, (0,0))
-    out.paste(im2, (im1.width, 0))
+    out.paste(im2, (im1.width, 0))    
+    out.paste(im3, (im1.width + im2.width, 0))
     return out
 
 
@@ -317,11 +318,13 @@ class Training_Framework():
                 fake_B, _ = self.Generator(real_im.unsqueeze(0))
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im))
+                ma = Image.fromarray(self.FromTorchTraining(self.mask.squeeze(0).int()))
             else:
                 fake_B, _ = self.Generator(real_im)
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im.squeeze(0)))
-            PIL_concatenate_h(co, im).save(self.modeltraining_output + "/" + "Image_" + str(epoch) + ".jpg", "JPEG")
+                ma = Image.fromarray(self.FromTorchTraining(self.mask.squeeze(0).int()))
+            PIL_concatenate_h(ma, co, im).save(self.modeltraining_output + "/" + "Image_" + str(epoch) + ".jpg", "JPEG")
 
         self.Generator.train()
 
@@ -654,12 +657,13 @@ class Model_Inference():
         with torch.no_grad():
             for run in loader:
                 loader.set_description(f"Running {run+1}/{runs} images completed")
-                _ , defect_image, _ = next(iter(self.dataloader))
+                _ , defect_image, mask = next(iter(self.dataloader))
                 real_A = defect_image.to(self.device)
                 fake_B, _ = self.model(real_A.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
-                PIL_concatenate_h(co, im).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
+                ma = Image.fromarray(self.FromTorchTraining(mask.squeeze(0).int()))
+                PIL_concatenate_h(ma, co, im).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
 
         print("Done!")
         print("All results saved to:")
@@ -691,36 +695,36 @@ class Model_Inference():
             SSIM_fake_values_p = np.zeros((total_images, 3))
             lbar = tqdm(range(total_images))
             for num in lbar:
-                images, defect_images, coordinates = next(iter(self.dataloader))
+                images, defect_images, defect_mask = next(iter(self.dataloader))
                 lbar.set_description(f"Running metrics {num+1}/{total_images} images")
 
                 if num > (total_len - 1):
                     break
                 
+                #Load images and run inference 
                 real_A = defect_images.to(self.device) #Defect
                 real_B = images.to(self.device) #Target 
                 fake_B, _ = self.model(real_A.clone())
+                mask = defect_mask.to(self.device)
 
-                real_A = self.FromTorchTraining(real_A.squeeze(0))
-                real_B = self.FromTorchTraining(real_B.squeeze(0))
+                #Assign defect regions and convert
+                local_fake_B = self.FromTorchTraining(torch.masked_select(fake_B, ~mask).view(3,8,8).squeeze(0))# defect-region
+                local_real_B = self.FromTorchTraining(torch.masked_select(real_B, ~mask).view(3,8,8).squeeze(0))# defect-region
+                local_real_A = self.FromTorchTraining(torch.masked_select(real_A, ~mask).view(3,8,8).squeeze(0))# defect-region
+
                 fake_B = self.FromTorchTraining(fake_B.squeeze(0))
-    
-                #Getting patch coordinates
-                SampleY, SampleX, BoxSize = coordinates[0].numpy()
-                #BoxSize = self.BoxSet[1] * int(self.Settings["Loss_region_Box_mult"])
-                if BoxSize < 7:
-                    L1_loss_region = 7
-                else:
-                    L1_loss_region = BoxSize
+                real_B = self.FromTorchTraining(real_B.squeeze(0))
+                real_A = self.FromTorchTraining(real_A.squeeze(0))
+
                 for channel in range(3):
                     PSNR_real_values[num, channel]       = PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                     PSNR_fake_values[num, channel]       = PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-                    PSNR_real_values_p[num, channel]     = PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    PSNR_fake_values_p[num, channel]     = PSNR(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                    PSNR_real_values_p[num, channel]     = PSNR(local_real_B[:,:,channel], local_real_A[:,:,channel], data_range=255)
+                    PSNR_fake_values_p[num, channel]     = PSNR(local_real_B[:,:,channel], local_fake_B[:,:,channel], data_range=255)
 
 
-                    SSIM_real_values_p[num, channel]     =  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], real_A[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
-                    SSIM_fake_values_p[num, channel]     =  SSIM(real_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], fake_B[SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region,channel], data_range=255)
+                    SSIM_real_values_p[num, channel]     =  SSIM(local_real_B[:,:,channel], local_real_A[:,:,channel], data_range=255)
+                    SSIM_fake_values_p[num, channel]     =  SSIM(local_real_B[:,:,channel], local_fake_B[:,:,channel], data_range=255)
                     SSIM_real_values[num, channel]       =  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
                     SSIM_fake_values[num, channel]       =  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
 
