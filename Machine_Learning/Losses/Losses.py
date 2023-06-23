@@ -66,6 +66,12 @@ class LossFunctions(nn.Module):
 
         return General_pixelloss, local_pixelloss
 
+    def Generator_Autoencoder_Pixelloss(self, fake_B, real_B):
+
+        pixelloss = self.pixelwise_loss(fake_B, real_B)
+
+        return pixelloss
+
     def LatentFeatureLoss(self, input, target):
 
         return self.Latent_Feature_Criterion(input, target)

@@ -168,23 +168,24 @@ class Training_Framework():
         losses = LossFunctions(self.device, Discriminator, Settings)
 
         if Settings["Loss"] == "Hinge_loss":
-            self.Discriminator_loss     = losses.Hinge_loss_Discriminator
-            self.Generator_loss         = losses.Hinge_loss_Generator
-            self.Generator_pixelloss    = losses.Generator_Pixelloss
+            self.Discriminator_loss                 = losses.Hinge_loss_Discriminator
+            self.Generator_loss                     = losses.Hinge_loss_Generator
+            self.Generator_pixelloss                = losses.Generator_Pixelloss
         if Settings["Loss"] == "WGAN":
-            self.Discriminator_loss     = losses.WGAN_Discriminator
-            self.Generator_loss         = losses.WGAN_Generator
-            self.Generator_pixelloss    = losses.Generator_Pixelloss
+            self.Discriminator_loss                 = losses.WGAN_Discriminator
+            self.Generator_loss                     = losses.WGAN_Generator
+            self.Generator_pixelloss                = losses.Generator_Pixelloss
+            self.Generator_autoencoder_pixelloss    = losses.Generator_Autoencoder_Pixelloss
         if Settings["Loss"] == "CGAN":
-            self.Discriminator_loss     = losses.CGAN_Dual_Encoder_Discriminator
-            self.Generator_loss         = losses.CGAN_Generator
-            self.Generator_pixelloss    = losses.Generator_Pixelloss
+            self.Discriminator_loss                 = losses.CGAN_Dual_Encoder_Discriminator
+            self.Generator_loss                     = losses.CGAN_Generator
+            self.Generator_pixelloss                = losses.Generator_Pixelloss
         if Settings["Loss"] == "WGANGP":
-            self.Discriminator_loss     = losses.WGANGP_Discriminator
-            self.Generator_loss         = losses.WGAN_Generator
-            self.Generator_pixelloss    = losses.Generator_Pixelloss
+            self.Discriminator_loss                 = losses.WGANGP_Discriminator
+            self.Generator_loss                     = losses.WGAN_Generator
+            self.Generator_pixelloss                = losses.Generator_Pixelloss
 
-        self.Generator_Deep_Feature_Loss = losses.LatentFeatureLoss
+        self.Generator_Deep_Feature_Loss            = losses.LatentFeatureLoss
 
 
 
@@ -249,9 +250,9 @@ class Training_Framework():
         loss_GAN_BB = self.Generator_loss(predicted_fake_BB)
         
         #Pixelwise loss
-        loss_pixel          =  self.Generator_pixelloss(self.fake_BB, self.real_B)#self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
-        _, local_pixelloss  =  self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
-        total_pixelloss  = loss_pixel * self.Settings["L1_loss_weight"] + local_pixelloss * self.Settings["L1__local_loss_weight"]
+        loss_pixel_BB                           = self.Generator_autoencoder_pixelloss(self.fake_BB, self.real_B)
+        loss_pixel_BA, local_pixelloss_BA       = self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
+        total_pixelloss                         = loss_pixel_BB * self.Settings["L1_loss_weight"] + local_pixelloss_BA * self.Settings["L1__local_loss_weight"]
 
         #Latent Feature loss
         LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)        
@@ -263,7 +264,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()  
 
-        return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()        
+        return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel_BA.detach(), local_pixelloss_BA.detach(), LatentLoss.detach()        
     
 
     def Generator_Autoencoder_updater(self, val=False):  
@@ -334,7 +335,7 @@ class Training_Framework():
         
         #Calculate loss WGAN: loss_real = - torch.mean(real_pred) loss_fake = torch.mean(fake_pred)
         Discriminator_auto_loss = self.Discriminator_loss(pred_fake_BB, pred_real_AB)
-        Discriminator_inpaint_loss = self.Discriminator_loss(pred_fake_BA, torch.zeros(1))
+        Discriminator_inpaint_loss = self.Discriminator_loss(pred_fake_BA, pred_real_AB)
 
         Discriminator_loss = Discriminator_auto_loss + Discriminator_inpaint_loss
 

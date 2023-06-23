@@ -44,7 +44,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "DualEncoder_Full_8_epoch",
+            "ModelTrainingName"     : "DualEncoder_Dual_pixelloss_Full_8_epoch",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
