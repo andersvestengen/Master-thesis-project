@@ -16,6 +16,8 @@ class LossFunctions(nn.Module):
         self.Deep_Feature_Criterion = nn.MSELoss().to(self.device)
         self.lambda_gp = Settings["lambda_gp"]
 
+    # Helper functions -----------------------------------------
+
     def CenteringAlgorithm(self, BoxSize, BoundingBox, Y, X):
         """
         Returns a larger bounding box centered on the defect block
@@ -26,25 +28,6 @@ class LossFunctions(nn.Module):
 
         return y,x
 
-    def Generator_Coordinate_Pixelloss(self, real_B, fake_B, defect_coordinates):
-        SampleY, SampleX, BoxSize = defect_coordinates[0]
-
-        loss_pixel = self.pixelwise_loss(fake_B, real_B)
-        
-        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
-        SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
-        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
-        
-        return loss_pixel, local_pixelloss
-
-
-    def Generator_Pixelloss(self, real_B, fake_B, mask):
-
-        local_pixelloss = self.pixelwise_loss(torch.where(mask, 0, fake_B), torch.where(mask, 0, real_B)) # defect-region
-        General_pixelloss = self.pixelwise_local_loss(torch.where(~mask, 0, fake_B), torch.where(~mask, 0, real_B)) # everywhere else
-
-        return General_pixelloss, local_pixelloss
-    
     def Make_Label_Tensor(self, tensor_size, bool_val):
         """
         Return a label tensor with size tensor_size and values bool_val
@@ -57,13 +40,32 @@ class LossFunctions(nn.Module):
 
         return label_tensor.expand_as(tensor_size)
     
-    def DeepFeatureLoss(self, Feature_in, Feature_gt):
-        return self.Deep_Feature_Criterion(Feature_in, Feature_gt)
 
-    
-    
+
+    # Loss functions -------------------------------------------
+    # Inputs are always fake, pred
+    # loss function inputs must always be in the order ( *input, *target ) !
+
+    def Generator_Coordinate_Pixelloss(self, real_B, fake_B, defect_coordinates): 
+        SampleY, SampleX, BoxSize = defect_coordinates[0]
+
+        loss_pixel = self.pixelwise_loss(fake_B, real_B)
+        
+        L1_loss_region = (BoxSize * int(self.Settings["Loss_region_Box_mult"])).to(self.device)
+        SampleY, SampleX = self.CenteringAlgorithm(BoxSize, L1_loss_region, SampleY, SampleX)
+        local_pixelloss = self.pixelwise_loss(fake_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region], real_B[:,:,SampleY:SampleY+L1_loss_region,SampleX:SampleX+L1_loss_region])
+        
+        return loss_pixel, local_pixelloss
+
+    def Generator_Pixelloss(self, fake_B, real_B, mask):
+
+        local_pixelloss = self.pixelwise_loss(torch.where(mask, 0, fake_B), torch.where(mask, 0, real_B)) # defect-region
+        General_pixelloss = self.pixelwise_local_loss(torch.where(~mask, 0, fake_B), torch.where(~mask, 0, real_B)) # everywhere else
+
+        return General_pixelloss, local_pixelloss
+
     def WGAN_Discriminator(self, *args):
-        real_pred, fake_pred = args
+        fake_pred, real_pred = args
 
         loss_real = - torch.mean(real_pred)
         loss_fake = torch.mean(fake_pred)
@@ -71,36 +73,34 @@ class LossFunctions(nn.Module):
         return loss_real + loss_fake
 
     def WGANGP_Discriminator(self, *args):
-        real_pred, fake_pred, real_AB, fake_AB = args
+        fake_pred, real_pred, fake_BA, real_AB = args
         loss_real = - torch.mean(real_pred)
         loss_fake = torch.mean(fake_pred)
 
-        gp_term = self.Gradient_Penalty(real_AB, fake_AB)
+        gp_term = self.Gradient_Penalty(real_AB, fake_BA)
         return loss_real + loss_fake + gp_term
 
 
     def WGAN_Generator(self, fake_pred):
         return - torch.mean(fake_pred)
 
-
-    def CGAN_Dual_Encoder_Discriminator(self, *args):
-        real_AB, fake_BA, fake_BB = args
+    def CGAN_Dual_Encoder_Discriminator(self, *args): 
+        fake_BA, fake_BB, real_AB = args
         real = self.Make_Label_Tensor(real_AB, 1)
         fake = self.Make_Label_Tensor(fake_BA, 0)
 
         return ( self.CGAN_loss(real_AB, real) + self.CGAN_loss(fake_BA, fake) + self.CGAN_loss(fake_BB, fake) ) * 0.333
 
-    def CGAN_Discriminator(self, *args):
-        real_pred, fake_pred = args
+    def CGAN_Discriminator(self, *args): 
+        fake_pred, real_pred = args
         real = self.Make_Label_Tensor(real_pred, 1)
         fake = self.Make_Label_Tensor(fake_pred, 0)
 
         return self.CGAN_loss(real_pred, real) + self.CGAN_loss(fake_pred, fake) * 0.5 
 
-    def CGAN_Generator(self, fake_pred):
+    def CGAN_Generator(self, fake_pred): # Losses must be supplied as: ( *input, *target ) !
         real = self.Make_Label_Tensor(fake_pred, 1)
         return self.CGAN_loss(fake_pred, real)
-
 
     def Gradient_Penalty(self, real_AB, fake_AB):
         #Create interpolation term
@@ -125,10 +125,9 @@ class LossFunctions(nn.Module):
         # Calculate and return GP
         gradient_penalty = (((gradients + 1e-16).norm(2, dim=1) -1) ** 2).mean() * self.lambda_gp
         return gradient_penalty
-
-
+    
     def Hinge_loss_Discriminator(self, *args):
-        real_pred, fake_pred = args
+        fake_pred, real_pred = args
         return torch.relu(torch.mean(1 - real_pred)) + torch.relu(torch.mean(1 + fake_pred))
 
     def Hinge_loss_Generator(self, predicted_fake):
