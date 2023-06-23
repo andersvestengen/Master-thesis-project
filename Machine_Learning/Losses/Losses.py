@@ -13,7 +13,7 @@ class LossFunctions(nn.Module):
             self.CGAN_loss = nn.BCEWithLogitsLoss().to(self.device)
         self.pixelwise_loss = nn.L1Loss().to(self.device)
         self.pixelwise_local_loss = nn.MSELoss().to(self.device)
-        self.Deep_Feature_Criterion = nn.MSELoss().to(self.device)
+        self.Latent_Feature_Criterion = nn.MSELoss().to(self.device)
         self.lambda_gp = Settings["lambda_gp"]
 
     # Helper functions -----------------------------------------
@@ -45,6 +45,8 @@ class LossFunctions(nn.Module):
     # Loss functions -------------------------------------------
     # Inputs are always fake, pred
     # loss function inputs must always be in the order ( *input, *target ) !
+    def Generator_Autoencoder_Pixellos(self, input, target):
+        return self.pixelwise_loss(input, target)
 
     def Generator_Coordinate_Pixelloss(self, real_B, fake_B, defect_coordinates): 
         SampleY, SampleX, BoxSize = defect_coordinates[0]
@@ -63,6 +65,10 @@ class LossFunctions(nn.Module):
         General_pixelloss = self.pixelwise_local_loss(torch.where(~mask, 0, fake_B), torch.where(~mask, 0, real_B)) # everywhere else
 
         return General_pixelloss, local_pixelloss
+
+    def LatentFeatureLoss(self, input, target):
+
+        return self.Latent_Feature_Criterion(input, target)
 
     def WGAN_Discriminator(self, *args):
         fake_pred, real_pred = args

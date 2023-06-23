@@ -184,7 +184,7 @@ class Training_Framework():
             self.Generator_loss         = losses.WGAN_Generator
             self.Generator_pixelloss    = losses.Generator_Pixelloss
 
-        self.Generator_Deep_Feature_Loss = losses.DeepFeatureLoss
+        self.Generator_Deep_Feature_Loss = losses.LatentFeatureLoss
 
 
 
@@ -237,7 +237,7 @@ class Training_Framework():
             f.write("Total training time: " + str(hours) + " hours " + str(minutes) + " minutes \n")
 
 
-    def Generator_AutoEncoder_updater(self, val=False):  
+    def Generator_Autoencoder_updater(self, val=False):  
         self.Generator.zero_grad()    
         # Generator GAN loss
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)     
@@ -247,7 +247,7 @@ class Training_Framework():
         loss_GAN_BB = self.Generator_loss(predicted_fake_BB)
         
         #Pixelwise loss
-        loss_pixel =  torch.nn.L1Loss(self.fake_BB, self.real_B) #self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
+        loss_pixel =  self.Generator_pixelloss(self.fake_BB, self.real_B)#self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
 
         total_pixelloss_BB = loss_pixel * self.Settings["L1_loss_weight"]
 
@@ -264,7 +264,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()  
 
-        return loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
+        return loss_GAN_BB.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
     
     def Generator_Inpainting_updater(self, val=False): 
         self.Generator.zero_grad()       
@@ -290,7 +290,7 @@ class Training_Framework():
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
 
-        return loss_GAN_BA.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
+        return loss_GAN_BA.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
      
 
     def Discriminator_Autoencoder_updater(self, val=False):
@@ -344,7 +344,7 @@ class Training_Framework():
         self.Generator.eval()
 
         if self.real_A.size(0) > 1:
-            real_im = self.real_A[0,:,:,:]
+            real_im = self.real_A[0,:,:,:] # Change B for A if working with inpainter, else leave it on real_B for autoencoder images
             mask    = self.mask[0,:,:,:]
         else:
             real_im = self.real_A
@@ -402,8 +402,8 @@ class Training_Framework():
                     self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
                     self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
                     self.mask = mask.to(self.device) # local loss coordinates
-                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
-                    GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
+                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_Inpainting_updater(val=True)
+                    GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_Inpainting_updater(val=True)
 
                     #Analytics
                     current_GEN_loss[num] =  GEN_loss
@@ -467,9 +467,9 @@ class Training_Framework():
                     self.mask = mask.to(self.device) # local loss coordinates
                     # Discriminator return Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
                     #Generator    return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
-                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater()
+                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_Inpainting_updater()
                     if num % self.n_crit == 0:
-                        GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
+                        GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_Inpainting_updater()
 
                     #Analytics
                     #This is all assuming batch-size stays at 1
@@ -726,7 +726,7 @@ class Model_Inference():
         with torch.no_grad():
             for run in loader:
                 loader.set_description(f"Running {run+1}/{runs} images completed")
-                _ , defect_image, mask = next(iter(self.dataloader))
+                _ ,defect_image , mask = next(iter(self.dataloader))
                 real_A = defect_image.to(self.device)
                 fake_B, _ = self.model(real_A.clone())
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
