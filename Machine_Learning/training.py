@@ -31,7 +31,7 @@ Settings = {
             "CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
-            "Loss"                  : losses[1], # Which GAN loss to train with?
+            "Loss"                  : losses[2], # Which GAN loss to train with?
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 362, # random training seed # 172
             "num_workers"           : 4,
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     
     # Loss functions
 
-    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]*0.25, betas=[0, 0.999])
+    Generator_optimizer = Adam(Generator.parameters(), lr=Settings["lr"]*0.5, betas=[0, 0.999])
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"], betas=[0, 0.999])
 
     #Training

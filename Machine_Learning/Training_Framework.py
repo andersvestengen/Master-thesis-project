@@ -176,7 +176,7 @@ class Training_Framework():
             self.Generator_loss         = losses.WGAN_Generator
             self.Generator_pixelloss    = losses.Generator_Pixelloss
         if Settings["Loss"] == "CGAN":
-            self.Discriminator_loss     = losses.CGAN_Discriminator
+            self.Discriminator_loss     = losses.CGAN_Dual_Encoder_Discriminator
             self.Generator_loss         = losses.CGAN_Generator
             self.Generator_pixelloss    = losses.Generator_Pixelloss
         if Settings["Loss"] == "WGANGP":
@@ -323,15 +323,13 @@ class Training_Framework():
         pred_real_AB = self.Discriminator(real_AB)
 
         #Calculate loss # loss_real = - torch.mean(real_pred) loss_fake = torch.mean(fake_pred)
-        Discriminator_loss = self.Discriminator_loss(pred_real_AB, pred_fake_BA)
-        autoencoder_loss = torch.mean(pred_fake_BB)
-        Discriminator_total_loss = self.Discriminator_loss(pred_real_AB, pred_fake_BA) + autoencoder_loss
-
+        Total_Discriminator_loss = self.Discriminator_loss(pred_real_AB, pred_fake_BA, pred_fake_BB)
+        autoencoder_loss = torch.zeros(1)
         if not val:
-            Discriminator_total_loss.backward(retain_graph=True)
+            Total_Discriminator_loss.backward(retain_graph=True)
             self.Discriminator_optimizer.step()
 
-        return Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
+        return Total_Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
 
     
     def FromTorchTraining(self, image):

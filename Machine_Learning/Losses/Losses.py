@@ -38,10 +38,10 @@ class LossFunctions(nn.Module):
         return loss_pixel, local_pixelloss
 
 
-    def Generator_Pixelloss(self, fake_B, real_B, mask):
+    def Generator_Pixelloss(self, real_B, fake_B, mask):
 
-        local_pixelloss = self.pixelwise_local_loss(torch.where(mask, 0, fake_B), torch.where(mask, 0, real_B)) # defect-region
-        General_pixelloss = self.pixelwise_loss(torch.where(~mask, 0, fake_B), torch.where(~mask, 0, real_B)) # everywhere else
+        local_pixelloss = self.pixelwise_loss(torch.where(mask, 0, fake_B), torch.where(mask, 0, real_B)) # defect-region
+        General_pixelloss = self.pixelwise_local_loss(torch.where(~mask, 0, fake_B), torch.where(~mask, 0, real_B)) # everywhere else
 
         return General_pixelloss, local_pixelloss
     
@@ -82,6 +82,13 @@ class LossFunctions(nn.Module):
     def WGAN_Generator(self, fake_pred):
         return - torch.mean(fake_pred)
 
+
+    def CGAN_Dual_Encoder_Discriminator(self, *args):
+        real_AB, fake_BA, fake_BB = args
+        real = self.Make_Label_Tensor(real_AB, 1)
+        fake = self.Make_Label_Tensor(fake_BA, 0)
+
+        return ( self.CGAN_loss(real_AB, real) + self.CGAN_loss(fake_BA, fake) + self.CGAN_loss(fake_BB, fake) ) * 0.333
 
     def CGAN_Discriminator(self, *args):
         real_pred, fake_pred = args
