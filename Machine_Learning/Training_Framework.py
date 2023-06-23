@@ -236,6 +236,35 @@ class Training_Framework():
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
             f.write("Total training time: " + str(hours) + " hours " + str(minutes) + " minutes \n")
 
+    def Generator_updater(self, val=False):
+        self.Generator.zero_grad()    
+        # Generator GAN loss
+        fake_BB = torch.cat((self.fake_BB, self.real_B), 1)     
+        predicted_fake_BB = self.Discriminator(fake_BB)
+        fake_BA = torch.cat((self.fake_BA, self.real_B), 1)     
+        predicted_fake_BA = self.Discriminator(fake_BA)
+
+        loss_GAN_BA = self.Generator_loss(predicted_fake_BA)
+
+        loss_GAN_BB = self.Generator_loss(predicted_fake_BB)
+        
+        #Pixelwise loss
+        loss_pixel          =  self.Generator_pixelloss(self.fake_BB, self.real_B)#self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
+        _, local_pixelloss  =  self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
+        total_pixelloss  = loss_pixel * self.Settings["L1_loss_weight"] + local_pixelloss * self.Settings["L1__local_loss_weight"]
+
+        #Latent Feature loss
+        LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)        
+
+        #Total loss
+        Total_loss_Generator = loss_GAN_BB + loss_GAN_BA + LatentLoss + total_pixelloss #+ LatentLoss
+        
+        if not val:
+            Total_loss_Generator.backward()
+            self.Generator_optimizer.step()  
+
+        return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()        
+    
 
     def Generator_Autoencoder_updater(self, val=False):  
         self.Generator.zero_grad()    
@@ -291,7 +320,30 @@ class Training_Framework():
             self.Generator_optimizer.step()
 
         return loss_GAN_BA.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
-     
+
+    def Discriminator_updater(self, val=False):
+        self.Discriminator.zero_grad()
+        #Get Critique scores
+        fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
+        pred_fake_BB = self.Discriminator(fake_BB.detach())
+
+        fake_BA = torch.cat((self.fake_BA, self.real_B), 1)   
+        real_AB = torch.cat((self.real_A, self.real_B), 1)     
+        pred_fake_BA = self.Discriminator(fake_BA.detach())
+        pred_real_AB = self.Discriminator(real_AB)
+        
+        #Calculate loss WGAN: loss_real = - torch.mean(real_pred) loss_fake = torch.mean(fake_pred)
+        Discriminator_auto_loss = self.Discriminator_loss(pred_fake_BB, pred_real_AB)
+        Discriminator_inpaint_loss = self.Discriminator_loss(pred_fake_BA, torch.zeros(1))
+
+        Discriminator_loss = Discriminator_auto_loss + Discriminator_inpaint_loss
+
+        if not val:
+            Discriminator_loss.backward(retain_graph=True)
+            self.Discriminator_optimizer.step()
+
+        return Discriminator_inpaint_loss.detach(), Discriminator_auto_loss.detach(), pred_real_AB.detach(), pred_fake_BB.detach()            
+
 
     def Discriminator_Autoencoder_updater(self, val=False):
         self.Discriminator.zero_grad()
