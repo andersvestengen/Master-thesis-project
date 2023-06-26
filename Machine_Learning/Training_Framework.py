@@ -250,15 +250,16 @@ class Training_Framework():
         loss_GAN_BB = self.Generator_loss(predicted_fake_BB)
         
         #Pixelwise loss
-        loss_pixel_BB                           = self.Generator_autoencoder_pixelloss(self.fake_BB, self.real_B)
+        loss_pixel_BB, local_pixelloss_BB       = self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
         loss_pixel_BA, local_pixelloss_BA       = self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
-        total_pixelloss                         = loss_pixel_BB * self.Settings["L1_loss_weight"] + local_pixelloss_BA * self.Settings["L1__local_loss_weight"]
+        total_pixelloss_BA                      = loss_pixel_BA * self.Settings["L1_loss_weight"] + local_pixelloss_BA * self.Settings["L1__local_loss_weight"]
+        total_pixelloss_BB                      = loss_pixel_BB * self.Settings["L1_loss_weight"] + local_pixelloss_BB * self.Settings["L1__local_loss_weight"]
 
         #Latent Feature loss
         LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)        
 
         #Total loss
-        Total_loss_Generator = loss_GAN_BB + loss_GAN_BA + LatentLoss + total_pixelloss #+ LatentLoss
+        Total_loss_Generator = loss_GAN_BB + loss_GAN_BA + LatentLoss + total_pixelloss_BA + total_pixelloss_BB #+ LatentLoss
         
         if not val:
             Total_loss_Generator.backward()

@@ -13,7 +13,7 @@ class LossFunctions(nn.Module):
             self.CGAN_loss = nn.BCEWithLogitsLoss().to(self.device)
         self.pixelwise_loss = nn.L1Loss().to(self.device)
         self.pixelwise_local_loss = nn.MSELoss().to(self.device)
-        self.Latent_Feature_Criterion = nn.MSELoss().to(self.device)
+        self.Latent_Feature_Criterion = nn.L1Loss().to(self.device)
         self.lambda_gp = Settings["lambda_gp"]
 
     # Helper functions -----------------------------------------
