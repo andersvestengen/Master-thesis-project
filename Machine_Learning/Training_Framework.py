@@ -252,8 +252,8 @@ class Training_Framework():
         #Pixelwise loss
         loss_pixel_BB, local_pixelloss_BB       = self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
         loss_pixel_BA, local_pixelloss_BA       = self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
-        total_pixelloss_BA                      = loss_pixel_BA * self.Settings["L1_loss_weight"] + local_pixelloss_BA * self.Settings["L1__local_loss_weight"]
-        total_pixelloss_BB                      = loss_pixel_BB * self.Settings["L1_loss_weight"] + local_pixelloss_BB * self.Settings["L1__local_loss_weight"]
+        total_pixelloss_BA                      = loss_pixel_BA + local_pixelloss_BA * self.Settings["L1__local_loss_weight"]
+        total_pixelloss_BB                      = loss_pixel_BB * self.Settings["L1_loss_weight"] + local_pixelloss_BB
 
         #Latent Feature loss
         LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)        

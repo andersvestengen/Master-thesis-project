@@ -76,6 +76,12 @@ class LossFunctions(nn.Module):
 
         return self.Latent_Feature_Criterion(input, target)
 
+    def Latent_WGAN_Loss(self, input, target):
+        loss_real = - torch.mean(target)
+        loss_fake = torch.mean(input)
+
+        return loss_real + loss_fake
+    
     def WGAN_Discriminator(self, *args):
         fake_pred, real_pred = args
 
