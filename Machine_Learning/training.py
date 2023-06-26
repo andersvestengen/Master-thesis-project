@@ -18,10 +18,10 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 8,
+            "epochs"                : 17,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 0,
+            "L1_loss_weight"        : 100,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "n_crit"                : 2,
@@ -38,13 +38,13 @@ Settings = {
             "shuffle"               : True,
             "Data_mean"             : [0.3212, 0.3858, 0.2613],
             "Data_std"              : [0.2938, 0.2827, 0.2658],
-            "Do norm"               : False, #Normalization on or off 
+            "Do norm"               : False, #Normalization on or off s
             "Datasplit"             : 0.8,
             "device"                : "cuda",
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "DualEncoder_justLocal_Test",
+            "ModelTrainingName"     : "DualEncoder_Dynamic_Enforecement_25_epochs",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
