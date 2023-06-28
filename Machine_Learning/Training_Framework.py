@@ -257,7 +257,7 @@ class Training_Framework():
         total_pixelloss_BB                      = loss_pixel_BB * self.Settings["L1_loss_weight"] + local_pixelloss_BB
 
         #Latent Feature loss
-        LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)        
+        LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB) * self.Settings["Latent_loss_weight"]    
 
         #Total loss
         Total_loss_Generator = loss_GAN_BB + loss_GAN_BA + LatentLoss + total_pixelloss_BA + total_pixelloss_BB #+ LatentLoss
@@ -330,7 +330,7 @@ class Training_Framework():
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
         pred_fake_BB = self.Discriminator(fake_BB.detach())
 
-        fake_BA = torch.cat((self.fake_BA, self.real_B), 1)   
+        fake_BA = torch.cat((self.fake_BA, self.real_A), 1)   
         real_AB = torch.cat((self.real_A, self.real_B), 1)     
         pred_fake_BA = self.Discriminator(fake_BA.detach())
         pred_real_AB = self.Discriminator(real_AB)
