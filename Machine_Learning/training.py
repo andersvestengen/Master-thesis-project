@@ -25,7 +25,7 @@ Settings = {
             "Latent_loss_weight"    : 25,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
-            "n_crit"                : 2,
+            "n_crit"                : 2, # how many Discriminator training iterations per Generator iterations
             "lambda_gp"             : 10, #WGAN-GP constant
             "Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
             "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
@@ -59,7 +59,8 @@ Settings = {
             "Latent_loss_weight"    : 25,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
-            "n_crit"                : 2,
+            "n_crit"                : 2, # how many Discriminator training iterations per Generator iterations
+            "Training_sample_rate"  : 15, # Sample analytics every N iterations
             "lambda_gp"             : 10, #WGAN-GP constant
             "Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
             "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
@@ -71,7 +72,7 @@ Settings = {
             "seed"                  : 362, # random training seed # 172
             "num_workers"           : 4,
             "shuffle"               : True,
-            "Data_mean"             : [0.3212, 0.3858, 0.2613],
+            "Data_mean"             : [0.3212, 0.3858, 0.2613], #  Depreciated
             "Data_std"              : [0.2938, 0.2827, 0.2658],
             "Do norm"               : False, #Normalization on or off s
             "Datasplit"             : 0.8,
@@ -81,7 +82,7 @@ Settings = {
             #No spaces in the model name, please use '_'
             "ModelTrainingName"     : "DUMMYTEST",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 0.008, #[None] for all available images or float [0,1] for a fraction of total images
+            "Num_training_samples"  : 0.1, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 

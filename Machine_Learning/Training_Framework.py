@@ -12,6 +12,7 @@ from skimage.metrics import structural_similarity as SSIM
 from Losses.Losses import LossFunctions
 import time
 import sys
+from math import ceil
 
 #---------------- Helper functions ----------------------
 def PIL_concatenate_h(im1, im2, im3):
@@ -152,12 +153,12 @@ class DataCollectionClass():
         - Need a plotting function. 
     """
     
-    def __init__(self, tr_len, val_len, modeldir, Settings):
+    def __init__(self, tr_len, val_len, N_t, N_v, modeldir, Settings):
             # Required array size
             self.Modeldir = modeldir
-            train_len = int(Settings["epochs"] * tr_len)
-            val_len = int(Settings["epochs"] * val_len)
-
+            train_len = ceil(Settings["epochs"] * tr_len / N_t)
+            val_len = ceil(Settings["epochs"] * val_len / N_v)
+            self.tr_iter = self.val_iter = 0
             #Train setup
             self.Generator_loss_train = torch.zeros(train_len, requires_grad=False)
             self.Generator_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
@@ -187,31 +188,29 @@ class DataCollectionClass():
         """
         current epoch needs to be the first argument, except when setting up training.  
         """
-        if epoch == 0:
-            iter = int(batch)
-        else:
-            iter = int(batch * (epoch+1))
-
+        
         if not val:
-            self.Generator_loss_train[iter] = current_GEN_loss.mean()
-            self.Discriminator_loss_train[iter] = current_DIS_loss.mean()
-            self.Discriminator_accuracy_real_training_raw[iter] = Discrim_acc_real_raw.mean()
-            self.Discriminator_accuracy_fake_training_raw[iter] = Discrim_acc_fake_raw.mean()
-            self.Discriminator_auto_loss_training[iter] = Discrim_auto_loss.mean()
-            self.Generator_pixel_loss_training[iter] = pixelloss.mean()
-            self.Generator_local_pixel_loss_training[iter] = local_pixelloss.mean()
-            self.Generator_DeepFeatureLoss_training[iter] = DeepFeatureloss_arr.mean()
-            self.Generator_auto_loss_training[iter] = Generator_auto_loss.mean()            
+            self.Generator_loss_train[self.tr_iter] = current_GEN_loss.mean()
+            self.Discriminator_loss_train[self.tr_iter] = current_DIS_loss.mean()
+            self.Discriminator_accuracy_real_training_raw[self.tr_iter] = Discrim_acc_real_raw.mean()
+            self.Discriminator_accuracy_fake_training_raw[self.tr_iter] = Discrim_acc_fake_raw.mean()
+            self.Discriminator_auto_loss_training[self.tr_iter] = Discrim_auto_loss.mean()
+            self.Generator_pixel_loss_training[self.tr_iter] = pixelloss.mean()
+            self.Generator_local_pixel_loss_training[self.tr_iter] = local_pixelloss.mean()
+            self.Generator_DeepFeatureLoss_training[self.tr_iter] = DeepFeatureloss_arr.mean()
+            self.Generator_auto_loss_training[self.tr_iter] = Generator_auto_loss.mean()            
+            self.tr_iter += 1
         else:
-            self.Generator_loss_validation[iter] = current_GEN_loss.mean()
-            self.Discriminator_loss_validation[iter] = current_DIS_loss.mean()
-            self.Discriminator_accuracy_real_validation_raw[iter] = Discrim_acc_real_raw.mean()
-            self.Discriminator_accuracy_fake_validation_raw[iter] = Discrim_acc_fake_raw.mean()
-            self.Discriminator_auto_loss_validation[iter] = Discrim_auto_loss.mean()
-            self.Generator_pixel_loss_validation[iter] = pixelloss.mean()
-            self.Generator_local_pixel_loss_validation[iter] = local_pixelloss.mean()
-            self.Generator_DeepFeatureLoss_validation[iter] = DeepFeatureloss_arr.mean()
-            self.Generator_auto_loss_validation[iter] = Generator_auto_loss.mean()
+            self.Generator_loss_validation[self.val_iter] = current_GEN_loss.mean()
+            self.Discriminator_loss_validation[self.val_iter] = current_DIS_loss.mean()
+            self.Discriminator_accuracy_real_validation_raw[self.val_iter] = Discrim_acc_real_raw.mean()
+            self.Discriminator_accuracy_fake_validation_raw[self.val_iter] = Discrim_acc_fake_raw.mean()
+            self.Discriminator_auto_loss_validation[self.val_iter] = Discrim_auto_loss.mean()
+            self.Generator_pixel_loss_validation[self.val_iter] = pixelloss.mean()
+            self.Generator_local_pixel_loss_validation[self.val_iter] = local_pixelloss.mean()
+            self.Generator_DeepFeatureLoss_validation[self.val_iter] = DeepFeatureloss_arr.mean()
+            self.Generator_auto_loss_validation[self.val_iter] = Generator_auto_loss.mean()
+            self.val_iter += 1
 
     def Save_Analytics(self):
         torch.save((self.Generator_loss_validation,
@@ -236,9 +235,8 @@ class DataCollectionClass():
     def MakeSaveGraph(self, y1, y2, y1legend, y2legend, xlabel, ylabel, title):
 
         x1axis = torch.arange(y1.size(0))
-        y2_interpolated = torch.interpolate(y2, y1.size(0)) # incase input is training and validation where validation would be smaller due to validation loader being smaller
         plt.plot(x1axis, y1, label=y1legend)
-        plt.plot(x2axis, y2_interpolated, label=y2legend)
+        plt.plot(x1axis, y2, label=y2legend)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
@@ -248,14 +246,14 @@ class DataCollectionClass():
 
     def Create_graphs(self):
         #Currently not making the joined Discriminator / Generator loss, nor the Discriminator real/fake raw pred graphs
-        self.MakeSaveGraph(self.Generator_loss_train, self.Generator_loss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (WGAN)", "Generator Loss")
-        self.MakeSaveGraph(self.Discriminator_loss_train, self.Discriminator_loss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (WGAN)", "Discriminator Loss ")
-        self.MakeSaveGraph(self.Generator_DeepFeatureLoss_training, self.Generator_DeepFeatureLoss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (WGAN)", "Generator Latent Feature Loss")
-        self.MakeSaveGraph(self.Discriminator_auto_loss_training, self.Discriminator_auto_loss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
-        self.MakeSaveGraph(self.Generator_auto_loss_training, self.Generator_auto_loss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (WGAN)", "Generator Autoencoder Loss")
-        self.MakeSaveGraph(self.Discriminator_auto_loss_training, self.Discriminator_auto_loss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
-        self.MakeSaveGraph(self.Generator_pixel_loss_training, self.Generator_pixel_loss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (L1)", "Generator Pixel Loss")
-        self.MakeSaveGraph(self.Generator_local_pixel_loss_training, self.Generator_local_pixel_loss_validation, "Training", "Validation (Interpolated)", "iterations", "loss (MSE)", "Generator Local Pixel Loss")
+        self.MakeSaveGraph(self.Generator_loss_train, self.Generator_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Generator Loss")
+        self.MakeSaveGraph(self.Discriminator_loss_train, self.Discriminator_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Discriminator Loss ")
+        self.MakeSaveGraph(self.Generator_DeepFeatureLoss_training, self.Generator_DeepFeatureLoss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Generator Latent Feature Loss")
+        self.MakeSaveGraph(self.Discriminator_auto_loss_training, self.Discriminator_auto_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
+        self.MakeSaveGraph(self.Generator_auto_loss_training, self.Generator_auto_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Generator Autoencoder Loss")
+        self.MakeSaveGraph(self.Discriminator_auto_loss_training, self.Discriminator_auto_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
+        self.MakeSaveGraph(self.Generator_pixel_loss_training, self.Generator_pixel_loss_validation, "Training", "Validation", "iterations", "loss (L1)", "Generator Pixel Loss")
+        self.MakeSaveGraph(self.Generator_local_pixel_loss_training, self.Generator_local_pixel_loss_validation, "Training", "Validation", "iterations", "loss (MSE)", "Generator Local Pixel Loss")
 
 class Training_Framework():
     """
@@ -328,7 +326,10 @@ class Training_Framework():
         self.modeltraining_output               = self.Modeldir + "/training_output"
         os.makedirs(self.modeltraining_output)
 
-        self.Collector = DataCollectionClass(len(train_loader), len(val_loader), self.Modeldir, Settings)
+        #Initializing Data collection
+        self.N_training_sample_rate = Settings["Training_sample_rate"] # User defined sample rate
+        self.N_validation_sample_rate = int((len(val_loader) * self.N_training_sample_rate) / len(train_loader)) # Validation sample rate defined by the size of the training sample rate. This is so both arrays are the same size at the end of training. 
+        self.Collector = DataCollectionClass(len(train_loader), len(val_loader), self.N_training_sample_rate, self.N_validation_sample_rate, self.Modeldir, Settings)
         self.train_start = time.time()
 
     def Save_Model(self):
@@ -545,8 +546,8 @@ class Training_Framework():
             self.Generator.requires_grad=False
             self.Discriminator.eval()
             self.Discriminator.requires_grad=False
-            last_GEN_loss = self.Collector.Generator_loss_validation[epoch-1*len(self.val_loader):epoch*len(self.val_loader)].mean()
-            last_DIS_loss = self.Collector.Discriminator_loss_validation[epoch-1*len(self.val_loader):epoch*len(self.val_loader)].mean()            
+            last_GEN_loss = self.Collector.Generator_loss_validation[-1]
+            last_DIS_loss = self.Collector.Discriminator_loss_validation[-1]           
             with tqdm(self.val_loader, unit=val_unit, leave=False) as tepoch:
                 for num, data in enumerate(tepoch):
                     images, defect_images, mask = data
@@ -564,7 +565,8 @@ class Training_Framework():
                     GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
 
                     #Analytics
-                    self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake), val=True)
+                    if num % self.N_validation_sample_rate == 0:
+                        self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake), val=True)
 
             #Turn on propagation
             self.Generator.train()
@@ -584,8 +586,8 @@ class Training_Framework():
                 else:
                     tepoch = tqdm(self.train_loader, unit='batch(s)', leave=False)
 
-                last_GEN_loss = self.Collector.Generator_loss_train[epoch-1*len(self.train_loader):epoch*len(self.train_loader)].mean()
-                last_DIS_loss = self.Collector.Discriminator_loss_train[epoch-1*len(self.train_loader):epoch*len(self.train_loader)].mean()
+                last_GEN_loss = self.Collector.Generator_loss_train[-1]
+                last_DIS_loss = self.Collector.Discriminator_loss_train[-1]
                 for num, data in enumerate(tepoch):
                     images, defect_images, mask = data
                     if epoch == 0:
@@ -605,8 +607,8 @@ class Training_Framework():
                     if num % self.n_crit == 0:
                         GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
 
-
-                    self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, local_loss_pixel, DeepFeatureloss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake))   
+                    if num % self.N_training_sample_rate == 0:
+                        self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, local_loss_pixel, DeepFeatureloss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake))   
                 #Save per epoch
                 self.validation_run(epoch)
                 self.Save_Model()
