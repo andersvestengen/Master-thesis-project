@@ -212,6 +212,13 @@ class DataCollectionClass():
             self.Generator_auto_loss_validation[self.val_iter] = Generator_auto_loss.mean()
             self.val_iter += 1
 
+    def GetCurrentLoss(self, val=False):
+        if not val:
+            return self.Generator_loss_train[self.tr_iter-1], self.Discriminator_auto_loss_training[self.tr_iter-1]
+        else:
+            return self.Generator_pixel_loss_validation[self.val_iter-1], self.Discriminator_loss_validation[self.val_iter-1]
+        
+
     def Save_Analytics(self):
         torch.save((self.Generator_loss_validation,
                                 self.Discriminator_loss_validation,
@@ -546,8 +553,7 @@ class Training_Framework():
             self.Generator.requires_grad=False
             self.Discriminator.eval()
             self.Discriminator.requires_grad=False
-            last_GEN_loss = self.Collector.Generator_loss_validation[-1]
-            last_DIS_loss = self.Collector.Discriminator_loss_validation[-1]           
+            last_GEN_loss, last_DIS_loss = self.Collector.GetCurrentLoss(val=True)       
             with tqdm(self.val_loader, unit=val_unit, leave=False) as tepoch:
                 for num, data in enumerate(tepoch):
                     images, defect_images, mask = data
@@ -586,8 +592,7 @@ class Training_Framework():
                 else:
                     tepoch = tqdm(self.train_loader, unit='batch(s)', leave=False)
 
-                last_GEN_loss = self.Collector.Generator_loss_train[-1]
-                last_DIS_loss = self.Collector.Discriminator_loss_train[-1]
+                last_GEN_loss, last_DIS_loss = self.Collector.GetCurrentLoss()       
                 for num, data in enumerate(tepoch):
                     images, defect_images, mask = data
                     if epoch == 0:
