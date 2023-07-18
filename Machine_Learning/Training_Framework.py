@@ -153,13 +153,18 @@ class DataCollectionClass():
         - Need a plotting function. 
     """
     
-    def __init__(self, tr_len, val_len, N_t, N_v, modeldir, Settings):
+    def __init__(self, tr_len, vl_len, N_t, N_v, modeldir, Settings):
             # Required array size
             self.Modeldir = modeldir
-            train_len = ceil(Settings["epochs"] * tr_len / N_t)
-            val_len = ceil(Settings["epochs"] * val_len / N_v)
-            self.tr_iter = self.val_iter = 0
-            #Train setup
+            train_len = Settings["epochs"] * ceil(tr_len / N_t)
+            val_len = Settings["epochs"] * ceil(vl_len / N_v)
+            print("Float solutions to the array lengths:", (Settings["epochs"] * tr_len / N_t), (Settings["epochs"] * vl_len / N_v))
+            print("Sample rates are:", N_t, N_v)
+            self.tr_iter = 0
+            self.val_iter = 0
+            #if train_len != val_len:
+            #    val_len = train_len
+            print("these are the array lengths:", train_len, val_len)
             self.Generator_loss_train = torch.zeros(train_len, requires_grad=False)
             self.Generator_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
             self.Generator_local_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
@@ -242,8 +247,10 @@ class DataCollectionClass():
     def MakeSaveGraph(self, y1, y2, y1legend, y2legend, xlabel, ylabel, title):
 
         x1axis = torch.arange(y1.size(0))
+        x2axis = torch.arange(y2.size(0))
+
         plt.plot(x1axis, y1, label=y1legend)
-        plt.plot(x1axis, y2, label=y2legend)
+        plt.plot(x2axis, y2, label=y2legend)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
@@ -335,7 +342,8 @@ class Training_Framework():
 
         #Initializing Data collection
         self.N_training_sample_rate = Settings["Training_sample_rate"] # User defined sample rate
-        self.N_validation_sample_rate = int((len(val_loader) * self.N_training_sample_rate) / len(train_loader)) # Validation sample rate defined by the size of the training sample rate. This is so both arrays are the same size at the end of training. 
+        print("these are the loader lengths:", len(train_loader), len(val_loader))
+        self.N_validation_sample_rate = ceil((len(val_loader) * self.N_training_sample_rate) / len(train_loader)) # Validation sample rate defined by the size of the training sample rate. This is so both arrays are the same size at the end of training. 
         self.Collector = DataCollectionClass(len(train_loader), len(val_loader), self.N_training_sample_rate, self.N_validation_sample_rate, self.Modeldir, Settings)
         self.train_start = time.time()
 
@@ -571,7 +579,7 @@ class Training_Framework():
                     GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
 
                     #Analytics
-                    if num % self.N_validation_sample_rate == 0:
+                    if num == 0 or num % self.N_validation_sample_rate == 0:
                         self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake), val=True)
 
             #Turn on propagation
@@ -612,7 +620,7 @@ class Training_Framework():
                     if num % self.n_crit == 0:
                         GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
 
-                    if num % self.N_training_sample_rate == 0:
+                    if num == 0 or num % self.N_training_sample_rate == 0:
                         self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, local_loss_pixel, DeepFeatureloss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake))   
                 #Save per epoch
                 self.validation_run(epoch)
