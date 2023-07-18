@@ -158,13 +158,8 @@ class DataCollectionClass():
             self.Modeldir = modeldir
             train_len = Settings["epochs"] * ceil(tr_len / N_t)
             val_len = Settings["epochs"] * ceil(vl_len / N_v)
-            print("Float solutions to the array lengths:", (Settings["epochs"] * tr_len / N_t), (Settings["epochs"] * vl_len / N_v))
-            print("Sample rates are:", N_t, N_v)
             self.tr_iter = 0
             self.val_iter = 0
-            #if train_len != val_len:
-            #    val_len = train_len
-            print("these are the array lengths:", train_len, val_len)
             self.Generator_loss_train = torch.zeros(train_len, requires_grad=False)
             self.Generator_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
             self.Generator_local_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
@@ -342,7 +337,6 @@ class Training_Framework():
 
         #Initializing Data collection
         self.N_training_sample_rate = Settings["Training_sample_rate"] # User defined sample rate
-        print("these are the loader lengths:", len(train_loader), len(val_loader))
         self.N_validation_sample_rate = ceil((len(val_loader) * self.N_training_sample_rate) / len(train_loader)) # Validation sample rate defined by the size of the training sample rate. This is so both arrays are the same size at the end of training. 
         self.Collector = DataCollectionClass(len(train_loader), len(val_loader), self.N_training_sample_rate, self.N_validation_sample_rate, self.Modeldir, Settings)
         self.train_start = time.time()
