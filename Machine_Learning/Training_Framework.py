@@ -311,7 +311,7 @@ class Training_Framework():
             self.Generator_loss                     = losses.WGAN_Generator
             self.Generator_pixelloss                = losses.Generator_Pixelloss
 
-        self.Generator_Deep_Feature_Loss            = losses.Latent_WGAN_Loss
+        self.Generator_Deep_Feature_Loss            = losses.LatentFeatureLoss
 
 
 
