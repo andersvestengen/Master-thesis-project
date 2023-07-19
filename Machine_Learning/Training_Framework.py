@@ -7,7 +7,10 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
-from ignite.metrics import PSNR, SSIM
+from skimage.metrics import structural_similarity as SSIM
+from skimage.metrics import peak_signal_noise_ratio as PSNR
+from ignite.metrics import PSNR as P_PSNR
+from ignite.metrics import SSIM as P_SSIM
 from Losses.Losses import LossFunctions
 import time
 import sys
@@ -146,8 +149,10 @@ class NormalizeInverse(transforms.Normalize):
 
 class CalculateMetrics():
 
-    def __init__(self, modelref):
+    def __init__(self, modelref, dataloderref, deviceref):
         self.model = modelref
+        self.dataloader = dataloderref
+        self.device = deviceref
         """
         Inputs:
             - How many iterations to run for calculating the metrics (This should be variable to speed up calculation during training.)
@@ -161,8 +166,8 @@ class CalculateMetrics():
         """
 
         total_len = iterations 
-        psnr_calc = PSNR(data_range=1.0)
-        ssim_calc = SSIM(data_range=1.0, kernel_size=(7,7))
+        psnr_calc = P_PSNR(data_range=1.0)
+        ssim_calc = P_SSIM(data_range=1.0, kernel_size=(7,7))
         with torch.no_grad():
             self.model.eval()
             total_images = total_len
@@ -187,11 +192,12 @@ class CalculateMetrics():
                 real_A = defect_images.to(self.device) #Defect
                 real_B = images.to(self.device) #Target 
                 fake_B, _ = self.model(real_A.clone())
-                fake_B_local = torch.masked_select(fake_B, ~mask).view(3,8,8)
-                real_B_local = torch.masked_select(real_B, ~mask).view(3,8,8)
-                real_A_local = torch.masked_select(real_A, ~mask).view(3,8,8)
-
                 mask = defect_mask.to(self.device)
+                batch = fake_B.size(0)
+                fake_B_local = torch.masked_select(fake_B, ~mask).view(batch,3,8,8)
+                real_B_local = torch.masked_select(real_B, ~mask).view(batch,3,8,8)
+                real_A_local = torch.masked_select(real_A, ~mask).view(batch,3,8,8)
+
 
                 psnr_calc.update((real_A, real_B))
                 PSNR_real_values[num] = psnr_calc.compute()
@@ -961,83 +967,28 @@ class Model_Inference():
         return y,x
 
     def CreateMetrics(self):
-        total_len = 500 # manually selected to not take too much time.
-        with torch.no_grad():
-            self.model.eval()
-            total_images = total_len
-            PSNR_real_values = np.zeros((total_images, 3))
-            PSNR_fake_values = np.zeros((total_images, 3))
-            SSIM_real_values = np.zeros((total_images, 3))
-            SSIM_fake_values = np.zeros((total_images, 3))
-
-            PSNR_real_values_p = np.zeros((total_images, 3))
-            PSNR_fake_values_p = np.zeros((total_images, 3))
-            SSIM_real_values_p = np.zeros((total_images, 3))
-            SSIM_fake_values_p = np.zeros((total_images, 3))
-            lbar = tqdm(range(total_images))
-            for num in lbar:
-                images, defect_images, defect_mask = next(iter(self.dataloader))
-                lbar.set_description(f"Running metrics {num+1}/{total_images} images")
-
-                if num > (total_len - 1):
-                    break
-                
-                #Load images and run inference 
-                real_A = defect_images.to(self.device) #Defect
-                real_B = images.to(self.device) #Target 
-                fake_B, _ = self.model(real_A.clone())
-                mask = defect_mask.to(self.device)
-
-                #Assign defect regions and convert
-                local_fake_B = self.FromTorchTraining(torch.masked_select(fake_B, ~mask).view(3,8,8).squeeze(0))# defect-region
-                local_real_B = self.FromTorchTraining(torch.masked_select(real_B, ~mask).view(3,8,8).squeeze(0))# defect-region
-                local_real_A = self.FromTorchTraining(torch.masked_select(real_A, ~mask).view(3,8,8).squeeze(0))# defect-region
-
-                fake_B = self.FromTorchTraining(fake_B.squeeze(0))
-                real_B = self.FromTorchTraining(real_B.squeeze(0))
-                real_A = self.FromTorchTraining(real_A.squeeze(0))
-
-                for channel in range(3):
-                    PSNR_real_values[num, channel]       = PSNR(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
-                    PSNR_fake_values[num, channel]       = PSNR(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-                    PSNR_real_values_p[num, channel]     = PSNR(local_real_B[:,:,channel], local_real_A[:,:,channel], data_range=255)
-                    PSNR_fake_values_p[num, channel]     = PSNR(local_real_B[:,:,channel], local_fake_B[:,:,channel], data_range=255)
-
-
-                    SSIM_real_values_p[num, channel]     =  SSIM(local_real_B[:,:,channel], local_real_A[:,:,channel], data_range=255)
-                    SSIM_fake_values_p[num, channel]     =  SSIM(local_real_B[:,:,channel], local_fake_B[:,:,channel], data_range=255)
-                    SSIM_real_values[num, channel]       =  SSIM(real_B[:,:,channel], real_A[:,:,channel], data_range=255)
-                    SSIM_fake_values[num, channel]       =  SSIM(real_B[:,:,channel], fake_B[:,:,channel], data_range=255)
-
-            
-            PSNR_fake_mean = np.ma.masked_invalid(PSNR_fake_values).mean(axis=(1,0))
-            PSNR_real_mean = np.ma.masked_invalid(PSNR_real_values).mean(axis=(1,0))
-            SSIM_fake_mean = np.ma.masked_invalid(SSIM_fake_values).mean(axis=(1,0))
-            SSIM_real_mean = np.ma.masked_invalid(SSIM_real_values).mean(axis=(1,0))
-            PSNR_fake_mean_p = np.ma.masked_invalid(PSNR_fake_values_p).mean(axis=(1,0))
-            PSNR_real_mean_p = np.ma.masked_invalid(PSNR_real_values_p).mean(axis=(1,0))
-            SSIM_fake_mean_p = np.ma.masked_invalid(SSIM_fake_values_p).mean(axis=(1,0))
-            SSIM_real_mean_p = np.ma.masked_invalid(SSIM_real_values_p).mean(axis=(1,0))
-
-            if not self.training:
-                metloc = self.run_dir + "/Model_metrics.txt"
-            else:
-                metloc = self.modeldir + "/Model_metrics.txt"
-            with open(metloc, 'w') as f:
-                    f.write("Full image:\n")
-                    f.write(f"PSNR_real_total:                  {PSNR_real_mean:.2f}    dB \n")
-                    f.write(f"PSNR_Generated_total:             {PSNR_fake_mean:.2f}    dB \n")
-                    f.write("Defect patch:\n")
-                    f.write(f"PSNR_real_defect_patch:           {PSNR_real_mean_p:.2f}    dB \n")
-                    f.write(f"PSNR_Generated_defect_patch:      {PSNR_fake_mean_p:.2f}    dB \n")
-                    f.write("\n")
-                    f.write("Full image:\n")
-                    f.write(f"SSIM_real_total:                  {SSIM_real_mean*100:.2f}    % \n")
-                    f.write(f"SSIM_Generated_total:             {SSIM_fake_mean*100:.2f}    % \n")
-                    f.write("Defect patch:\n")
-                    f.write(f"SSIM_real_defect_patch:           {SSIM_real_mean_p*100:.2f}    % \n")
-                    f.write(f"SSIM_Generated_defect_patch:      {SSIM_fake_mean_p*100:.2f}    % \n")
-            print("Metrics added to Model_metrics.txt file")
+        total_len = 500
+        metric = CalculateMetrics(self.model, self.dataloader, self.device)
+        results = metric.ComputeMetrics(total_len)
+        if not self.training:
+            metloc = self.run_dir + "/Model_metrics.txt"
+        else:
+            metloc = self.modeldir + "/Model_metrics.txt"
+        with open(metloc, 'w') as f:
+                f.write("Full image:\n")
+                f.write(f"PSNR_real_total:                  {results[0]:.2f}    dB \n")
+                f.write(f"PSNR_Generated_total:             {results[1]:.2f}    dB \n")
+                f.write("Defect patch:\n")
+                f.write(f"PSNR_real_defect_patch:           {results[2]:.2f}    dB \n")
+                f.write(f"PSNR_Generated_defect_patch:      {results[3]:.2f}    dB \n")
+                f.write("\n")
+                f.write("Full image:\n")
+                f.write(f"SSIM_real_total:                  {results[4]*100:.2f}    % \n")
+                f.write(f"SSIM_Generated_total:             {results[5]*100:.2f}    % \n")
+                f.write("Defect patch:\n")
+                f.write(f"SSIM_real_defect_patch:           {results[6]*100:.2f}    % \n")
+                f.write(f"SSIM_Generated_defect_patch:      {results[7]*100:.2f}    % \n")
+        print("Metrics added to Model_metrics.txt file")
 
 if __name__ == '__main__':
     pass
