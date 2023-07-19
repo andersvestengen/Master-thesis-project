@@ -404,27 +404,28 @@ class Training_Framework():
         self.val_loader = val_loader
         
         #Initialize loss functions
-        losses = LossFunctions(self.device, Discriminator, Settings)
+        self.losses = LossFunctions(self.device, Discriminator, Settings)
 
         if Settings["Loss"] == "Hinge_loss":
-            self.Discriminator_loss                 = losses.Hinge_loss_Discriminator
-            self.Generator_loss                     = losses.Hinge_loss_Generator
-            self.Generator_pixelloss                = losses.Generator_Pixelloss
+            self.Discriminator_loss                 = self.losses.Hinge_loss_Discriminator
+            self.Generator_loss                     = self.losses.Hinge_loss_Generator
+            self.Generator_pixelloss                = self.losses.Generator_Pixelloss
         if Settings["Loss"] == "WGAN":
-            self.Discriminator_loss                 = losses.WGAN_Discriminator
-            self.Generator_loss                     = losses.WGAN_Generator
-            self.Generator_pixelloss                = losses.Generator_Pixelloss
-            self.Generator_autoencoder_pixelloss    = losses.Generator_Autoencoder_Pixelloss
+            self.Discriminator_loss                 = self.losses.WGAN_Discriminator
+            self.Generator_loss                     = self.losses.WGAN_Generator
+            self.Generator_pixelloss                = self.losses.Generator_Pixelloss
+            self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
         if Settings["Loss"] == "CGAN":
-            self.Discriminator_loss                 = losses.CGAN_Dual_Encoder_Discriminator
-            self.Generator_loss                     = losses.CGAN_Generator
-            self.Generator_pixelloss                = losses.Generator_Pixelloss
+            self.Discriminator_loss                 = self.losses.CGAN_Dual_Encoder_Discriminator
+            self.Generator_loss                     = self.losses.CGAN_Generator
+            self.Generator_pixelloss                = self.losses.Generator_Pixelloss
         if Settings["Loss"] == "WGANGP":
-            self.Discriminator_loss                 = losses.WGANGP_Discriminator
-            self.Generator_loss                     = losses.WGAN_Generator
-            self.Generator_pixelloss                = losses.Generator_Pixelloss
+            self.Discriminator_loss                 = self.losses.WGANGP_Discriminator
+            self.Generator_loss                     = self.losses.WGAN_Generator
+            self.Generator_pixelloss                = self.losses.Generator_Pixelloss
 
-        self.Generator_Deep_Feature_Loss            = losses.Latent_WGAN_Loss
+        self.Generator_Deep_Feature_Loss            = self.losses.Latent_WGAN_Loss
+
 
 
 
@@ -481,6 +482,16 @@ class Training_Framework():
             f.write("Generator model: " + self.Generator.name + "\n")
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
             f.write("Total training time: " + str(hours) + " hours " + str(minutes) + " minutes \n")
+            f.write("Chosen loss type: " + self.Settings["Loss"] + "\n")
+            f.write("Loss function for Latent loss: " + self.Generator_Deep_Feature_Loss.__name__ + "\n")
+            f.write("Loss function for Discriminator loss: " + self.Discriminator_loss.__name__ + "\n")
+            f.write("Loss function for Generator loss: " + self.Generator_loss.__name__ + "\n")
+            f.write("Loss function for Generator pixel loss: " + self.Generator_pixelloss.__name__ + "\n")
+            f.write("Loss function for Generator auto encoder pixel loss: " + self.Generator_autoencoder_pixelloss.__name__ + "\n")
+            f.write("Internal Loss criterion for global pixel loss: " + type(self.losses.pixelwise_loss).__name__ + "\n")
+            f.write("Internal Loss criterion for local pixel loss: " + type(self.losses.pixelwise_local_loss).__name__ + "\n")
+            f.write("Internal Loss criterion for latent loss  (if not WGAN): " + type(self.losses.Latent_Feature_Criterion).__name__ + "\n")
+
 
     def Generator_updater(self, val=False):
         self.Generator.zero_grad()    
