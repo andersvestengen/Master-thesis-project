@@ -586,7 +586,7 @@ class Training_Framework():
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
         pred_fake_BB = self.Discriminator(fake_BB.detach())
 
-        fake_BA = torch.cat((self.fake_BA, self.real_B), 1) # June 26th compares (self.fake_BA, self.real_B)
+        fake_BA = torch.cat((self.fake_BA, self.real_A), 1) 
         real_AB = torch.cat((self.real_A, self.real_B), 1)     
         pred_fake_BA = self.Discriminator(fake_BA.detach())
         pred_real_AB = self.Discriminator(real_AB)
