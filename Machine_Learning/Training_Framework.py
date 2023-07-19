@@ -324,9 +324,9 @@ class DataCollectionClass():
 
     def GetCurrentLoss(self, val=False):
         if not val:
-            return self.Generator_loss_train[self.tr_iter-1], self.Discriminator_auto_loss_training[self.tr_iter-1]
+            return self.Generator_loss_train[self.tr_iter-1], self.Discriminator_loss_train[self.tr_iter-1]
         else:
-            return self.Generator_pixel_loss_validation[self.val_iter-1], self.Discriminator_loss_validation[self.val_iter-1]
+            return self.Generator_loss_validation[self.val_iter-1], self.Discriminator_loss_validation[self.val_iter-1]
         
 
     def Save_Analytics(self):
@@ -334,6 +334,7 @@ class DataCollectionClass():
                                 self.Discriminator_loss_validation,
                                 self.Discriminator_accuracy_real_validation_raw,
                                 self.Discriminator_accuracy_fake_validation_raw,
+                                self.Discriminator_auto_loss_training,
                                 self.Generator_pixel_loss_validation,
                                 self.Generator_local_pixel_loss_validation,
                                 self.Generator_DeepFeatureLoss_validation,
