@@ -181,7 +181,7 @@ class CalculateMetrics():
             PSNR_fake_values_p = torch.zeros((total_images))
             SSIM_real_values_p = torch.zeros((total_images))
             SSIM_fake_values_p = torch.zeros((total_images))
-            lbar = tqdm(range(total_images))
+            lbar = tqdm(range(total_images), leave=False)
             for num in lbar:
                 images, defect_images, defect_mask = next(iter(self.dataloader))
                 lbar.set_description(f"Computing metrics {num+1}/{total_images} images")
@@ -251,6 +251,8 @@ class DataCollectionClass():
             val_len = Settings["epochs"] * ceil(vl_len / N_v)
             self.tr_iter = 0
             self.val_iter = 0
+            
+            #Model Analytics
             self.Generator_loss_train = torch.zeros(train_len, requires_grad=False)
             self.Generator_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
             self.Generator_local_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
@@ -273,6 +275,14 @@ class DataCollectionClass():
             self.Discriminator_accuracy_real_validation_raw = torch.zeros(val_len, requires_grad=False)
             self.Discriminator_accuracy_fake_validation_raw = torch.zeros(val_len, requires_grad=False)    
             self.Discriminator_auto_loss_validation = torch.zeros(val_len, requires_grad=False)
+
+            #Metric Analytics
+            self.PSNR_Generated = torch.zeros(Settings["epochs"], requires_grad=False)
+            self.PSNR_Generated_patch = torch.zeros(Settings["epochs"], requires_grad=False)
+            self.SSIM_Generated = torch.zeros(Settings["epochs"], requires_grad=False)
+            self.SSIM_Generated_patch = torch.zeros(Settings["epochs"], requires_grad=False)
+
+
 
     def Analytics_run(self, *args, val=False):
         batch, epoch, current_GEN_loss, current_DIS_loss, Discrim_acc_real_raw, Discrim_acc_fake_raw, pixelloss, local_pixelloss, DeepFeatureloss_arr, Discrim_auto_loss, Generator_auto_loss = args
@@ -303,6 +313,15 @@ class DataCollectionClass():
             self.Generator_auto_loss_validation[self.val_iter] = Generator_auto_loss.mean()
             self.val_iter += 1
 
+    def Metrics_run(self, args, epoch):
+        PSNR_score, PSNR_score_p, SSIM_score, SSIM_score_p = args
+
+        self.PSNR_Generated[epoch] = PSNR_score
+        self.PSNR_Generated_patch[epoch] = PSNR_score_p
+        self.SSIM_Generated[epoch] = SSIM_score
+        self.SSIM_Generated_patch[epoch] = SSIM_score_p
+
+
     def GetCurrentLoss(self, val=False):
         if not val:
             return self.Generator_loss_train[self.tr_iter-1], self.Discriminator_auto_loss_training[self.tr_iter-1]
@@ -327,16 +346,18 @@ class DataCollectionClass():
                                 self.Discriminator_accuracy_fake_training_raw,
                                 self.Discriminator_auto_loss_validation,
                                 self.Generator_auto_loss_validation,
+                                self.PSNR_Generated,
+                                self.PSNR_Generated_patch,
+                                self.SSIM_Generated,
+                                self.SSIM_Generated_patch,
                                 ), self.Modeldir + '/Analytics.pt')
 
 
-    def MakeSaveGraph(self, y1, y2, y1legend, y2legend, xlabel, ylabel, title):
+    def MakeSaveGraph(self, datas, xlabel, ylabel, title):
+        for axis, legend in datas:
+            xaxis = torch.arange(axis.size(0))
+            plt.plot(xaxis, axis, label=legend)
 
-        x1axis = torch.arange(y1.size(0))
-        x2axis = torch.arange(y2.size(0))
-
-        plt.plot(x1axis, y1, label=y1legend)
-        plt.plot(x2axis, y2, label=y2legend)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
@@ -346,14 +367,15 @@ class DataCollectionClass():
 
     def Create_graphs(self):
         #Currently not making the joined Discriminator / Generator loss, nor the Discriminator real/fake raw pred graphs
-        self.MakeSaveGraph(self.Generator_loss_train, self.Generator_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Generator Loss")
-        self.MakeSaveGraph(self.Discriminator_loss_train, self.Discriminator_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Discriminator Loss ")
-        self.MakeSaveGraph(self.Generator_DeepFeatureLoss_training, self.Generator_DeepFeatureLoss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Generator Latent Feature Loss")
-        self.MakeSaveGraph(self.Discriminator_auto_loss_training, self.Discriminator_auto_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
-        self.MakeSaveGraph(self.Generator_auto_loss_training, self.Generator_auto_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Generator Autoencoder Loss")
-        self.MakeSaveGraph(self.Discriminator_auto_loss_training, self.Discriminator_auto_loss_validation, "Training", "Validation", "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
-        self.MakeSaveGraph(self.Generator_pixel_loss_training, self.Generator_pixel_loss_validation, "Training", "Validation", "iterations", "loss (L1)", "Generator Pixel Loss")
-        self.MakeSaveGraph(self.Generator_local_pixel_loss_training, self.Generator_local_pixel_loss_validation, "Training", "Validation", "iterations", "loss (MSE)", "Generator Local Pixel Loss")
+        self.MakeSaveGraph([[self.Generator_loss_train, "Training"],[ self.Generator_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Generator Loss")
+        self.MakeSaveGraph([[self.Discriminator_loss_train, "Training"],[ self.Discriminator_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Discriminator Loss ")
+        self.MakeSaveGraph([[self.Generator_DeepFeatureLoss_training, "Training"],[ self.Generator_DeepFeatureLoss_validation, "Validation"]], "iterations", "loss (WGAN)", "Generator Latent Feature Loss")
+        self.MakeSaveGraph([[self.Discriminator_auto_loss_training, "Training"],[ self.Discriminator_auto_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
+        self.MakeSaveGraph([[self.Generator_auto_loss_training, "Training"],[ self.Generator_auto_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Generator Autoencoder Loss")
+        self.MakeSaveGraph([[self.Generator_pixel_loss_training, "Training"],[ self.Generator_pixel_loss_validation, "Validation"]], "iterations", "loss (L1)", "Generator Pixel Loss")
+        self.MakeSaveGraph([[self.Generator_local_pixel_loss_training, "Training"],[ self.Generator_local_pixel_loss_validation, "Validation"]], "iterations", "loss (MSE)", "Generator Local Pixel Loss")
+        self.MakeSaveGraph([[self.PSNR_Generated, "Global"],[ self.PSNR_Generated_patch, "Defect"]], "epochs", "PSNR (dB)", "PSNR per epoch")
+        self.MakeSaveGraph([[self.SSIM_Generated, "Global"],[ self.SSIM_Generated_patch, "Defect"]], "epochs", "SSIM (%)", "SSIM per epoch")
 
 class Training_Framework():
     """
@@ -439,6 +461,7 @@ class Training_Framework():
 
     def Save_Model(self, epoch):
             results = self.Evaluator.ComputeMetrics(6) # desired 100 images -> 100/batch(16) = 6.25
+            self.Collector.Metrics_run([results[1], results[3], results[5]*100, results[7]*100], epoch)
             Score = results[1] + results[3] + results[5]*100 + results[7]*100
             if epoch == 0 or Score > self.ModelScores.max():
                 print("saved model, score:", Score)
