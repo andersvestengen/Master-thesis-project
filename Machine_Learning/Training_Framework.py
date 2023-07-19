@@ -311,7 +311,7 @@ class Training_Framework():
             self.Generator_loss                     = losses.WGAN_Generator
             self.Generator_pixelloss                = losses.Generator_Pixelloss
 
-        self.Generator_Deep_Feature_Loss            = losses.LatentFeatureLoss
+        self.Generator_Deep_Feature_Loss            = losses.Latent_WGAN_Loss
 
 
 
@@ -452,7 +452,7 @@ class Training_Framework():
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
         pred_fake_BB = self.Discriminator(fake_BB.detach())
 
-        fake_BA = torch.cat((self.fake_BA, self.real_A), 1)   
+        fake_BA = torch.cat((self.fake_BA, self.real_A), 1) # June 26th compares (self.fake_BA, self.real_B)
         real_AB = torch.cat((self.real_A, self.real_B), 1)     
         pred_fake_BA = self.Discriminator(fake_BA.detach())
         pred_real_AB = self.Discriminator(real_AB)
