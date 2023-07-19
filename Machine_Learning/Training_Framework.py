@@ -7,8 +7,7 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
-from skimage.metrics import peak_signal_noise_ratio as PSNR
-from skimage.metrics import structural_similarity as SSIM
+from ignite.metrics import PSNR, SSIM
 from Losses.Losses import LossFunctions
 import time
 import sys
@@ -144,6 +143,90 @@ class NormalizeInverse(transforms.Normalize):
 
     def __call__(self, tensor):
         return super().__call__(tensor.clone())
+
+class CalculateMetrics():
+
+    def __init__(self, modelref):
+        self.model = modelref
+        """
+        Inputs:
+            - How many iterations to run for calculating the metrics (This should be variable to speed up calculation during training.)
+            - 
+        
+        """
+
+    def ComputeMetrics(self, iterations):
+        """
+        Should have toggle to only compute SSIM
+        """
+
+        total_len = iterations 
+        psnr_calc = PSNR(data_range=1.0)
+        ssim_calc = SSIM(data_range=1.0, kernel_size=(7,7))
+        with torch.no_grad():
+            self.model.eval()
+            total_images = total_len
+            PSNR_real_values = torch.zeros((total_images))
+            PSNR_fake_values = torch.zeros((total_images))
+            SSIM_real_values = torch.zeros((total_images))
+            SSIM_fake_values = torch.zeros((total_images))
+
+            PSNR_real_values_p = torch.zeros((total_images))
+            PSNR_fake_values_p = torch.zeros((total_images))
+            SSIM_real_values_p = torch.zeros((total_images))
+            SSIM_fake_values_p = torch.zeros((total_images))
+            lbar = tqdm(range(total_images))
+            for num in lbar:
+                images, defect_images, defect_mask = next(iter(self.dataloader))
+                lbar.set_description(f"Computing metrics {num+1}/{total_images} images")
+
+                if num > (total_len - 1):
+                    break
+                
+                #Load images and run inference 
+                real_A = defect_images.to(self.device) #Defect
+                real_B = images.to(self.device) #Target 
+                fake_B, _ = self.model(real_A.clone())
+                fake_B_local = torch.masked_select(fake_B, ~mask).view(3,8,8)
+                real_B_local = torch.masked_select(real_B, ~mask).view(3,8,8)
+                real_A_local = torch.masked_select(real_A, ~mask).view(3,8,8)
+
+                mask = defect_mask.to(self.device)
+
+                psnr_calc.update((real_A, real_B))
+                PSNR_real_values[num] = psnr_calc.compute()
+                psnr_calc.reset()
+
+                psnr_calc.update((fake_B, real_B))
+                PSNR_fake_values[num] = psnr_calc.compute()
+                psnr_calc.reset()
+
+                psnr_calc.update((real_A_local, real_B_local))
+                PSNR_real_values_p[num] = psnr_calc.compute()
+                psnr_calc.reset()
+
+                psnr_calc.update((fake_B_local, real_B_local))
+                PSNR_fake_values_p[num] = psnr_calc.compute()
+                psnr_calc.reset()
+
+
+                ssim_calc.update((real_A, real_B))
+                SSIM_real_values[num] = ssim_calc.compute()
+                ssim_calc.reset()
+
+                ssim_calc.update((fake_B, real_B))
+                SSIM_fake_values[num] = ssim_calc.compute()
+                ssim_calc.reset()
+
+                ssim_calc.update((real_A_local, real_B_local))
+                SSIM_real_values_p[num] = ssim_calc.compute()
+                ssim_calc.reset()
+
+                ssim_calc.update((fake_B_local, real_B_local))
+                SSIM_fake_values_p[num] = ssim_calc.compute()
+                ssim_calc.reset()
+
+        return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean()]
 
 class DataCollectionClass():
     """
