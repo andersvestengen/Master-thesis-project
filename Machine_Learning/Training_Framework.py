@@ -14,7 +14,7 @@ from ignite.metrics import SSIM as P_SSIM
 from Losses.Losses import LossFunctions
 import time
 import sys
-from math import ceil
+from math import ceil, floor
 
 #---------------- Helper functions ----------------------
 def PIL_concatenate_h(im1, im2, im3):
@@ -168,6 +168,7 @@ class CalculateMetrics():
         total_len = iterations 
         psnr_calc = P_PSNR(data_range=1.0)
         ssim_calc = P_SSIM(data_range=1.0, kernel_size=(7,7))
+        self.model.zero_grad()  
         with torch.no_grad():
             self.model.eval()
             total_images = total_len
@@ -231,6 +232,7 @@ class CalculateMetrics():
                 ssim_calc.update((fake_B_local, real_B_local))
                 SSIM_fake_values_p[num] = ssim_calc.compute()
                 ssim_calc.reset()
+            self.model.train()
 
         return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean()]
 
@@ -430,10 +432,19 @@ class Training_Framework():
         self.Collector = DataCollectionClass(len(train_loader), len(val_loader), self.N_training_sample_rate, self.N_validation_sample_rate, self.Modeldir, Settings)
         self.train_start = time.time()
 
-    def Save_Model(self):
-            print("saved model")
-            torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
-            torch.save(self.Discriminator.state_dict(), str( self.Modeldir + "/dis_model.pt"))
+        #Initializing metrics and score class
+        self.Evaluator = CalculateMetrics(self.Generator, self.val_loader, self.device)
+        #Putting the model here temporarily
+        self.ModelScores = torch.zeros(Settings["epochs"])
+
+    def Save_Model(self, epoch):
+            results = self.Evaluator.ComputeMetrics(6) # desired 100 images -> 100/batch(16) = 6.25
+            Score = results[1] + results[3] + results[5]*100 + results[7]*100
+            if epoch == 0 or Score > self.ModelScores.max():
+                print("saved model, score:", Score)
+                torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
+                torch.save(self.Discriminator.state_dict(), str( self.Modeldir + "/dis_model.pt"))
+            self.ModelScores[epoch] = Score
 
     def SaveState(self):
         training_time_seconds = time.time() - self.train_start
@@ -541,7 +552,7 @@ class Training_Framework():
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
         pred_fake_BB = self.Discriminator(fake_BB.detach())
 
-        fake_BA = torch.cat((self.fake_BA, self.real_A), 1) # June 26th compares (self.fake_BA, self.real_B)
+        fake_BA = torch.cat((self.fake_BA, self.real_B), 1) # June 26th compares (self.fake_BA, self.real_B)
         real_AB = torch.cat((self.real_A, self.real_B), 1)     
         pred_fake_BA = self.Discriminator(fake_BA.detach())
         pred_real_AB = self.Discriminator(real_AB)
@@ -707,7 +718,7 @@ class Training_Framework():
                         self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, local_loss_pixel, DeepFeatureloss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake))   
                 #Save per epoch
                 self.validation_run(epoch)
-                self.Save_Model()
+                self.Save_Model(epoch)
             #Save Analytics to file and create images from analytics    
             self.Collector.Save_Analytics()
             self.Collector.Create_graphs()

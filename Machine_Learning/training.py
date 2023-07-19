@@ -46,7 +46,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "June26th_comparison_with_WGAN_with_BA_to_real_A",
+            "ModelTrainingName"     : "June26th_comparison_with_WGAN_with_BA_to_real_B",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
