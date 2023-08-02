@@ -18,7 +18,7 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 50,
+            "epochs"                : 25,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
@@ -46,7 +46,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "DualEncoder_WGAN_50_epochs",
+            "ModelTrainingName"     : "Modelname",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True

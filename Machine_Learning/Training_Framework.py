@@ -251,7 +251,9 @@ class DataCollectionClass():
             val_len = Settings["epochs"] * ceil(vl_len / N_v)
             self.tr_iter = 0
             self.val_iter = 0
-            
+            #print("Sample rates for training and validation are:", N_t, N_v)
+            #print("Sizes for the arrays are:", train_len, val_len)
+
             #Model Analytics
             self.Generator_loss_train = torch.zeros(train_len, requires_grad=False)
             self.Generator_pixel_loss_training = torch.zeros(train_len, requires_grad=False)
@@ -458,10 +460,13 @@ class Training_Framework():
 
         #Initializing metrics and score class
         self.Evaluator = CalculateMetrics(self.Generator, self.val_loader, self.device)
-        #Putting the model here temporarily
+        #Putting the model score array here temporarily
         self.ModelScores = torch.zeros(Settings["epochs"])
 
     def Save_Model(self, epoch):
+        with torch.no_grad():
+            self.Generator.eval()
+            self.Discriminator.eval()
             results = self.Evaluator.ComputeMetrics(6) # desired 100 images -> 100/batch(16) = 6.25
             self.Collector.Metrics_run([results[1], results[3], results[5]*100, results[7]*100], epoch)
             Score = results[1] + results[3] + results[5]*100 + results[7]*100
@@ -469,7 +474,9 @@ class Training_Framework():
                 print("saved model, score:", Score)
                 torch.save(self.Generator.state_dict(), str( self.Modeldir + "/model.pt"))
                 torch.save(self.Discriminator.state_dict(), str( self.Modeldir + "/dis_model.pt"))
-            self.ModelScores[epoch] = Score
+        self.Generator.train()
+        self.Discriminator.train()
+        self.ModelScores[epoch] = Score
 
     def SaveState(self):
         training_time_seconds = time.time() - self.train_start
