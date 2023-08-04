@@ -499,6 +499,7 @@ class Training_Framework():
             f.write("Internal Loss criterion for global pixel loss: " + type(self.losses.pixelwise_loss).__name__ + "\n")
             f.write("Internal Loss criterion for local pixel loss: " + type(self.losses.pixelwise_local_loss).__name__ + "\n")
             f.write("Internal Loss criterion for latent loss  (if not WGAN): " + type(self.losses.Latent_Feature_Criterion).__name__ + "\n")
+            f.write("Final model score: " + str(self.ModelScores[-1]) + "\n")
 
 
     def Generator_updater(self, val=False):
@@ -765,6 +766,9 @@ class Training_Framework():
             self.Collector.Save_Analytics()
             self.Collector.Create_graphs()
             self.SaveState()
+            #Create graph of the model scores over the epochs
+            self.Collector.MakeSaveGraph([[self.ModelScores, "Model Score"]], "epochs", "Score [PSNR + SSIM global/local]", "Model score")
+
             #Something fishy about metric calc at the end of training. Using the inference.py script until further notice
             #Metrics = Model_Inference(self.Generator, val_loader, self.Settings, self.Modeldir, training=True)
             #Metrics.CreateMetrics()

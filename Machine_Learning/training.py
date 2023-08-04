@@ -18,7 +18,7 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 25,
+            "epochs"                : 13,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
@@ -46,12 +46,46 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Modelname",
+            "ModelTrainingName"     : "DualEncoder_WGAN_XavierInit_30_epochs",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 
+Settings = {
+            "epochs"                : 2,
+            "batch_size"            : 16,
+            "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
+            "L1_loss_weight"        : 100,
+            "Latent_loss_weight"    : 1,
+            "BoxSet"               : [8,8], # min/max defect, inclusive
+            "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
+            "Training_sample_rate"  : 15, # Sample analytics every N iterations
+            "n_crit"                : 2, # how many Discriminator training iterations per Generator iterations
+            "lambda_gp"             : 10, #WGAN-GP constant
+            "Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
+            "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
+            "CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
+            "lr"                    : 0.0004,
+            "dataset_loc"           : Server_dir,
+            "Loss"                  : losses[1], # Which GAN loss to train with?
+            "preprocess_storage"    : Preprocess_dir,
+            "seed"                  : 362, # random training seed # 172
+            "num_workers"           : 4,
+            "shuffle"               : True,
+            "Data_mean"             : [0.3212, 0.3858, 0.2613],
+            "Data_std"              : [0.2938, 0.2827, 0.2658],
+            "Do norm"               : False, #Normalization on or off s
+            "Datasplit"             : 0.8,
+            "device"                : "cuda",
+            "ImageHW"               : 128,
+            "RestoreModel"          : False,
+            #No spaces in the model name, please use '_'
+            "ModelTrainingName"     : "TESTDELEME",
+            "Drop_incomplete_batch" : True,
+            "Num_training_samples"  : 0.01, #[None] for all available images or float [0,1] for a fraction of total images
+            "Pin_memory"            : True
+            }
 
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(0.2),
@@ -131,9 +165,9 @@ if __name__ == '__main__':
             RestoreModel(Discriminator, Discriminator_dir)
     else:
         Discriminator = PixelDiscriminator().to(device)
-        init_weights(Discriminator)
+        init_weights(Discriminator, init_gain=1, init_type="xavier")
         Generator = Generator_Defect_GAN().to(device)
-        init_weights(Generator)
+        init_weights(Generator, init_gain=1, init_type="xavier")
 
 
     # Configure dataloaders

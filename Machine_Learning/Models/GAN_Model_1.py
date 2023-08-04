@@ -30,7 +30,7 @@ def init_weights(net, init_type="normal", init_gain=0.02):
             if init_type == "normal":
                  nn.init.normal_(m.weight.data, 0.0, init_gain)
             elif init_type == 'xavier':
-                nn.init.xavier_normal_(m.weight.data, gain=init_gain)
+                nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('relu'))
             elif init_type == 'kaiming':
                 nn.init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
                            
