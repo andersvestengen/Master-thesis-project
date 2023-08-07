@@ -216,7 +216,6 @@ class CalculateMetrics():
                 PSNR_fake_values_p[num] = psnr_calc.compute()
                 psnr_calc.reset()
 
-
                 ssim_calc.update((real_A, real_B))
                 SSIM_real_values[num] = ssim_calc.compute()
                 ssim_calc.reset()
@@ -654,9 +653,9 @@ class Training_Framework():
     def FromTorchTraining(self, image):
         #Returns a trainable tensor back into a visual image.
         if self.Settings["Do norm"]:
-            return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+            return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.int).numpy()
         else:
-            return image.permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+            return image.permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.int).numpy()
 
 
 
@@ -812,11 +811,11 @@ class Model_Inference():
     def FromTorchTraining(self, image):
         #Returns a trainable tensor back into a visual image.
         if self.Settings["Do norm"]:
-            return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+            return self.Reverse_Normalization(image).permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.int).numpy()
         else:
-            return image.permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.uint8).numpy()
+            return image.permute(1,2,0).mul_(255).clamp(0,255).to("cpu", torch.int).numpy()
         
-    def Inference_run(self, runs=8):
+    def Inference_run(self, runs=30):
         """
         Does an inference run on the Model for three images
         """
@@ -842,8 +841,8 @@ class Model_Inference():
         Returns a larger bounding box centered on the defect block
         """
 
-        x = torch.round(X + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
-        y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(torch.uint8).clamp(0, 256 - BoundingBox)
+        x = torch.round(X + 0.5*BoxSize - 0.5*BoundingBox).to(torch.int).clamp(0, 256 - BoundingBox)
+        y = torch.round(Y + 0.5*BoxSize - 0.5*BoundingBox).to(torch.int).clamp(0, 256 - BoundingBox)
 
         return y,x
 
@@ -851,6 +850,7 @@ class Model_Inference():
         total_len = 500
         metric = CalculateMetrics(self.model, self.dataloader, self.device)
         results = metric.ComputeMetrics(total_len)
+        Score = results[1] + results[3] + results[5]*100 + results[7]*100
         if not self.training:
             metloc = self.run_dir + "/Model_metrics.txt"
         else:
@@ -869,6 +869,9 @@ class Model_Inference():
                 f.write("Defect patch:\n")
                 f.write(f"SSIM_real_defect_patch:           {results[6]*100:.2f}    % \n")
                 f.write(f"SSIM_Generated_defect_patch:      {results[7]*100:.2f}    % \n")
+                f.write("\n")
+                f.write(f"Model Score:                      {Score:.2f}\n")
+
         print("Metrics added to Model_metrics.txt file")
 
 if __name__ == '__main__':
