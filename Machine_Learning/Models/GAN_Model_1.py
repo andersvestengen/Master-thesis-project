@@ -14,7 +14,7 @@ Dev notes:
 #sizes and functions based on the pix2pix paper and github codebase
 
 
-def init_weights(net, init_type="normal", init_gain=0.02):
+def init_weights(net, init_type="normal", init_gain=0.02, activation_function="relu"):
     """
     weight initialization function to automate different init-schemes.
 
@@ -32,7 +32,7 @@ def init_weights(net, init_type="normal", init_gain=0.02):
             elif init_type == 'xavier':
                 nn.init.xavier_uniform_(m.weight.data, gain=nn.init.calculate_gain('relu'))
             elif init_type == 'kaiming':
-                nn.init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+                nn.init.kaiming_uniform_(m.weight.data, a=init_gain, nonlinearity=activation_function)
                            
             if hasattr(m, 'bias') and m.bias is not None:
                 nn.init.constant_(m.bias.data, 0.0)
