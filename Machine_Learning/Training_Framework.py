@@ -7,8 +7,8 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
-from skimage.metrics import structural_similarity as SSIM
-from skimage.metrics import peak_signal_noise_ratio as PSNR
+#from skimage.metrics import structural_similarity as SSIM
+#from skimage.metrics import peak_signal_noise_ratio as PSNR
 from ignite.metrics import PSNR as P_PSNR
 from ignite.metrics import SSIM as P_SSIM
 from Losses.Losses import LossFunctions

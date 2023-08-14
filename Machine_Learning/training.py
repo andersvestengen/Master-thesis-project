@@ -53,6 +53,7 @@ Settings = {
             }
 
 
+
 training_transforms = transforms.Compose([
     transforms.RandomHorizontalFlip(0.2),
     transforms.RandomVerticalFlip(0.2),
