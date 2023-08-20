@@ -93,16 +93,25 @@ Old_list = [
     "self.Generator_auto_loss_validation",]
 
 def ListPrint(list):
+    """
+    Prints input to screen, line by line.
+    """
     for num, item in enumerate(list):
         choice = "[" + str(num) + "]    " + item
         print(choice)
 
 
 def MakeSaveGraph(datas, xlabel, ylabel, title):
+    """
+    Creates a graph from a variable range of input data
+    
+    """
     for arr in datas:
         if len(arr) == 3:
             xaxis, axis, legend = arr
         else:
+            legend = arr[1]
+            print(datas)
             xaxis = torch.arange(axis.size(0))
         plt.plot(xaxis, axis, label=legend)
 
@@ -110,9 +119,28 @@ def MakeSaveGraph(datas, xlabel, ylabel, title):
     plt.ylabel(ylabel)
     plt.title(title)
     plt.legend()
-    plt.show()
+    #plt.show()
     #plt.savefig("Images" + "/" + title + ".png")
-    #plt.clf()
+    plt.savefig("title" + ".png")
+    plt.clf()
+
+def GetDataAlg(Models, Analytics, gen):
+    Struct = []
+    for model in Models:
+        Modeldata = []
+        for dim in Analytics:
+            if gen == "old":
+                data = np.load(model + "/Analytics.npz")
+                data_dim = data['arr_0'][dim]
+            if gen == "new":
+                data = torch.load(model + "/Analytics.pt", map_location=torch.device('cpu'))
+                print("this is data size:", data.size())
+                data_dim = data[0][dim]
+                print("this is data_dim", data_dim)
+            Modeldata.append(data_dim)
+        Struct.append(Modeldata)
+    return Struct
+
 
 def ChooseAnalytics():
     choice = input("Old or new models [o/n]?: ")
@@ -135,21 +163,29 @@ def ChooseAnalytics():
                 analytic.append(int(choice))
     return analytic
 
-def GetData(Models, analytics_dim, gen):
-    Datas = []
+def DisplayGraphs(Analytics, Struct, Models, gen):
     if gen == "old":
-                for num, modeldir in enumerate(Models):
-                     for dim in analytics_dim:
-                        data = np.load(modeldir + "/Analytics.npz")
-                        Datas.insert(num, data['arr_0'][dim])
+        anylytics = Old_list
     else:
-                for num, modeldir in enumerate(Models):
-                     for dim in analytics_dim:
-                        data = torch.load(modeldir + "/Analytics.pt", map_location=torch.device('cpu'))
-                        Datas.insert(num, data[0][dim])
-    return Datas
+        anylytics = New_list
+    for n in range(len(Analytics)):
+        GraphData = []
+        for m, model in enumerate(Models):
+            modelname = model.split("/")[1].split(" ")[0]
+            Gdata = Struct[n][m]
+            print("THis is Strcut:", Struct)
+            GraphData.append([Gdata, modelname])
+        print("Analytic is:", anylytics[n])
+        xlabel = input("what is xlabel?: ")
+        ylabel = input("what is ylabel?: ")
+        title = input("what is title?: ")
+        MakeSaveGraph(GraphData, xlabel, ylabel, title)
 
-def LoadModelGraphs(Models):
+def CheckVerDiff(Models):
+    """
+    Checks which type of file system a list of models uses and throws an error if they're mixed.
+    'Models' must be a list of absolute file paths to the model directories
+    """
     old = 0
     new = 0
     for modeldir in Models:
@@ -165,21 +201,17 @@ def LoadModelGraphs(Models):
             print(modeldir)
             sys.exit()
     
+    if new != 0:
+        return "new"
+    else:
+        return "old"
+
+def LoadModelGraphs(Models):
+    filesys = CheckVerDiff(Models) # Check models are from the same 
+    print("CheckVerDiff output:", filesys)
     analytic_dim = ChooseAnalytics() # list of the different analytics to compare
-    if old != 0: # If old 
-        models_data = GetData(Models, analytic_dim, gen="old") #Returns the data in (model,dim) hierarchy
-    if new != 0: 
-        models_data = GetData(Models, analytic_dim, gen="new") #Returns the data in (model,dim) hierarchy
-
-    Graph_list = []
-    print("This is the models_data list size:", len(models_data[0])) #So the list is just len = 2 ? 
-    for modeldata in models_data:
-        modelname = modeldir.split("/")[1].split(" ")[0]
-        for data in modeldata:
-              Graph_list.append([data, modelname])
-
-    MakeSaveGraph(Graph_list, "input", "output", "Model Comparison")
-
+    models_data = GetDataAlg(Models, analytic_dim, gen=filesys) #Returns the data in (model,dim) hierarchy
+    DisplayGraphs(analytic_dim, models_data, Models, filesys)
 
 models_loc = "Trained_Models"
 Inference_dir = "Inference_Run"
@@ -195,17 +227,3 @@ while True:
         modelchoices.append(models_loc + "/"  + models[int(choice)])
 
 LoadModelGraphs(modelchoices)
-ChooseAnalytics()
-
-
-
-
-
-
-"""
-
-model_state = models_loc + "/"  + models[choice] + "/Savestate.txt"
-model_inf = []
-with open(model_state, 'r') as f:
-    model_inf = [Line for Line in f]
-"""
