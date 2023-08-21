@@ -118,9 +118,7 @@ def MakeSaveGraph(datas, xlabel, ylabel, title):
     plt.ylabel(ylabel)
     plt.title(title)
     plt.legend()
-    #plt.show()
-    #plt.savefig("Images" + "/" + title + ".png")
-    plt.savefig("title" + ".png")
+    plt.savefig("ModelCompareImages" + "/" + title + ".png")
     plt.clf()
 
 def GetDataAlg(Models, Analytics, gen):
@@ -133,7 +131,10 @@ def GetDataAlg(Models, Analytics, gen):
                 data_dim = data['arr_0'][dim]
             if gen == "new":
                 data = torch.load(model + "/Analytics.pt", map_location=torch.device('cpu'))
-                data_dim = data[dim]
+                if dim <= 16:
+                    data_dim = data[dim][10:]
+                else:
+                    data_dim = data[dim]
             Modeldata.append(data_dim)
         Struct.append(Modeldata)
     return Struct
@@ -144,16 +145,16 @@ def ChooseAnalytics(filesys):
     if filesys == "old":
         ListPrint(Old_list)
         while True:
-            choice = input("which [num] analytic? (x to stop): ")
-            if choice == "x" or choice == "X":
+            choice = input("which [num] analytic? (blank space to stop): ")
+            if choice == "":
                 break
             else:
                 analytic.append(int(choice))
     if filesys == "new":
         ListPrint(New_list)
         while True:
-            choice = input("which [num] analytic? (x to stop): ")
-            if choice == "x" or choice == "X":
+            choice = input("which [num] analytic? (blank space to stop)): ")
+            if choice == "":
                 break
             else:
                 analytic.append(int(choice))
@@ -216,8 +217,8 @@ models = os.listdir(models_loc)
 ListPrint(models)
 modelchoices = []
 while True:
-    choice  = input("please input modelnum (x to stop): ")
-    if choice == "x" or choice == "X":
+    choice  = input("please input modelnum (blank space to stop): ")
+    if choice == "":
         break
     else:
         modelchoices.append(models_loc + "/"  + models[int(choice)])

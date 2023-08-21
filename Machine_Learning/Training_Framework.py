@@ -623,7 +623,7 @@ class Training_Framework():
         self.Discriminator.zero_grad()
         #Get Critique scores
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
-        real_AB = torch.cat((self.real_A, self.real_B), 1)     
+        real_AB = torch.cat((self.real_B, self.real_B), 1)     #this used to compare real_A with real_B, but it shouldn't?
         pred_real_AB = self.Discriminator(real_AB)
         pred_fake_BB = self.Discriminator(fake_BB.detach())
 

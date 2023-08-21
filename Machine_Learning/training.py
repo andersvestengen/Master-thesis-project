@@ -33,7 +33,7 @@ Settings = {
             "CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
-            "Loss"                  : losses[2], # Which GAN loss to train with?
+            "Loss"                  : losses[1], # Which GAN loss to train with?
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 29467, #362, # random training seed # 172
             "num_workers"           : 4,
@@ -46,9 +46,9 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "cGAN_loss_Thesis_Test_Inpainter",
+            "ModelTrainingName"     : "WGAN_loss_Thesis_Test_Inpainter",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : 0.42, #[None] for all available images or float [0,1] for a fraction of total images
+            "Num_training_samples"  : 0.41, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 
@@ -123,12 +123,12 @@ if __name__ == '__main__':
         Dis_arch = Get_name(Dis_list, model_inf)
 
         if Gen_arch == "Generator_Defect_GAN":
-            Generator = Generator_Defect_GAN()
+            Generator = Generator_Defect_GAN(snormalization=False)
             RestoreModel(Generator, Generator_dir)
 
 
         if Dis_arch == "PixelDiscriminator":
-            Discriminator = PixelDiscriminator()
+            Discriminator = PixelDiscriminator(norm_layer=False)
             RestoreModel(Discriminator, Discriminator_dir)
     else:
         Discriminator = PixelDiscriminator().to(device)
