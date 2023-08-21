@@ -46,7 +46,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "WGAN_loss_Thesis_Test_Inpainter",
+            "ModelTrainingName"     : "WGAN_loss_Thesis_Test_DualEncoder",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 0.41, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True

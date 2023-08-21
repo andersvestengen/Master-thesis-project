@@ -717,8 +717,8 @@ class Training_Framework():
                     self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
                     self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
                     self.mask = mask.to(self.device) # local loss coordinates
-                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_Inpainting_updater(val=True)
-                    GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_Inpainting_updater(val=True)
+                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
+                    GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
 
                     #Analytics
                     if num == 0 or num % self.N_validation_sample_rate == 0:
@@ -758,9 +758,9 @@ class Training_Framework():
                     self.mask = mask.to(self.device) # local loss coordinates
                     # Discriminator return Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
                     #Generator    return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
-                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_Inpainting_updater()
+                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater()
                     if num % self.n_crit == 0:
-                        GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_Inpainting_updater()
+                        GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
 
                     if num == 0 or num % self.N_training_sample_rate == 0:
                         self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, local_loss_pixel, DeepFeatureloss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake))   

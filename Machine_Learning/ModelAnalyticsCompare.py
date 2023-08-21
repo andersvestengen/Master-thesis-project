@@ -167,21 +167,38 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
     else:
         anylytics = New_list
     smoothing = input("apply smoothing? [y/n]: ")
-    for n in range(len(Analytics)):
+    if len(Models) > 1:
+        for n in range(len(Analytics)):
+            GraphData = []
+            print("Analytic is:", anylytics[Analytics[n]])
+            for m, model in enumerate(Models):
+                if smoothing == "y":
+                    Gdata = SmoothCurve(Struct[m][n])
+                else:
+                    Gdata = Struct[m][n]
+                modelname = model.split("/")[1].split(" ")[0]
+                GraphData.append([Gdata, modelname])
+            xlabel = input("what is xlabel?: ")
+            ylabel = input("what is ylabel?: ")
+            title = input("what is title?: ")
+            MakeSaveGraph(GraphData, xlabel, ylabel, title)
+    else:
         GraphData = []
-        print("Analytic is:", anylytics[Analytics[n]])
-        for m, model in enumerate(Models):
+        print("modelname:", Models[0].split("/")[1].split(" ")[0])
+        for n in range(len(Analytics)):
+            print("Analytic is:", anylytics[Analytics[n]].split(".")[1])
             if smoothing == "y":
-                Gdata = SmoothCurve(Struct[m][n])
+                Gdata = SmoothCurve(Struct[0][n])
             else:
-                Gdata = Struct[m][n]
-            modelname = model.split("/")[1].split(" ")[0]
-            GraphData.append([Gdata, modelname])
+                Gdata = Struct[0][n]
+            analyticname = input("cleaner analyticname?: ")
+            if analyticname == "":
+                analyticname = anylytics[Analytics[n]].split(".")[1]
+            GraphData.append([Gdata, analyticname])
         xlabel = input("what is xlabel?: ")
         ylabel = input("what is ylabel?: ")
-        title = input("what is title?: ")
+        title = input("what is the title?: ")
         MakeSaveGraph(GraphData, xlabel, ylabel, title)
-
 
 def SmoothCurve(input, a=0.01):
     """
