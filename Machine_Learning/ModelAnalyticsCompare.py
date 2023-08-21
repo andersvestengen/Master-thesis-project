@@ -110,8 +110,7 @@ def MakeSaveGraph(datas, xlabel, ylabel, title):
         if len(arr) == 3:
             xaxis, axis, legend = arr
         else:
-            legend = arr[1]
-            print(datas)
+            axis, legend = arr
             xaxis = torch.arange(axis.size(0))
         plt.plot(xaxis, axis, label=legend)
 
@@ -134,18 +133,15 @@ def GetDataAlg(Models, Analytics, gen):
                 data_dim = data['arr_0'][dim]
             if gen == "new":
                 data = torch.load(model + "/Analytics.pt", map_location=torch.device('cpu'))
-                print("this is data size:", data.size())
-                data_dim = data[0][dim]
-                print("this is data_dim", data_dim)
+                data_dim = data[dim]
             Modeldata.append(data_dim)
         Struct.append(Modeldata)
     return Struct
 
 
-def ChooseAnalytics():
-    choice = input("Old or new models [o/n]?: ")
+def ChooseAnalytics(filesys):
     analytic = []
-    if choice == "o":
+    if filesys == "old":
         ListPrint(Old_list)
         while True:
             choice = input("which [num] analytic? (x to stop): ")
@@ -153,7 +149,7 @@ def ChooseAnalytics():
                 break
             else:
                 analytic.append(int(choice))
-    if choice == "n":
+    if filesys == "new":
         ListPrint(New_list)
         while True:
             choice = input("which [num] analytic? (x to stop): ")
@@ -172,8 +168,8 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
         GraphData = []
         for m, model in enumerate(Models):
             modelname = model.split("/")[1].split(" ")[0]
-            Gdata = Struct[n][m]
-            print("THis is Strcut:", Struct)
+            print("this is n and m:", n, m)
+            Gdata = Struct[m][n]
             GraphData.append([Gdata, modelname])
         print("Analytic is:", anylytics[n])
         xlabel = input("what is xlabel?: ")
@@ -209,7 +205,7 @@ def CheckVerDiff(Models):
 def LoadModelGraphs(Models):
     filesys = CheckVerDiff(Models) # Check models are from the same 
     print("CheckVerDiff output:", filesys)
-    analytic_dim = ChooseAnalytics() # list of the different analytics to compare
+    analytic_dim = ChooseAnalytics(filesys) # list of the different analytics to compare
     models_data = GetDataAlg(Models, analytic_dim, gen=filesys) #Returns the data in (model,dim) hierarchy
     DisplayGraphs(analytic_dim, models_data, Models, filesys)
 

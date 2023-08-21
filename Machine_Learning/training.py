@@ -18,7 +18,7 @@ Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Settings = {
-            "epochs"                : 17,
+            "epochs"                : 3,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
             "L1_loss_weight"        : 100,
@@ -33,7 +33,7 @@ Settings = {
             "CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
-            "Loss"                  : losses[1], # Which GAN loss to train with?
+            "Loss"                  : losses[2], # Which GAN loss to train with?
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 29467, #362, # random training seed # 172
             "num_workers"           : 4,
@@ -46,9 +46,9 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "DualEncoder_WGAN_KaimingHe_17_epochs",
+            "ModelTrainingName"     : "cGAN_loss_Thesis_Test_Inpainter",
             "Drop_incomplete_batch" : True,
-            "Num_training_samples"  : None, #[None] for all available images or float [0,1] for a fraction of total images
+            "Num_training_samples"  : 0.42, #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
             }
 

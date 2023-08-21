@@ -103,11 +103,11 @@ class LossFunctions(nn.Module):
         return - torch.mean(fake_pred)
 
     def CGAN_Dual_Encoder_Discriminator(self, *args): 
-        fake_BA, fake_BB, real_AB = args
-        real = self.Make_Label_Tensor(real_AB, 1)
-        fake = self.Make_Label_Tensor(fake_BA, 0)
+        fake_in, real_in = args
+        real = self.Make_Label_Tensor(real_in, 1)
+        fake = self.Make_Label_Tensor(fake_in, 0)
 
-        return ( self.CGAN_loss(real_AB, real) + self.CGAN_loss(fake_BA, fake) + self.CGAN_loss(fake_BB, fake) ) * 0.333
+        return ( self.CGAN_loss(real_in, real) + self.CGAN_loss(fake_in, fake) ) * 0.5
 
     def CGAN_Discriminator(self, *args): 
         fake_pred, real_pred = args

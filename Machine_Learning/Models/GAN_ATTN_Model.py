@@ -175,11 +175,16 @@ class Generator_Unet_Window_Attention(nn.Module):
 
 
 class Defect_GAN_Encoder_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out):
+    def __init__(self, channel_in, channel_out, snormalization=True):
         super(Defect_GAN_Encoder_Layer, self).__init__()
-        layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                  nn.ReLU(),
-                  ]
+        if snormalization:
+            layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                    nn.ReLU(),
+                    ]
+        else:
+            layers = [nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True),
+                    nn.ReLU(),
+                    ]
         self.model = nn.Sequential(*layers)       
         
         
@@ -189,11 +194,17 @@ class Defect_GAN_Encoder_Layer(nn.Module):
 
 
 class Defect_GAN_Decoder_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out):
+    def __init__(self, channel_in, channel_out, snormalization=True):
         super(Defect_GAN_Decoder_Layer, self).__init__()
-        layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                nn.ReLU(),
-        ]
+        if snormalization:
+            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                    nn.ReLU(),
+                    ]
+        else:
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
+                    nn.ReLU(),
+                    ]
+            
         #Might consider adding conditional batchnorm to this layer? Does it interfere with spectral norm, or influence skip connections the wrong way? 
         self.model = nn.Sequential(*layers)       
         
@@ -205,11 +216,16 @@ class Defect_GAN_Decoder_Layer(nn.Module):
 
 
 class Defect_GAN_Final_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out):
+    def __init__(self, channel_in, channel_out, snormalization=True):
         super(Defect_GAN_Final_Layer, self).__init__()
-        layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                nn.Tanh(),
-        ]
+        if snormalization:
+            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
+                    nn.Tanh(),
+                    ]
+        else:
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
+                    nn.Tanh(),
+                    ]
         #Might consider adding conditional batchnorm to this layer? Does it interfere with spectral norm, or influence skip connections the wrong way? 
         self.model = nn.Sequential(*layers)       
         
@@ -220,29 +236,41 @@ class Defect_GAN_Final_Layer(nn.Module):
 
 #Unet structure with SN and Sagan improvements along with skip connections. Structure also follows some of the DAM-GAN principles
 class Generator_Defect_GAN(nn.Module):
-    def __init__(self, input_channels=3, output_channels=3):
+    def __init__(self, input_channels=3, output_channels=3, snormalization=True):
         super(Generator_Defect_GAN, self).__init__()
         self.name = "Generator_Defect_GAN"
         #Encoder layers
-        self.encoder1 = Defect_GAN_Encoder_Layer(input_channels, 64) # 128
-        self.encoder2 = Defect_GAN_Encoder_Layer(64, 128) # 64
-        self.encoder3 = Defect_GAN_Encoder_Layer(128, 256) # 32
-        self.encoder4 = Defect_GAN_Encoder_Layer(256, 512) # 16
+        self.encoder1 = Defect_GAN_Encoder_Layer(input_channels, 64, snormalization=snormalization) # 128
+        self.encoder2 = Defect_GAN_Encoder_Layer(64, 128, snormalization=snormalization) # 64
+        self.encoder3 = Defect_GAN_Encoder_Layer(128, 256, snormalization=snormalization) # 32
+        self.encoder4 = Defect_GAN_Encoder_Layer(256, 512, snormalization=snormalization) # 16
 
         #Center layer
-        self.center = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 1, dilation=1, bias=True)), # 16
-                  nn.ReLU())
+        if snormalization:
+            self.center = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 1, dilation=1, bias=True)), # 16
+                    nn.ReLU())
+        else:
+            self.center = nn.Sequential(nn.Conv2d(512, 512, 1, dilation=1, bias=True), # 16
+                    nn.ReLU())
+
 
         #Decoder layers
-        self.decoder1 = Defect_GAN_Decoder_Layer(512, 256) # 16 -> 32
-        self.decoder2 = Defect_GAN_Decoder_Layer(256, 128) # 32 -> 64
-        self.decoder3 = Defect_GAN_Decoder_Layer(128, 64) # 32 -> 64
+        self.decoder1 = Defect_GAN_Decoder_Layer(512, 256, snormalization=snormalization) # 16 -> 32
+        self.decoder2 = Defect_GAN_Decoder_Layer(256, 128, snormalization=snormalization) # 32 -> 64
+        self.decoder3 = Defect_GAN_Decoder_Layer(128, 64, snormalization=snormalization) # 32 -> 64
 
         # output
-        self.final_layer = nn.Sequential(
-            nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(64, output_channels, 4, 2, 1, bias=True)),
-            nn.Tanh() # 64 -> 128
-        )
+        if snormalization:
+            self.final_layer = nn.Sequential(
+                nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(64, output_channels, 4, 2, 1, bias=True)),
+                nn.Tanh() # 64 -> 128
+            )
+        else:
+            self.final_layer = nn.Sequential(
+                nn.ConvTranspose2d(64, output_channels, 4, 2, 1, bias=True),
+                nn.Tanh() # 64 -> 128
+            )
+
     def forward(self, input):
         e1 = self.encoder1(input)
         e2 = self.encoder2(e1)

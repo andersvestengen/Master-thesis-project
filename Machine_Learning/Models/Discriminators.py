@@ -138,7 +138,7 @@ class PixelDiscriminator(nn.Module):
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
         """
-        if norm_layer is not None:
+        if norm_layer:
             model = [
                 nn.utils.parametrizations.spectral_norm(nn.Conv2d(input_channels*2, 32, kernel_size=1, stride=1, padding=0)),
                 nn.LeakyReLU(0.2, True),
@@ -153,19 +153,18 @@ class PixelDiscriminator(nn.Module):
                 nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 1, kernel_size=1, stride=1, padding=0)),
             ]
         else:
-            last_conv_channels=64
             model = [
-                nn.Conv2d(input_channels*2, last_conv_channels, kernel_size=1, stride=1, padding=0),
+                nn.Conv2d(input_channels*2, 32, kernel_size=1, stride=1, padding=0),
                 nn.LeakyReLU(0.2, True),
-                nn.Conv2d(last_conv_channels, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+                nn.Conv2d(32, 64, kernel_size=1, stride=1, padding=0),
                 nn.LeakyReLU(0.2, True),
-                nn.Conv2d(last_conv_channels * 2, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+                nn.Conv2d(64, 128, kernel_size=1, stride=1, padding=0),
                 nn.LeakyReLU(0.2, True),
-                nn.Conv2d(last_conv_channels * 2, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+                nn.Conv2d(128, 256, kernel_size=1, stride=1, padding=0),
                 nn.LeakyReLU(0.2, True),
-                nn.Conv2d(last_conv_channels * 2, last_conv_channels * 2, kernel_size=1, stride=1, padding=0, bias=use_bias),
+                nn.Conv2d(256, 512, kernel_size=1, stride=1, padding=0),
                 nn.LeakyReLU(0.2, True),
-                nn.Conv2d(last_conv_channels * 2, 1, kernel_size=1, stride=1, padding=0, bias=use_bias)
+                nn.Conv2d(512, 1, kernel_size=1, stride=1, padding=0)
             ]
 
         self.model = nn.Sequential(*model)

@@ -282,6 +282,7 @@ class DataCollectionClass():
             self.PSNR_Generated_patch = torch.zeros(Settings["epochs"], requires_grad=False)
             self.SSIM_Generated = torch.zeros(Settings["epochs"], requires_grad=False)
             self.SSIM_Generated_patch = torch.zeros(Settings["epochs"], requires_grad=False)
+            self.Model_Metric_Score = torch.zeros(Settings["epochs"], requires_grad=False)
 
 
 
@@ -316,12 +317,13 @@ class DataCollectionClass():
 
     def Metrics_run(self, args, epoch):
         PSNR_score, PSNR_score_p, SSIM_score, SSIM_score_p = args
+        Score = PSNR_score + PSNR_score_p + SSIM_score + SSIM_score_p
 
         self.PSNR_Generated[epoch] = PSNR_score
         self.PSNR_Generated_patch[epoch] = PSNR_score_p
         self.SSIM_Generated[epoch] = SSIM_score
         self.SSIM_Generated_patch[epoch] = SSIM_score_p
-
+        self.Model_Metric_Score[epoch] = Score
 
     def GetCurrentLoss(self, val=False):
         if not val:
@@ -352,6 +354,7 @@ class DataCollectionClass():
                                 self.PSNR_Generated_patch,
                                 self.SSIM_Generated,
                                 self.SSIM_Generated_patch,
+                                self.Model_Metric_Score,
                                 ), self.Modeldir + '/Analytics.pt')
 
 
@@ -369,15 +372,16 @@ class DataCollectionClass():
 
     def Create_graphs(self):
         #Currently not making the joined Discriminator / Generator loss, nor the Discriminator real/fake raw pred graphs
-        self.MakeSaveGraph([[self.Generator_loss_train, "Training"],[ self.Generator_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Generator Loss")
-        self.MakeSaveGraph([[self.Discriminator_loss_train, "Training"],[ self.Discriminator_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Discriminator Loss ")
-        self.MakeSaveGraph([[self.Generator_DeepFeatureLoss_training, "Training"],[ self.Generator_DeepFeatureLoss_validation, "Validation"]], "iterations", "loss (WGAN)", "Generator Latent Feature Loss")
-        self.MakeSaveGraph([[self.Discriminator_auto_loss_training, "Training"],[ self.Discriminator_auto_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Discriminator Autoencoder Loss")
-        self.MakeSaveGraph([[self.Generator_auto_loss_training, "Training"],[ self.Generator_auto_loss_validation, "Validation"]], "iterations", "loss (WGAN)", "Generator Autoencoder Loss")
-        self.MakeSaveGraph([[self.Generator_pixel_loss_training, "Training"],[ self.Generator_pixel_loss_validation, "Validation"]], "iterations", "loss (L1)", "Generator Pixel Loss")
-        self.MakeSaveGraph([[self.Generator_local_pixel_loss_training, "Training"],[ self.Generator_local_pixel_loss_validation, "Validation"]], "iterations", "loss (MSE)", "Generator Local Pixel Loss")
+        self.MakeSaveGraph([[self.Generator_loss_train, "Training"],[ self.Generator_loss_validation, "Validation"]], "samples", "loss (WGAN)", "Generator Loss")
+        self.MakeSaveGraph([[self.Discriminator_loss_train, "Training"],[ self.Discriminator_loss_validation, "Validation"]], "samples", "loss (WGAN)", "Discriminator Loss ")
+        self.MakeSaveGraph([[self.Generator_DeepFeatureLoss_training, "Training"],[ self.Generator_DeepFeatureLoss_validation, "Validation"]], "samples", "loss (WGAN)", "Generator Latent Feature Loss")
+        self.MakeSaveGraph([[self.Discriminator_auto_loss_training, "Training"],[ self.Discriminator_auto_loss_validation, "Validation"]], "samples", "loss (WGAN)", "Discriminator Autoencoder Loss")
+        self.MakeSaveGraph([[self.Generator_auto_loss_training, "Training"],[ self.Generator_auto_loss_validation, "Validation"]], "samples", "loss (WGAN)", "Generator Autoencoder Loss")
+        self.MakeSaveGraph([[self.Generator_pixel_loss_training, "Training"],[ self.Generator_pixel_loss_validation, "Validation"]], "samples", "loss (L1)", "Generator Pixel Loss")
+        self.MakeSaveGraph([[self.Generator_local_pixel_loss_training, "Training"],[ self.Generator_local_pixel_loss_validation, "Validation"]], "samples", "loss (MSE)", "Generator Local Pixel Loss")
         self.MakeSaveGraph([[self.PSNR_Generated, "Global"],[ self.PSNR_Generated_patch, "Defect"]], "epochs", "PSNR (dB)", "PSNR per epoch")
         self.MakeSaveGraph([[self.SSIM_Generated, "Global"],[ self.SSIM_Generated_patch, "Defect"]], "epochs", "SSIM (%)", "SSIM per epoch")
+        self.MakeSaveGraph([[self.Model_Metric_Score, "Model Score"]], "epochs", "Score [PSNR + SSIM global/local]", "Model score")
 
 class Training_Framework():
     """
@@ -412,19 +416,22 @@ class Training_Framework():
             self.Discriminator_loss                 = self.losses.Hinge_loss_Discriminator
             self.Generator_loss                     = self.losses.Hinge_loss_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
+            self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
         if Settings["Loss"] == "WGAN":
             self.Discriminator_loss                 = self.losses.WGAN_Discriminator
             self.Generator_loss                     = self.losses.WGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
             self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
         if Settings["Loss"] == "CGAN":
-            self.Discriminator_loss                 = self.losses.CGAN_Dual_Encoder_Discriminator
+            self.Discriminator_loss                 = self.losses.CGAN_Discriminator
             self.Generator_loss                     = self.losses.CGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
+            self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
         if Settings["Loss"] == "WGANGP":
             self.Discriminator_loss                 = self.losses.WGANGP_Discriminator
             self.Generator_loss                     = self.losses.WGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
+            self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
 
         self.Generator_Deep_Feature_Loss            = self.losses.Latent_WGAN_Loss
 
@@ -559,7 +566,8 @@ class Training_Framework():
         if not val:
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()  
-
+        
+        # return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel_BA.detach(), local_pixelloss_BA.detach(), LatentLoss.detach()        
         return loss_GAN_BB.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
     
     def Generator_Inpainting_updater(self, val=False): 
@@ -571,9 +579,8 @@ class Training_Framework():
         loss_GAN_BA = self.Generator_loss(predicted_fake_BA)
 
         #Pixelwise loss
-        _, local_pixelloss =  self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
+        loss_pixel, local_pixelloss =  self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
 
-        loss_pixel = torch.zeros(1)
         LatentLoss = torch.zeros(1)
         #Latent Feature loss # only viable for training with dual encoder scheme's 
         #LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)    
@@ -585,7 +592,8 @@ class Training_Framework():
         if not val:
             Total_loss_Generator.backward()
             self.Generator_optimizer.step()
-
+   
+        # return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel_BA.detach(), local_pixelloss_BA.detach(), LatentLoss.detach()        
         return loss_GAN_BA.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
 
     def Discriminator_updater(self, val=False):
@@ -599,7 +607,6 @@ class Training_Framework():
         pred_fake_BA = self.Discriminator(fake_BA.detach())
         pred_real_AB = self.Discriminator(real_AB)
         
-        #Calculate loss WGAN: loss_real = - torch.mean(real_pred) loss_fake = torch.mean(fake_pred)
         Discriminator_auto_loss = self.Discriminator_loss(pred_fake_BB, pred_real_AB)
         Discriminator_inpaint_loss = self.Discriminator_loss(pred_fake_BA, pred_real_AB)
 
@@ -620,16 +627,14 @@ class Training_Framework():
         pred_real_AB = self.Discriminator(real_AB)
         pred_fake_BB = self.Discriminator(fake_BB.detach())
 
-        #Calculate loss WGAN: loss_real = - torch.mean(real_pred) loss_fake = torch.mean(fake_pred)
-        Discriminator_loss = self.Discriminator_loss(pred_fake_BB, pred_real_AB)
-        autoencoder_loss = torch.zeros(1)
+        Discriminator_auto_loss = self.Discriminator_loss(pred_fake_BB, pred_real_AB)
+        Discriminator_inpaint_loss = torch.zeros(1)
 
 
         if not val:
-            Discriminator_loss.backward(retain_graph=True)
+            Discriminator_auto_loss.backward(retain_graph=True)
             self.Discriminator_optimizer.step()
-
-        return Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BB.detach()
+        return Discriminator_inpaint_loss.detach(), Discriminator_auto_loss.detach(), pred_real_AB.detach(), pred_fake_BB.detach()
 
     def Discriminator_Inpainting_updater(self, val=False):
         self.Discriminator.zero_grad()
@@ -641,13 +646,14 @@ class Training_Framework():
         pred_real_AB = self.Discriminator(real_AB)
 
         #Calculate loss # loss_real = - torch.mean(real_pred) loss_fake = torch.mean(fake_pred)
-        Total_Discriminator_loss = self.Discriminator_loss(pred_fake_BA, pred_real_AB)
-        autoencoder_loss = torch.zeros(1)
+        Discriminator_inpaint_loss = self.Discriminator_loss(pred_fake_BA, pred_real_AB)
+        Discriminator_auto_loss = torch.zeros(1)
+
         if not val:
-            Total_Discriminator_loss.backward(retain_graph=True)
+            Discriminator_inpaint_loss.backward(retain_graph=True)
             self.Discriminator_optimizer.step()
 
-        return Total_Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
+        return Discriminator_inpaint_loss.detach(), Discriminator_auto_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
 
     
     def FromTorchTraining(self, image):
@@ -711,8 +717,8 @@ class Training_Framework():
                     self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
                     self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
                     self.mask = mask.to(self.device) # local loss coordinates
-                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
-                    GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
+                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_Inpainting_updater(val=True)
+                    GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_Inpainting_updater(val=True)
 
                     #Analytics
                     if num == 0 or num % self.N_validation_sample_rate == 0:
@@ -752,9 +758,9 @@ class Training_Framework():
                     self.mask = mask.to(self.device) # local loss coordinates
                     # Discriminator return Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
                     #Generator    return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
-                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater()
+                    DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_Inpainting_updater()
                     if num % self.n_crit == 0:
-                        GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_updater()
+                        GEN_loss, GEN_AutoEncoder_loss, loss_pixel, local_loss_pixel, DeepFeatureloss = self.Generator_Inpainting_updater()
 
                     if num == 0 or num % self.N_training_sample_rate == 0:
                         self.Collector.Analytics_run(num, epoch, GEN_loss, DIS_loss, loss_pixel, local_loss_pixel, DeepFeatureloss, DIS_AutoEncoder_loss, GEN_AutoEncoder_loss, torch.mean(predicted_real), torch.mean(predicted_fake))   
@@ -766,7 +772,7 @@ class Training_Framework():
             self.Collector.Create_graphs()
             self.SaveState()
             #Create graph of the model scores over the epochs
-            self.Collector.MakeSaveGraph([[self.ModelScores, "Model Score"]], "epochs", "Score [PSNR + SSIM global/local]", "Model score")
+            
 
             #Something fishy about metric calc at the end of training. Using the inference.py script until further notice
             #Metrics = Model_Inference(self.Generator, val_loader, self.Settings, self.Modeldir, training=True)
