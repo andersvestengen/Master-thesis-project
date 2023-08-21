@@ -72,7 +72,8 @@ New_list = [
     "self.PSNR_Generated", 
     "self.PSNR_Generated_patch", 
     "self.SSIM_Generated", 
-    "self.SSIM_Generated_patch",]
+    "self.SSIM_Generated_patch",
+    "self.Model_Metric_Score"]
 
 Old_list = [
     "self.Generator_loss_validation", 
