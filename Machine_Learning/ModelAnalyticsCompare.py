@@ -165,18 +165,33 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
         anylytics = Old_list
     else:
         anylytics = New_list
+    smoothing = input("apply smoothing? [y/n]: ")
     for n in range(len(Analytics)):
         GraphData = []
+        print("Analytic is:", anylytics[Analytics[n]])
         for m, model in enumerate(Models):
+            if smoothing == "y":
+                Gdata = SmoothCurve(Struct[m][n])
+            else:
+                Gdata = Struct[m][n]
             modelname = model.split("/")[1].split(" ")[0]
-            print("this is n and m:", n, m)
-            Gdata = Struct[m][n]
             GraphData.append([Gdata, modelname])
-        print("Analytic is:", anylytics[n])
         xlabel = input("what is xlabel?: ")
         ylabel = input("what is ylabel?: ")
         title = input("what is title?: ")
         MakeSaveGraph(GraphData, xlabel, ylabel, title)
+
+
+def SmoothCurve(input, a=0.01):
+    """
+    Using the exponential moving average as described here:
+    https://corporatefinanceinstitute.com/resources/capital-markets/exponentially-weighted-moving-average-ewma/
+    """
+    S_t = torch.zeros(input.size(0))
+    S_t[0] = input[0]
+    for n, Y_t in enumerate(input[1:], 1):
+        S_t[n] = a*Y_t + (1 - a)*S_t[n-1]
+    return S_t
 
 def CheckVerDiff(Models):
     """
