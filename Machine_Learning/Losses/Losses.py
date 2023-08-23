@@ -109,14 +109,14 @@ class LossFunctions(nn.Module):
 
         return ( self.CGAN_loss(real_in, real) + self.CGAN_loss(fake_in, fake) ) * 0.5
 
-    def CGAN_Discriminator(self, *args): 
+    def CGAN_Discriminator(self, *args): #Where is this from??
         fake_pred, real_pred = args
         real = self.Make_Label_Tensor(real_pred, 1)
         fake = self.Make_Label_Tensor(fake_pred, 0)
 
         return self.CGAN_loss(real_pred, real) + self.CGAN_loss(fake_pred, fake) * 0.5 
 
-    def CGAN_Generator(self, fake_pred): # Losses must be supplied as: ( *input, *target ) !
+    def CGAN_Generator(self, fake_pred): #Where is this from ? 
         real = self.Make_Label_Tensor(fake_pred, 1)
         return self.CGAN_loss(fake_pred, real)
 

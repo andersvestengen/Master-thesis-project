@@ -417,25 +417,36 @@ class Training_Framework():
             self.Generator_loss                     = self.losses.Hinge_loss_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
             self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
+            self.Generator_Deep_Feature_Loss        = self.losses.Latent_Feature_Criterion
         if Settings["Loss"] == "WGAN":
             self.Discriminator_loss                 = self.losses.WGAN_Discriminator
             self.Generator_loss                     = self.losses.WGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
             self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
+            self.Generator_Deep_Feature_Loss        = self.losses.Latent_WGAN_Loss
         if Settings["Loss"] == "CGAN":
             self.Discriminator_loss                 = self.losses.CGAN_Discriminator
             self.Generator_loss                     = self.losses.CGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
             self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
+            self.Generator_Deep_Feature_Loss        = self.losses.Latent_Feature_Criterion
         if Settings["Loss"] == "WGANGP":
             self.Discriminator_loss                 = self.losses.WGANGP_Discriminator
             self.Generator_loss                     = self.losses.WGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
             self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
+            self.Generator_Deep_Feature_Loss        = self.losses.Latent_WGAN_Loss
 
-        self.Generator_Deep_Feature_Loss            = self.losses.Latent_WGAN_Loss
 
-
+        if Settings["Objective"] == "Inpainting":
+            self.Discriminator_updater              = self.Discriminator_Inpainting_updater
+            self.Generator_updater                  = self.Generator_Inpainting_updater
+        if Settings["Objective"] == "AutoEncoder":
+            self.Discriminator_updater              = self.Discriminator_Autoencoder_updater
+            self.Generator_updater                  = self.Generator_Autoencoder_updater         
+        if Settings["Objective"] == "DualEncoder":
+            self.Discriminator_updater              = self.Discriminator_DualEncoder_updater
+            self.Generator_updater                  = self.Generator_DualEncoder_updater
 
 
         # Set the working Directory
@@ -497,10 +508,15 @@ class Training_Framework():
             f.write("Discriminator model: " + self.Discriminator.name + "\n")
             f.write("Total training time: " + str(hours) + " hours " + str(minutes) + " minutes \n")
             f.write("Chosen loss type: " + self.Settings["Loss"] + "\n")
-            f.write("Loss function for Latent loss: " + self.Generator_Deep_Feature_Loss.__name__ + "\n")
+            try:
+                f.write("Loss function for Latent loss: " + self.Generator_Deep_Feature_Loss.__name__ + "\n")
+            except AttributeError:
+                f.write("Loss function for Latent loss: " + type(self.Generator_Deep_Feature_Loss).__name__ + "\n")
             f.write("Loss function for Discriminator loss: " + self.Discriminator_loss.__name__ + "\n")
             f.write("Loss function for Generator loss: " + self.Generator_loss.__name__ + "\n")
             f.write("Loss function for Generator pixel loss: " + self.Generator_pixelloss.__name__ + "\n")
+            f.write("Generator updater function: " + self.Generator_updater.__name__ + "\n")
+            f.write("Discriminator updater function: " + self.Discriminator_updater.__name__ + "\n")
             f.write("Loss function for Generator auto encoder pixel loss: " + self.Generator_autoencoder_pixelloss.__name__ + "\n")
             f.write("Internal Loss criterion for global pixel loss: " + type(self.losses.pixelwise_loss).__name__ + "\n")
             f.write("Internal Loss criterion for local pixel loss: " + type(self.losses.pixelwise_local_loss).__name__ + "\n")
@@ -508,7 +524,7 @@ class Training_Framework():
             f.write("Final model score: " + str(self.ModelScores[-1]) + "\n")
 
 
-    def Generator_updater(self, val=False):
+    def Generator_DualEncoder_updater(self, val=False):
         self.Generator.zero_grad()    
         # Generator GAN loss
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)     
@@ -596,7 +612,7 @@ class Training_Framework():
         # return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel_BA.detach(), local_pixelloss_BA.detach(), LatentLoss.detach()        
         return loss_GAN_BA.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
 
-    def Discriminator_updater(self, val=False):
+    def Discriminator_DualEncoder_updater(self, val=False):
         self.Discriminator.zero_grad()
         #Get Critique scores
         fake_BB = torch.cat((self.fake_BB, self.real_B), 1)
