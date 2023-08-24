@@ -423,7 +423,7 @@ class Training_Framework():
             self.Generator_loss                     = self.losses.WGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
             self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
-            self.Generator_Deep_Feature_Loss        = self.losses.Latent_WGAN_Loss
+            self.Generator_Deep_Feature_Loss        = self.losses.Latent_Feature_Criterion
         if Settings["Loss"] == "CGAN":
             self.Discriminator_loss                 = self.losses.CGAN_Discriminator
             self.Generator_loss                     = self.losses.CGAN_Generator
@@ -435,7 +435,7 @@ class Training_Framework():
             self.Generator_loss                     = self.losses.WGAN_Generator
             self.Generator_pixelloss                = self.losses.Generator_Pixelloss
             self.Generator_autoencoder_pixelloss    = self.losses.Generator_Autoencoder_Pixelloss
-            self.Generator_Deep_Feature_Loss        = self.losses.Latent_WGAN_Loss
+            self.Generator_Deep_Feature_Loss        = self.losses.Latent_Feature_Criterion
 
 
         if Settings["Objective"] == "Inpainting":
@@ -516,6 +516,8 @@ class Training_Framework():
             f.write("Loss function for Generator loss: " + self.Generator_loss.__name__ + "\n")
             f.write("Loss function for Generator pixel loss: " + self.Generator_pixelloss.__name__ + "\n")
             f.write("Generator updater function: " + self.Generator_updater.__name__ + "\n")
+            f.write("Number of training samples:" + str(len(self.train_loader) * 16) + "\n")
+            f.write("Number of validation samples:" + str(len(self.validation_loader) * 16) + "\n")
             f.write("Discriminator updater function: " + self.Discriminator_updater.__name__ + "\n")
             f.write("Loss function for Generator auto encoder pixel loss: " + self.Generator_autoencoder_pixelloss.__name__ + "\n")
             f.write("Internal Loss criterion for global pixel loss: " + type(self.losses.pixelwise_loss).__name__ + "\n")
@@ -566,7 +568,7 @@ class Training_Framework():
         loss_GAN_BB = self.Generator_loss(predicted_fake_BB)
         
         #Pixelwise loss
-        loss_pixel =  self.Generator_pixelloss(self.fake_BB, self.real_B)#self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
+        loss_pixel =  self.Generator_autoencoder_pixelloss(self.fake_BB, self.real_B)#self.Generator_pixelloss(self.fake_BB, self.real_B, self.mask)
 
         total_pixelloss_BB = loss_pixel * self.Settings["L1_loss_weight"]
 

@@ -93,6 +93,36 @@ Old_list = [
     "self.Discriminator_auto_loss_validation", 
     "self.Generator_auto_loss_validation",]
 
+
+def FindShiftVal(Modeldir):
+
+    model_inf = []
+    print("This is the modeldir:", Modeldir)
+    with open(Modeldir + "/Savestate.txt", 'r') as f:
+        model_inf = [Line for Line in f]
+    # "Number of validation samples:"
+    model_arch = ":"
+    epochs = 0
+    batches = 0
+    for line in model_inf:
+        try:
+            model_arch = line.split(':')
+            if model_arch[0] == "epochs":
+                epochs = int(model_arch[1].split("\n")[0])
+            if model_arch[0] == "batch_size":
+                batches = int(model_arch[1].split("\n")[0])
+            if model_arch[0] == "Number of validation samples":
+                print("Shift set to:", model_arch[1].split("\n")[0])
+                shift = int(model_arch[1].split("\n")[0]) / batches / epochs
+                print("Shift set to:", shift)
+                return shift 
+        except:
+            pass
+        else:
+            continue
+        break
+
+
 def ListPrint(list):
     """
     Prints input to screen, line by line.
@@ -133,7 +163,7 @@ def GetDataAlg(Models, Analytics, gen):
             if gen == "new":
                 data = torch.load(model + "/Analytics.pt", map_location=torch.device('cpu'))
                 if dim <= 16:
-                    data_dim = data[dim][10:]
+                    data_dim = data[dim]#[10:]
                 else:
                     data_dim = data[dim]
             Modeldata.append(data_dim)
@@ -171,13 +201,20 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
         for n in range(len(Analytics)):
             GraphData = []
             print("Analytic is:", anylytics[Analytics[n]])
+            shift = input("Apply x-axis shift? [whole number, blank is no]: ")
             for m, model in enumerate(Models):
                 if smoothing == "y":
                     Gdata = SmoothCurve(Struct[m][n])
                 else:
                     Gdata = Struct[m][n]
                 modelname = model.split("/")[1].split(" ")[0]
-                GraphData.append([Gdata, modelname])
+                if shift == "y":
+                    shiftval = FindShiftVal(Models[m])
+                    xaxis = torch.arange(int(shiftval), int(shiftval) + len(Struct[0][n]), 1)
+                    GraphData.append([xaxis, Gdata, modelname])
+                else:
+                    GraphData.append([Gdata, modelname])
+
             xlabel = input("what is xlabel?: ")
             ylabel = input("what is ylabel?: ")
             title = input("what is title?: ")
@@ -187,6 +224,7 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
         print("modelname:", Models[0].split("/")[1].split(" ")[0])
         for n in range(len(Analytics)):
             print("Analytic is:", anylytics[Analytics[n]].split(".")[1])
+            shift = input("Apply x-axis shift? [y/n]: ")
             if smoothing == "y":
                 Gdata = SmoothCurve(Struct[0][n])
             else:
@@ -194,13 +232,19 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
             analyticname = input("cleaner analyticname?: ")
             if analyticname == "":
                 analyticname = anylytics[Analytics[n]].split(".")[1]
-            GraphData.append([Gdata, analyticname])
+            if shift == "y":
+                shiftval = FindShiftVal(Models[0])
+                xaxis = torch.arange(int(shiftval), int(shiftval) + len(Struct[0][n]), 1)
+                print("Struct len and xaxis len is:", len(Struct[0][n]), xaxis.size(0))
+                GraphData.append([xaxis, Gdata, analyticname])
+            else:
+                GraphData.append([Gdata, analyticname])
         xlabel = input("what is xlabel?: ")
         ylabel = input("what is ylabel?: ")
         title = input("what is the title?: ")
         MakeSaveGraph(GraphData, xlabel, ylabel, title)
 
-def SmoothCurve(input, a=0.01):
+def SmoothCurve(input, a=0.05):
     """
     Using the exponential moving average as described here:
     https://corporatefinanceinstitute.com/resources/capital-markets/exponentially-weighted-moving-average-ewma/

@@ -85,8 +85,8 @@ class LossFunctions(nn.Module):
     def WGAN_Discriminator(self, *args):
         fake_pred, real_pred = args
 
-        loss_real = - torch.mean(real_pred)
-        loss_fake = torch.mean(fake_pred)
+        loss_real = torch.mean(real_pred)
+        loss_fake = - torch.mean(fake_pred)
 
         return loss_real + loss_fake
 
@@ -100,7 +100,7 @@ class LossFunctions(nn.Module):
 
 
     def WGAN_Generator(self, fake_pred):
-        return - torch.mean(fake_pred)
+        return torch.mean(fake_pred)
 
     def CGAN_Dual_Encoder_Discriminator(self, *args): 
         fake_in, real_in = args
@@ -114,7 +114,7 @@ class LossFunctions(nn.Module):
         real = self.Make_Label_Tensor(real_pred, 1)
         fake = self.Make_Label_Tensor(fake_pred, 0)
 
-        return self.CGAN_loss(real_pred, real) + self.CGAN_loss(fake_pred, fake) * 0.5 
+        return ( self.CGAN_loss(real_pred, real) + self.CGAN_loss(fake_pred, fake) ) * 0.5
 
     def CGAN_Generator(self, fake_pred): #Where is this from ? 
         real = self.Make_Label_Tensor(fake_pred, 1)
