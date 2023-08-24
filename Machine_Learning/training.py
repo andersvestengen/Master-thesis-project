@@ -48,7 +48,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Inpainter_AltWGAN_L1_Global_Kaiming_500K",
+            "ModelTrainingName"     : "Inpainter_WGAN_L1_Global_and_local_Kaiming_500K",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 0.823, # Should be 100K per epoch #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True

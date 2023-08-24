@@ -517,7 +517,7 @@ class Training_Framework():
             f.write("Loss function for Generator pixel loss: " + self.Generator_pixelloss.__name__ + "\n")
             f.write("Generator updater function: " + self.Generator_updater.__name__ + "\n")
             f.write("Number of training samples:" + str(len(self.train_loader) * 16) + "\n")
-            f.write("Number of validation samples:" + str(len(self.validation_loader) * 16) + "\n")
+            f.write("Number of validation samples:" + str(len(self.val_loader) * 16) + "\n")
             f.write("Discriminator updater function: " + self.Discriminator_updater.__name__ + "\n")
             f.write("Loss function for Generator auto encoder pixel loss: " + self.Generator_autoencoder_pixelloss.__name__ + "\n")
             f.write("Internal Loss criterion for global pixel loss: " + type(self.losses.pixelwise_loss).__name__ + "\n")
