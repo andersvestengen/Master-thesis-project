@@ -122,11 +122,34 @@ class PixPatchGANDiscriminator(nn.Module):
     def forward(self, input):
         return self.model(input)
     
+class Discriminator_layer(nn.Module):
+    def __init__(self, channel_in, channel_out, last=False, snormalization=True, batchnorm=False, dropout=False):
+        super(Discriminator_layer, self).__init__()
+        if snormalization:
+            layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, kernel_size=1, stride=1, padding=0))
+                    ]
+        else:
+            layers = [nn.Conv2d(channel_in, channel_out, kernel_size=1, stride=1, padding=0)
+                    ]
+            
+        if dropout:
+            layers.append(nn.Dropout(0.25))
 
+        if batchnorm:
+            layers.append(nn.BatchNorm2d())
+
+        if not last:    
+            layers.append(nn.LeakyReLU(0.2, True))            
+
+        self.model = nn.Sequential(*layers)       
+
+    def forward(self, input):
+        output =  self.model(input)
+        return output
 
 class PixelDiscriminator(nn.Module):
 
-    def __init__(self, input_channels=3, norm_layer=True, use_bias=False):
+    def __init__(self, input_channels=3, snormalization=True, batchnorm=False, dropout=False):
 
 
         super(PixelDiscriminator, self).__init__()
@@ -138,6 +161,16 @@ class PixelDiscriminator(nn.Module):
         else:
             use_bias = norm_layer == nn.InstanceNorm2d
         """
+        model = [
+            Discriminator_layer(input_channels*2, 32, snormalization=snormalization, batchnorm=batchnorm, dropout=dropout),
+            Discriminator_layer(32, 64, snormalization=snormalization, batchnorm=batchnorm, dropout=dropout),
+            Discriminator_layer(64, 128, snormalization=snormalization, batchnorm=batchnorm, dropout=dropout),
+            Discriminator_layer(128, 256, snormalization=snormalization, batchnorm=batchnorm, dropout=dropout),
+            Discriminator_layer(256, 512, snormalization=snormalization, batchnorm=batchnorm, dropout=dropout),
+            Discriminator_layer(512, 1, last=True, snormalization=snormalization, batchnorm=batchnorm, dropout=dropout),
+                ]
+
+        """        
         if norm_layer:
             model = [
                 nn.utils.parametrizations.spectral_norm(nn.Conv2d(input_channels*2, 32, kernel_size=1, stride=1, padding=0)),
@@ -166,7 +199,7 @@ class PixelDiscriminator(nn.Module):
                 nn.LeakyReLU(0.2, True),
                 nn.Conv2d(512, 1, kernel_size=1, stride=1, padding=0)
             ]
-
+        """
         self.model = nn.Sequential(*model)
 
     def forward(self, input):

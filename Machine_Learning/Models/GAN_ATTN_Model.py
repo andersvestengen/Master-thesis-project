@@ -175,16 +175,23 @@ class Generator_Unet_Window_Attention(nn.Module):
 
 
 class Defect_GAN_Encoder_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out, snormalization=True):
+    def __init__(self, channel_in, channel_out, snormalization=True, batchnorm=False, dropout=False):
         super(Defect_GAN_Encoder_Layer, self).__init__()
         if snormalization:
-            layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                    nn.ReLU(),
+            layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True))
                     ]
         else:
-            layers = [nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True),
-                    nn.ReLU(),
+            layers = [nn.Conv2d(channel_in, channel_out, 4, 2, 1, bias=True)
                     ]
+
+        if dropout:
+            layers.append(nn.Dropout(0.5))
+
+        if batchnorm:
+            layers.append(nn.BatchNorm2d())
+            
+        layers.append(nn.ReLU())
+
         self.model = nn.Sequential(*layers)       
         
         
@@ -194,17 +201,22 @@ class Defect_GAN_Encoder_Layer(nn.Module):
 
 
 class Defect_GAN_Decoder_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out, snormalization=True):
+    def __init__(self, channel_in, channel_out, snormalization=True, batchnorm=False, dropout=False):
         super(Defect_GAN_Decoder_Layer, self).__init__()
         if snormalization:
-            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                    nn.ReLU(),
+            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True))
                     ]
         else:
-            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
-                    nn.ReLU(),
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)
                     ]
             
+        if dropout:
+            layers.append(nn.Dropout(0.5))
+
+        if batchnorm:
+            layers.append(nn.BatchNorm2d())
+            
+        layers.append(nn.ReLU())            
         #Might consider adding conditional batchnorm to this layer? Does it interfere with spectral norm, or influence skip connections the wrong way? 
         self.model = nn.Sequential(*layers)       
         
@@ -216,16 +228,23 @@ class Defect_GAN_Decoder_Layer(nn.Module):
 
 
 class Defect_GAN_Final_Layer(nn.Module):
-    def __init__(self, channel_in, channel_out, snormalization=True):
+    def __init__(self, channel_in, channel_out, snormalization=True, batchnorm=False, dropout=False):
         super(Defect_GAN_Final_Layer, self).__init__()
         if snormalization:
-            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)),
-                    nn.Tanh(),
+            layers = [nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True))
                     ]
         else:
-            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True),
-                    nn.Tanh(),
+            layers = [nn.ConvTranspose2d(channel_in, channel_out, 4, 2, 1, bias=True)
                     ]
+            
+        if dropout:
+            layers.append(nn.Dropout(0.5))
+
+        if batchnorm:
+            layers.append(nn.BatchNorm2d())
+            
+        layers.append(nn.Tanh())   
+
         #Might consider adding conditional batchnorm to this layer? Does it interfere with spectral norm, or influence skip connections the wrong way? 
         self.model = nn.Sequential(*layers)       
         
@@ -236,28 +255,38 @@ class Defect_GAN_Final_Layer(nn.Module):
 
 #Unet structure with SN and Sagan improvements along with skip connections. Structure also follows some of the DAM-GAN principles
 class Generator_Defect_GAN(nn.Module):
-    def __init__(self, input_channels=3, output_channels=3, snormalization=True):
+    def __init__(self, input_channels=3, output_channels=3, snormalization=True, batchnorm=False, dropout=False):
         super(Generator_Defect_GAN, self).__init__()
         self.name = "Generator_Defect_GAN"
         #Encoder layers
-        self.encoder1 = Defect_GAN_Encoder_Layer(input_channels, 64, snormalization=snormalization) # 128
-        self.encoder2 = Defect_GAN_Encoder_Layer(64, 128, snormalization=snormalization) # 64
-        self.encoder3 = Defect_GAN_Encoder_Layer(128, 256, snormalization=snormalization) # 32
-        self.encoder4 = Defect_GAN_Encoder_Layer(256, 512, snormalization=snormalization) # 16
+        self.encoder1 = Defect_GAN_Encoder_Layer(input_channels, 64, snormalization=snormalization, batchnorm=batchnorm) # 128
+        self.encoder2 = Defect_GAN_Encoder_Layer(64, 128, snormalization=snormalization, batchnorm=batchnorm) # 64
+        self.encoder3 = Defect_GAN_Encoder_Layer(128, 256, snormalization=snormalization, batchnorm=batchnorm) # 32
+        self.encoder4 = Defect_GAN_Encoder_Layer(256, 512, snormalization=snormalization, batchnorm=batchnorm) # 16
 
         #Center layer
         if snormalization:
-            self.center = nn.Sequential(nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 1, dilation=1, bias=True)), # 16
-                    nn.ReLU())
+            center_layers = [nn.utils.parametrizations.spectral_norm(nn.Conv2d(512, 512, 1, dilation=1, bias=True)) # 16
+                            ]
         else:
-            self.center = nn.Sequential(nn.Conv2d(512, 512, 1, dilation=1, bias=True), # 16
-                    nn.ReLU())
+            center_layers = [nn.Conv2d(512, 512, 1, dilation=1, bias=True) # 16
+                            ]
+            
+        if dropout:
+            center_layers.append(nn.Dropout(0.5))
+
+        if batchnorm:
+            center_layers.append(nn.BatchNorm2d())
+            
+        center_layers.append(nn.ReLU())    
+
+        self.center = nn.Sequential(*center_layers)
 
 
         #Decoder layers
-        self.decoder1 = Defect_GAN_Decoder_Layer(512, 256, snormalization=snormalization) # 16 -> 32
-        self.decoder2 = Defect_GAN_Decoder_Layer(256, 128, snormalization=snormalization) # 32 -> 64
-        self.decoder3 = Defect_GAN_Decoder_Layer(128, 64, snormalization=snormalization) # 32 -> 64
+        self.decoder1 = Defect_GAN_Decoder_Layer(512, 256, snormalization=snormalization, batchnorm=batchnorm) # 16 -> 32
+        self.decoder2 = Defect_GAN_Decoder_Layer(256, 128, snormalization=snormalization, batchnorm=batchnorm) # 32 -> 64
+        self.decoder3 = Defect_GAN_Decoder_Layer(128, 64, snormalization=snormalization, batchnorm=batchnorm) # 32 -> 64
 
         # output
         if snormalization:
