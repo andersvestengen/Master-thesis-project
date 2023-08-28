@@ -133,10 +133,10 @@ class Discriminator_layer(nn.Module):
                     ]
             
         if dropout:
-            layers.append(nn.Dropout(0.25))
+            layers.append(nn.Dropout(0.5))
 
         if batchnorm:
-            layers.append(nn.BatchNorm2d())
+            layers.append(nn.BatchNorm2d(channel_out))
 
         if not last:    
             layers.append(nn.LeakyReLU(0.2, True))            

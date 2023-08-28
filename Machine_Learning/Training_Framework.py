@@ -7,8 +7,6 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
-#from skimage.metrics import structural_similarity as SSIM
-#from skimage.metrics import peak_signal_noise_ratio as PSNR
 from ignite.metrics import PSNR as P_PSNR
 from ignite.metrics import SSIM as P_SSIM
 from Losses.Losses import LossFunctions
@@ -17,12 +15,20 @@ import sys
 from math import ceil, floor
 
 #---------------- Helper functions ----------------------
-def PIL_concatenate_h(im1, im2, im3):
-    out = Image.new('RGB', (im1.width + im2.width + im3.width, im1.height))
-    out.paste(im1, (0,0))
-    out.paste(im2, (im1.width, 0))    
-    out.paste(im3, (im1.width + im2.width, 0))
-    return out
+def PIL_concatenate_h(arr):
+    if len(arr) == 3:
+        im1, im2, im3 = arr
+        out = Image.new('RGB', (im1.width + im2.width + im3.width, im1.height))
+        out.paste(im1, (0,0))
+        out.paste(im2, (im1.width, 0))    
+        out.paste(im3, (im1.width + im2.width, 0))
+        return out
+    else:
+        im1,im2 = arr
+        out = Image.new('RGB', (im1.width + im2.width, im1.height))
+        out.paste(im1, (0,0))
+        out.paste(im2, (im1.width, 0))    
+        return out
 
 def Readfile(dir):
     ReadList = []
@@ -389,10 +395,13 @@ class Training_Framework():
     Legos and less like a novel.
     """
 
-    def __init__(self, Settings, Generator, G_opt, D_opt, Discriminator, train_loader, val_loader):
+    def __init__(self, Settings, Autoencoder, Generator, G_opt, D_opt, Discriminator, train_loader, val_loader):
         torch.manual_seed(Settings["seed"])
         np.random.seed(Settings["seed"])
         self.Settings = Settings
+        self.Autoencoder = Autoencoder
+        if self.Autoencoder is not None:
+            self.Autoencoder.eval()
         self.Generator = Generator
         self.Generator_optimizer = G_opt
         self.Discriminator = Discriminator
@@ -408,7 +417,8 @@ class Training_Framework():
         self.transmit = False # No reason to do file transfer in the future
         self.train_loader = train_loader
         self.val_loader = val_loader
-        
+        self.InpainterRun = False # inpainter flag
+        self.AutoencoderRun = False # Autoencoder flag
         #Initialize loss functions
         self.losses = LossFunctions(self.device, Discriminator, Settings)
 
@@ -439,15 +449,27 @@ class Training_Framework():
 
 
         if Settings["Objective"] == "Inpainting":
+            self.InpainterRun = True # inpainter flag
             self.Discriminator_updater              = self.Discriminator_Inpainting_updater
             self.Generator_updater                  = self.Generator_Inpainting_updater
         if Settings["Objective"] == "AutoEncoder":
+            self.AutoencoderRun = True # Autoencoder flag
             self.Discriminator_updater              = self.Discriminator_Autoencoder_updater
             self.Generator_updater                  = self.Generator_Autoencoder_updater         
         if Settings["Objective"] == "DualEncoder":
+            self.InpainterRun = True # inpainter flag
+            self.AutoencoderRun = True # Autoencoder flag
             self.Discriminator_updater              = self.Discriminator_DualEncoder_updater
             self.Generator_updater                  = self.Generator_DualEncoder_updater
-
+        if Settings["Objective"] == "InpainterWithLatentAutoencoder":
+            self.InpainterRun = True # inpainter flag
+            self.AutoencoderRun = True # Autoencoder flag
+            self.Discriminator_updater              = self.Discriminator_Inpainting_updater
+            self.Generator_updater                  = self.Generator_InpaintLatent_updater
+        if Settings["Objective"] == "NoGAN":
+            self.InpainterRun = True # inpainter flag
+            self.Discriminator_updater              = self.Discriminator_NoGAN
+            self.Generator_updater                  = self.Generator_NoGAN
 
         # Set the working Directory
         if not self.Settings["dataset_loc"]:
@@ -525,6 +547,35 @@ class Training_Framework():
             f.write("Internal Loss criterion for latent loss  (if not WGAN): " + type(self.losses.Latent_Feature_Criterion).__name__ + "\n")
             f.write("Final model score: " + str(self.ModelScores[-1]) + "\n")
 
+
+    def Generator_InpaintLatent_updater(self, val=False):
+        self.Generator.zero_grad()    
+        # Generator GAN loss
+        # BB is autoencoder output 
+        # BA is inpainting output
+
+        fake_BA = torch.cat((self.fake_BA, self.real_B), 1)     
+        predicted_fake_BA = self.Discriminator(fake_BA)
+
+        loss_GAN_BA = self.Generator_loss(predicted_fake_BA)
+
+        #Pixelwise loss
+        loss_pixel_BA, local_pixelloss_BA       = self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
+
+        total_pixelloss_BA                      = loss_pixel_BA + local_pixelloss_BA * self.Settings["L1__local_loss_weight"]
+
+        #Latent Feature loss
+        _, self.Latent_BB = self.Autoencoder(self.real_B) # Autoencoder run
+        LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB) * self.Settings["Latent_loss_weight"]    
+        loss_GAN_BB = total_pixelloss_BB = torch.zeros(1)
+        #Total loss
+        Total_loss_Generator = loss_GAN_BA + LatentLoss + total_pixelloss_BA
+        
+        if not val:
+            Total_loss_Generator.backward()
+            self.Generator_optimizer.step()  
+
+        return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel_BA.detach(), local_pixelloss_BA.detach(), LatentLoss.detach()   
 
     def Generator_DualEncoder_updater(self, val=False):
         self.Generator.zero_grad()    
@@ -604,7 +655,7 @@ class Training_Framework():
         #LatentLoss = self.Generator_Deep_Feature_Loss(self.Latent_BA, self.Latent_BB)    
 
         #Total loss
-        Generator_Inpainting_loss = loss_GAN_BA + local_pixelloss * self.Settings["L1__local_loss_weight"]
+        Generator_Inpainting_loss = loss_GAN_BA + loss_pixel * self.Settings["L1_loss_weight"] + local_pixelloss * self.Settings["L1__local_loss_weight"]
         
         Total_loss_Generator = Generator_Inpainting_loss
         if not val:
@@ -612,7 +663,26 @@ class Training_Framework():
             self.Generator_optimizer.step()
    
         # return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel_BA.detach(), local_pixelloss_BA.detach(), LatentLoss.detach()        
-        return loss_GAN_BA.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
+        return loss_GAN_BA.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()  
+
+    def Generator_NoGAN(self, val=False): 
+        self.Generator.zero_grad()       
+        #Pixelwise loss
+        loss_pixel, local_pixelloss =  self.Generator_pixelloss(self.fake_BA, self.real_B, self.mask)
+
+        LatentLoss = torch.zeros(1)
+        loss_GAN_BA = torch.zeros(1) 
+
+        #Total loss
+        Generator_Inpainting_loss =  loss_pixel * self.Settings["L1_loss_weight"] + local_pixelloss * self.Settings["L1__local_loss_weight"]
+        
+        Total_loss_Generator = Generator_Inpainting_loss
+        if not val:
+            Total_loss_Generator.backward()
+            self.Generator_optimizer.step()
+   
+        # return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel_BA.detach(), local_pixelloss_BA.detach(), LatentLoss.detach()        
+        return loss_GAN_BA.detach(), LatentLoss.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()  
 
     def Discriminator_DualEncoder_updater(self, val=False):
         self.Discriminator.zero_grad()
@@ -654,6 +724,10 @@ class Training_Framework():
             self.Discriminator_optimizer.step()
         return Discriminator_inpaint_loss.detach(), Discriminator_auto_loss.detach(), pred_real_AB.detach(), pred_fake_BB.detach()
 
+    def Discriminator_NoGAN(self, val=False):
+        dummy_return_val = torch.zeros(1, requires_grad=False, device=self.device)  
+        return dummy_return_val, dummy_return_val, dummy_return_val, dummy_return_val
+    
     def Discriminator_Inpainting_updater(self, val=False):
         self.Discriminator.zero_grad()
 
@@ -704,7 +778,7 @@ class Training_Framework():
                 im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                 co = Image.fromarray(self.FromTorchTraining(real_im.squeeze(0)))
                 ma = Image.fromarray(self.FromTorchTraining(mask.squeeze(0).int()))
-            PIL_concatenate_h(ma, co, im).save(self.modeltraining_output + "/" + "Image_" + str(epoch) + ".jpg", "JPEG")
+            PIL_concatenate_h([ma, co, im]).save(self.modeltraining_output + "/" + "Image_" + str(epoch) + ".jpg", "JPEG")
 
         self.Generator.train()
 
@@ -732,8 +806,10 @@ class Training_Framework():
 
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
-                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
+                    if self.InpainterRun:
+                        self.fake_BA, self.Latent_BA = self.Generator(self.real_A) # Inpainting run
+                    if self.AutoencoderRun:
+                        self.fake_BB, self.Latent_BB = self.Generator(self.real_B) # Autoencoder run
                     self.mask = mask.to(self.device) # local loss coordinates
                     DIS_loss, DIS_AutoEncoder_loss, predicted_real, predicted_fake = self.Discriminator_updater(val=True)
                     GEN_loss, GEN_AutoEncoder_loss, loss_pixel, loss_pixel_local, DeepFeatureLoss = self.Generator_updater(val=True)
@@ -751,6 +827,10 @@ class Training_Framework():
             self.Generate_validation_images(epoch)
 
     def Trainer(self):
+            self.fake_BA = None
+            self.Latent_BA = None
+            self.fake_BB = None 
+            self.Latent_BB = None 
             epochs = tqdm(range(self.Settings["epochs"]), unit="epoch")
             for epoch in epochs:
                 epochs.set_description(f"Training the model on epoch {epoch}")
@@ -771,8 +851,11 @@ class Training_Framework():
                     
                     self.real_A = defect_images.to(self.device) #Defect
                     self.real_B = images.to(self.device) #Target
-                    self.fake_BA, self.Latent_BA = self.Generator(self.real_A)
-                    self.fake_BB, self.Latent_BB = self.Generator(self.real_B)
+                    if self.InpainterRun:
+                        self.fake_BA, self.Latent_BA = self.Generator(self.real_A) # Inpainting run
+                    if self.AutoencoderRun:
+                        self.fake_BB, self.Latent_BB = self.Generator(self.real_B) # Autoencoder run
+
                     self.mask = mask.to(self.device) # local loss coordinates
                     # Discriminator return Discriminator_loss.detach(), autoencoder_loss.detach(), pred_real_AB.detach(), pred_fake_BA.detach()
                     #Generator    return loss_GAN_BA.detach(), loss_GAN_BB.detach(), loss_pixel.detach(), local_pixelloss.detach(), LatentLoss.detach()
@@ -822,6 +905,11 @@ class Model_Inference():
         self.Reverse_Normalization = NormalizeInverse(self.Settings["Data_mean"], self.Settings["Data_std"])
         self.run_dir = run_dir
         self.BoxSet = self.Settings["BoxSet"]
+        if input("Autoencoder [y/n]?: "):
+            self.autoencoder = True
+        else:
+            self.autoencoder = False
+
         if not training:
             self.RestoreModel()
         
@@ -848,13 +936,21 @@ class Model_Inference():
         with torch.no_grad():
             for run in loader:
                 loader.set_description(f"Running {run+1}/{runs} images completed")
-                _ ,defect_image , mask = next(iter(self.dataloader))
-                real_A = defect_image.to(self.device)
-                fake_B, _ = self.model(real_A.clone())
-                im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
-                co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
-                ma = Image.fromarray(self.FromTorchTraining(mask.squeeze(0).int()))
-                PIL_concatenate_h(ma, co, im).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
+                if self.autoencoder:
+                    gt_image ,_ , _ = next(iter(self.dataloader))
+                    real_B = gt_image.to(self.device)
+                    fake_B, _ = self.model(real_B.clone())
+                    im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
+                    co = Image.fromarray(self.FromTorchTraining(real_B.squeeze(0)))
+                    PIL_concatenate_h([co, im]).save(self.run_dir + "/output/image_" + str(run) + ".jpg")                
+                else:
+                    _ ,defect_image , mask = next(iter(self.dataloader))
+                    real_A = defect_image.to(self.device)
+                    fake_B, _ = self.model(real_A.clone())
+                    im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
+                    co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
+                    ma = Image.fromarray(self.FromTorchTraining(mask.squeeze(0).int()))
+                    PIL_concatenate_h([ma, co, im]).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
 
         print("Done!")
         print("All results saved to:")

@@ -17,7 +17,7 @@ Preprocess_dir = "/home/anders/Thesis_image_cache"
 Celeb_A_Dataset = "/home/anders/Celeb_A_Dataset"
 Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Images"
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
-Objective = ["Inpainting", "AutoEncoder", "DualEncoder"] #Choose one 
+Objective = ["Inpainting", "AutoEncoder", "DualEncoder", "InpainterWithLatentAutoencoder", "NoGAN"] #Choose one 
 Settings = {
             "epochs"                : 5,
             "batch_size"            : 16,
@@ -35,7 +35,7 @@ Settings = {
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
             "Loss"                  : losses[1], # Which GAN loss to train with?
-            "Objective"             : Objective[0],
+            "Objective"             : Objective[4],
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 29467, #362, # random training seed # 172
             "num_workers"           : 4,
@@ -48,7 +48,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Inpainter_WGAN_with_regr_Kaiming_500K",
+            "ModelTrainingName"     : "Inpainter_NoGAN_with_Vanilla_WGAN_option_Kaiming_500K",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 0.823, # Should be 100K per epoch #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
@@ -125,19 +125,44 @@ if __name__ == '__main__':
         Dis_arch = Get_name(Dis_list, model_inf)
 
         if Gen_arch == "Generator_Defect_GAN":
-            Generator = Generator_Defect_GAN(snormalization=True, batchnorm=True)
+            Generator = Generator_Defect_GAN(snormalization=False, batchnorm=False)
             RestoreModel(Generator, Generator_dir)
 
 
         if Dis_arch == "PixelDiscriminator":
-            Discriminator = PixelDiscriminator(snormalization=True, batchnorm=True)
+            Discriminator = PixelDiscriminator(snormalization=False, batchnorm=False)
             RestoreModel(Discriminator, Discriminator_dir)
     else:
-        Discriminator = PixelDiscriminator().to(device)
+        Discriminator = PixelDiscriminator(snormalization=False, batchnorm=False, dropout=False).to(device)
         init_weights(Discriminator, init_gain=1, init_type="kaiming")
-        Generator = Generator_Defect_GAN().to(device)
+        Generator = Generator_Defect_GAN(snormalization=False, batchnorm=False, dropout=False).to(device)
         init_weights(Generator, init_gain=1, init_type="kaiming", activation_function="leaky_relu")
 
+    #Configure autoencoder for latent loss of inpainter
+    Autoencoder = None
+    if Settings["Objective"] == "InpainterWithLatentAutoencoder":
+        print("Choose and Autoencoder for the latent loss ")
+        models_loc = Server_dir +  "/Trained_Models"
+        #Get dir list of all the current trained models
+        models = os.listdir(models_loc)
+
+        for num, model in enumerate(models):
+            choice = "[" + str(num) + "]    " + model
+            print(choice)
+
+        choice  = int(input("please input modelnum: "))
+
+        #Get model choice to be loaded 
+        Autoencoder_dir = models_loc + "/"  + models[choice] + "/model.pt"
+
+        modelname = models[choice]
+        model_state = models_loc + "/"  + models[choice] + "/Savestate.txt"
+        model_inf = []
+        with open(model_state, 'r') as f:
+            model_inf = [Line for Line in f]
+
+        Autoencoder = Generator_Defect_GAN(snormalization=True, batchnorm=True).to(device)
+        RestoreModel(Autoencoder, Autoencoder_dir)
 
     # Configure dataloaders
     train_dataset_file = "/home/anders/Master-thesis-project/Machine_Learning/CELEBA_Training_split"
@@ -168,5 +193,5 @@ if __name__ == '__main__':
     Discriminator_optimizer = Adam(Discriminator.parameters(), lr=Settings["lr"], betas=[0, 0.999])
 
     #Training
-    trainer = Training_Framework(Settings, Generator, Generator_optimizer, Discriminator_optimizer, Discriminator, train_loader, val_loader)
+    trainer = Training_Framework(Settings, Autoencoder, Generator, Generator_optimizer, Discriminator_optimizer, Discriminator, train_loader, val_loader)
     trainer.Trainer()

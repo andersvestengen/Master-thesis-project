@@ -188,7 +188,7 @@ class Defect_GAN_Encoder_Layer(nn.Module):
             layers.append(nn.Dropout(0.5))
 
         if batchnorm:
-            layers.append(nn.BatchNorm2d())
+            layers.append(nn.BatchNorm2d(channel_out))
             
         layers.append(nn.ReLU())
 
@@ -214,7 +214,7 @@ class Defect_GAN_Decoder_Layer(nn.Module):
             layers.append(nn.Dropout(0.5))
 
         if batchnorm:
-            layers.append(nn.BatchNorm2d())
+            layers.append(nn.BatchNorm2d(channel_out))
             
         layers.append(nn.ReLU())            
         #Might consider adding conditional batchnorm to this layer? Does it interfere with spectral norm, or influence skip connections the wrong way? 
@@ -241,7 +241,7 @@ class Defect_GAN_Final_Layer(nn.Module):
             layers.append(nn.Dropout(0.5))
 
         if batchnorm:
-            layers.append(nn.BatchNorm2d())
+            layers.append(nn.BatchNorm2d(channel_out))
             
         layers.append(nn.Tanh())   
 
@@ -276,7 +276,7 @@ class Generator_Defect_GAN(nn.Module):
             center_layers.append(nn.Dropout(0.5))
 
         if batchnorm:
-            center_layers.append(nn.BatchNorm2d())
+            center_layers.append(nn.BatchNorm2d(512))
             
         center_layers.append(nn.ReLU())    
 

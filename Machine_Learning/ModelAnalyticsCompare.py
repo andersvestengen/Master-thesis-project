@@ -75,6 +75,32 @@ New_list = [
     "self.SSIM_Generated_patch",
     "self.Model_Metric_Score"]
 
+Axis_list = {
+    "self.Generator_loss_validation" : ["samples", "Loss [WGAN]"],
+    "self.Discriminator_loss_validation": ["samples", "Loss [WGAN]"],
+    "self.Discriminator_accuracy_real_validation_raw": ["samples", "Loss [WGAN]"],
+    "self.Discriminator_accuracy_fake_validation_raw": ["samples", "Loss [WGAN]"],
+    "self.Discriminator_auto_loss_training": ["samples", "Loss [WGAN]"], 
+    "self.Generator_pixel_loss_validation": ["samples", "Loss [L1]"], 
+    "self.Generator_local_pixel_loss_validation": ["samples", "Loss [L1]"], 
+    "self.Generator_DeepFeatureLoss_validation": ["samples", "Loss [L2]"], 
+    "self.Generator_DeepFeatureLoss_training": ["samples", "Loss [L2]"], 
+    "self.Generator_loss_train": ["samples", "Loss [WGAN]"],
+    "self.Generator_pixel_loss_training": ["samples", "Loss [L1]"],
+    "self.Generator_local_pixel_loss_training": ["samples", "Loss [L1]"],
+    "self.Discriminator_loss_train": ["samples", "Loss [WGAN]"],
+    "self.Discriminator_accuracy_real_training_raw": ["samples", "Loss [WGAN]"], 
+    "self.Discriminator_accuracy_fake_training_raw": ["samples", "Loss [WGAN]"],
+    "self.Discriminator_auto_loss_validation": ["samples", "Loss [WGAN]"], 
+    "self.Generator_auto_loss_validation": ["samples", "Loss [WGAN]"],
+    "self.PSNR_Generated": ["epoch", "PSNR [dB]"], 
+    "self.PSNR_Generated_patch": ["epoch", "PSNR [dB]"], 
+    "self.SSIM_Generated": ["epoch", "SSIM [%]"],
+    "self.SSIM_Generated_patch": ["epoch", "SSIM [%]"],
+    "self.Model_Metric_Score": ["epoch", "PSNR + SSIM*100"],
+
+}
+
 Old_list = [
     "self.Generator_loss_validation", 
     "self.Discriminator_loss_validation", 
@@ -147,7 +173,7 @@ def MakeSaveGraph(datas, xlabel, ylabel, title):
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.title(title)
+    #plt.title(title)
     plt.legend()
     plt.savefig("ModelCompareImages" + "/" + title + ".png")
     plt.clf()
@@ -200,7 +226,7 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
     if len(Models) > 1:
         for n in range(len(Analytics)):
             GraphData = []
-            print("Analytic is:", anylytics[Analytics[n]])
+            print("Analytic is:", anylytics[Analytics[n]].split(".")[1])
             shift = input("Apply x-axis shift? [whole number, blank is no]: ")
             for m, model in enumerate(Models):
                 if smoothing == "y":
@@ -214,9 +240,13 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
                     GraphData.append([xaxis, Gdata, modelname])
                 else:
                     GraphData.append([Gdata, modelname])
-
-            xlabel = input("what is xlabel?: ")
-            ylabel = input("what is ylabel?: ")
+            xlabel, ylabel = Axis_list[anylytics[Analytics[n]]]
+            print("Suggested x and y axis:", xlabel, ",", ylabel)
+            if input("change?[y/n]: ") == "y":
+                xlabel = input("what is xlabel?: ")
+                ylabel = input("what is ylabel?: ")
+            if smoothing == "y":
+                ylabel += " (smoothed)"
             title = input("what is title?: ")
             MakeSaveGraph(GraphData, xlabel, ylabel, title)
     else:
@@ -239,8 +269,13 @@ def DisplayGraphs(Analytics, Struct, Models, gen):
                 GraphData.append([xaxis, Gdata, analyticname])
             else:
                 GraphData.append([Gdata, analyticname])
-        xlabel = input("what is xlabel?: ")
-        ylabel = input("what is ylabel?: ")
+        xlabel, ylabel = Axis_list[anylytics[Analytics[n]]]
+        print("Suggested x and y axis:", xlabel, ",", ylabel)
+        if input("change?[y/n]: ") == "y":
+            xlabel = input("what is xlabel?: ")
+            ylabel = input("what is ylabel?: ")
+        if smoothing == "y":
+            ylabel += " (smoothed)"
         title = input("what is the title?: ")
         MakeSaveGraph(GraphData, xlabel, ylabel, title)
 

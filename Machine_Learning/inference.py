@@ -119,7 +119,7 @@ if __name__ == '__main__':
 			Model = Generator_Unet_Attention()
 
 		if model_arch == "Generator_Defect_GAN":
-			Model = Generator_Defect_GAN()
+			Model = Generator_Defect_GAN(snormalization=False)
 
 		if model_arch == "UnetGenerator":
 			Model = UnetGenerator(norm_layer=torch.nn.InstanceNorm2d)
