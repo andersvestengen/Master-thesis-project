@@ -292,12 +292,12 @@ class Generator_Defect_GAN(nn.Module):
         if snormalization:
             self.final_layer = nn.Sequential(
                 nn.utils.parametrizations.spectral_norm(nn.ConvTranspose2d(64, output_channels, 4, 2, 1, bias=True)),
-                nn.Tanh() # 64 -> 128
+                nn.ReLU() # 64 -> 128
             )
         else:
             self.final_layer = nn.Sequential(
                 nn.ConvTranspose2d(64, output_channels, 4, 2, 1, bias=True),
-                nn.Tanh() # 64 -> 128
+                nn.ReLU() # 64 -> 128
             )
 
     def forward(self, input):

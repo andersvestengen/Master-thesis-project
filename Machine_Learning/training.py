@@ -22,8 +22,8 @@ Settings = {
             "epochs"                : 5,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 100,
-            "Latent_loss_weight"    : 0,
+            "L1_loss_weight"        : 10,
+            "Latent_loss_weight"    : 1,
             "BoxSet"               : [8,8], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "Training_sample_rate"  : 15, # Sample analytics every N iterations
@@ -35,7 +35,7 @@ Settings = {
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
             "Loss"                  : losses[1], # Which GAN loss to train with?
-            "Objective"             : Objective[4],
+            "Objective"             : Objective[3],
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 29467, #362, # random training seed # 172
             "num_workers"           : 4,
@@ -48,7 +48,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Inpainter_NoGAN_with_Vanilla_WGAN_option_Kaiming_500K",
+            "ModelTrainingName"     : "LatentInpainter_L1_latent_WGAN__Kaiming_500K",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : 0.823, # Should be 100K per epoch #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True
@@ -125,17 +125,17 @@ if __name__ == '__main__':
         Dis_arch = Get_name(Dis_list, model_inf)
 
         if Gen_arch == "Generator_Defect_GAN":
-            Generator = Generator_Defect_GAN(snormalization=False, batchnorm=False)
+            Generator = Generator_Defect_GAN(snormalization=True, batchnorm=False, dropout=True)
             RestoreModel(Generator, Generator_dir)
 
 
         if Dis_arch == "PixelDiscriminator":
-            Discriminator = PixelDiscriminator(snormalization=False, batchnorm=False)
+            Discriminator = PixelDiscriminator(snormalization=True, batchnorm=False, dropout=True)
             RestoreModel(Discriminator, Discriminator_dir)
     else:
-        Discriminator = PixelDiscriminator(snormalization=False, batchnorm=False, dropout=False).to(device)
+        Discriminator = PixelDiscriminator(snormalization=True, batchnorm=False, dropout=True).to(device)
         init_weights(Discriminator, init_gain=1, init_type="kaiming")
-        Generator = Generator_Defect_GAN(snormalization=False, batchnorm=False, dropout=False).to(device)
+        Generator = Generator_Defect_GAN(snormalization=True, batchnorm=False, dropout=True).to(device)
         init_weights(Generator, init_gain=1, init_type="kaiming", activation_function="leaky_relu")
 
     #Configure autoencoder for latent loss of inpainter
@@ -161,7 +161,7 @@ if __name__ == '__main__':
         with open(model_state, 'r') as f:
             model_inf = [Line for Line in f]
 
-        Autoencoder = Generator_Defect_GAN(snormalization=True, batchnorm=True).to(device)
+        Autoencoder = Generator_Defect_GAN(snormalization=True, batchnorm=False, dropout=True).to(device)
         RestoreModel(Autoencoder, Autoencoder_dir)
 
     # Configure dataloaders
