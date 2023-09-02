@@ -166,7 +166,7 @@ class CalculateMetrics():
         
         """
 
-    def ComputeMetrics(self, iterations):
+    def ComputeMetrics(self, iterations, std=False):
         """
         Should have toggle to only compute SSIM
         """
@@ -238,8 +238,13 @@ class CalculateMetrics():
                 SSIM_fake_values_p[num] = ssim_calc.compute()
                 ssim_calc.reset()
             self.model.train()
-
-        return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean()]
+        print(PSNR_real_values)
+        if std:
+            return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean(), PSNR_real_values.std(), PSNR_fake_values.std(), PSNR_real_values_p.std(), PSNR_fake_values_p.std(), SSIM_real_values.std(), SSIM_fake_values.std(), SSIM_real_values_p.std(), SSIM_fake_values_p.std()]
+    
+        else:
+            return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean()]
+        
 
 class DataCollectionClass():
     """
@@ -969,26 +974,27 @@ class Model_Inference():
     def CreateMetrics(self):
         total_len = 500
         metric = CalculateMetrics(self.model, self.dataloader, self.device)
-        results = metric.ComputeMetrics(total_len)
+        results = metric.ComputeMetrics(total_len, std=True)
         Score = results[1] + results[3] + results[5]*100 + results[7]*100
+        print("results:", results[8:])
         if not self.training:
             metloc = self.run_dir + "/Model_metrics.txt"
         else:
             metloc = self.modeldir + "/Model_metrics.txt"
         with open(metloc, 'w') as f:
                 f.write("Full image:\n")
-                f.write(f"PSNR_real_total:                  {results[0]:.2f}  [+/- 0.67]   dB \n")
-                f.write(f"PSNR_Generated_total:             {results[1]:.2f}  [+/- 0.14]   dB \n")
+                f.write(f"PSNR_real_total:                  {results[0]:.2f}  [+/- {results[8]:.2f}]   dB \n")
+                f.write(f"PSNR_Generated_total:             {results[1]:.2f}  [+/- {results[9]:.2f}]   dB \n")
                 f.write("Defect patch:\n")
-                f.write(f"PSNR_real_defect_patch:           {results[2]:.2f}  [+/- 0.90]   dB \n")
-                f.write(f"PSNR_Generated_defect_patch:      {results[3]:.2f}  [+/- 0.37]   dB \n")
+                f.write(f"PSNR_real_defect_patch:           {results[2]:.2f}  [+/- {results[10]:.2f}]   dB \n")
+                f.write(f"PSNR_Generated_defect_patch:      {results[3]:.2f}  [+/- {results[11]:.2f}]   dB \n")
                 f.write("\n")
                 f.write("Full image:\n")
-                f.write(f"SSIM_real_total:                  {results[4]*100:.2f}  [+/- 0.00]   % \n")
-                f.write(f"SSIM_Generated_total:             {results[5]*100:.2f}  [+/- 0.06]   % \n")
+                f.write(f"SSIM_real_total:                  {results[4]*100:.2f}  [+/- {results[12]:.2f}]   % \n")
+                f.write(f"SSIM_Generated_total:             {results[5]*100:.2f}  [+/- {results[13]:.2f}]   % \n")
                 f.write("Defect patch:\n")
-                f.write(f"SSIM_real_defect_patch:           {results[6]*100:.2f}  [+/- 1.22]   % \n")
-                f.write(f"SSIM_Generated_defect_patch:      {results[7]*100:.2f}  [+/- 1.15]   % \n")
+                f.write(f"SSIM_real_defect_patch:           {results[6]*100:.2f}  [+/- {results[14]:.2f}]   % \n")
+                f.write(f"SSIM_Generated_defect_patch:      {results[7]*100:.2f}  [+/- {results[15]:.2f}]   % \n")
                 f.write("\n")
                 f.write(f"Model Score:                      {Score:.2f} [+/- 1.42] \n")
 

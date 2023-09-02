@@ -40,7 +40,7 @@ if __name__ == '__main__':
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
-				"ImageHW"               : 256,
+				"ImageHW"               : 512,
 				"RestoreModel"          : False,
 				#No spaces in the model name, please use '_'
 				"ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
 		modeldir = models_loc + "/"  + models[choice] + "/model.pt"
 		modelname = models[choice]
-		run_dir = Inference_dir + "/" + modelname
+		run_dir = Inference_dir + "/" + modelname + "_res_" + str(Settings["ImageHW"])
 		print(run_dir)
 		model_state = models_loc + "/"  + models[choice] + "/Savestate.txt"
 		model_inf = []
