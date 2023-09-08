@@ -40,18 +40,13 @@ class GAN_dataset(Dataset):
         self.Blockmode = self.Settings["Blockmode"]
         self.CenterDefect = self.Settings["CenterDefect"]
         #Define wether defects are blacked out, whited out or both
-        self.BlackWhite = torch.tensor(self.Settings["BlackorWhite"], dtype=torch.int8)
-        if self.Settings["BlackorWhite"][0] == True:
-            self.BlackWhite[0] = 0
+        if self.Settings["BlackandWhite"]:
+            self.BlackWhite = True
         else:
-            self.BlackWhite[0] = 1
-
-        if self.Settings["BlackorWhite"][1] == True:
-            # values are +1, due to torch.randint 'high' being exclusive, while low is inclusive
-            self.BlackWhite[1] = 2
-        else:
-            self.BlackWhite[1] = 1
-
+            self.BlackWhite = False
+            
+        self.Colorranges = torch.tensor(([0, 0.25], [0.75, 1])).float()
+        self.defect_range = int(self.Settings["Num Defects"])
         self.mean = self.Settings["Data_mean"]
         self.std = self.Settings["Data_std"]
 
@@ -185,43 +180,53 @@ class GAN_dataset(Dataset):
         sample = ((Total_length - margin) * torch.rand(1)).clamp(margin).to(torch.int)
 
         return sample
-
+    
+    def DefineDefectColor(self):
+        
+        if self.BlackWhite:
+            low, high = self.Colorranges[torch.randint(2, (1,))[0]]
+        else:
+            low, high = self.Colorranges[0]
+        
+        return low, high
+    
     def DefectGenerator(self, imageMatrix):
         """
         Takes a matrix-converted image and returns a training sample of that image with a randomly degraded [Boxsize * Boxsize] square, and coordinates for loss function.
         
         """
-        BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,)).to(torch.int)
-        ImageY = imageMatrix.size(1) # Height
-        ImageX = imageMatrix.size(2) # Width
-        if self.CenterDefect:
-            SampleY = int(ImageY // 2)
-            SampleX = int(ImageX // 2)
-        else:
-            SampleY = self.getSample(ImageY, BoxSize)
-            SampleX = self.getSample(ImageX, BoxSize)
+        defects = torch.randint(1, self.defect_range + 1, (1,))
+        Total_Mask = torch.ones(imageMatrix.size())
+        for i in range(defects):
+            color_low, color_high =  self.DefineDefectColor()
+            BoxSize = torch.randint(self.BoxSet[0],self.BoxSet[1] + 1, (1,)).to(torch.int)
+            ImageY = imageMatrix.size(1) # Height
+            ImageX = imageMatrix.size(2) # Width
+            if self.CenterDefect:
+                SampleY = int(ImageY // 2)
+                SampleX = int(ImageX // 2)
+            else:
+                SampleY = self.getSample(ImageY, BoxSize)
+                SampleX = self.getSample(ImageX, BoxSize)
 
 
-        #color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
-        #Doing black for now
-        if self.Blockmode:
-            #Create a solid block in the image, used in eatly training
-            minimask = torch.full((BoxSize, BoxSize), 0).float()
-            imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = minimask
-            Mask = torch.ones(imageMatrix.size())
-            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
-        else:
-            #Create a more complex defect in the image
-            defect_mask = torch.randint(0,2, ((BoxSize, BoxSize))).bool()
-            Cutout = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize]
-            r = torch.full(((3, BoxSize, BoxSize)), 0).float()[:,defect_mask]
-            Cutout[:,defect_mask] = r
-            imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = Cutout
-            #Create Mask
-            Mask = torch.ones(imageMatrix.size())
-            Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
+            #color = torch.randint(self.BlackWhite[0],self.BlackWhite[1], (1,), generator=self.defect_seed)
+            #Doing black for now
+            if self.Blockmode:
+                #Create a solid block in the image, used in eatly training
+                minimask = torch.full((BoxSize, BoxSize), 0).float()
+                imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = minimask
+            else:
+                #Create a more complex defect in the image
+                defect_mask = torch.randint(0,2, ((BoxSize, BoxSize))).bool()
+                Cutout = imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize]
+                r = torch.randn((1, BoxSize, BoxSize)).mul(color_high).clamp(color_low,color_high).float()[:,defect_mask]
+                Cutout[:,defect_mask] = r
+                imageMatrix[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = Cutout
 
-        return imageMatrix, Mask.bool()
+            Total_Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
+            
+        return imageMatrix, Total_Mask
     
 
     def __len__(self):
