@@ -226,7 +226,7 @@ class GAN_dataset(Dataset):
 
             Total_Mask[:,SampleY:SampleY + BoxSize, SampleX:SampleX + BoxSize] = torch.zeros((BoxSize, BoxSize))
             
-        return imageMatrix, Total_Mask
+        return imageMatrix, Total_Mask.bool()
     
 
     def __len__(self):
