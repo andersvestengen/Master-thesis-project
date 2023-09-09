@@ -36,11 +36,11 @@ if __name__ == '__main__':
 				"num_workers"           : 1,
             	"Data_mean"             : [0.3212, 0.3858, 0.2613],
             	"Data_std"              : [0.2938, 0.2827, 0.2658],
-            	"Do norm"               : True, #Normalization on or off 
+            	"Do norm"               : False, #Normalization on or off 
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
-				"ImageHW"               : 512,
+				"ImageHW"               : 128,
 				"RestoreModel"          : False,
 				#No spaces in the model name, please use '_'
 				"ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
