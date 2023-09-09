@@ -238,7 +238,6 @@ class CalculateMetrics():
                 SSIM_fake_values_p[num] = ssim_calc.compute()
                 ssim_calc.reset()
             self.model.train()
-        print(PSNR_real_values)
         if std:
             return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean(), PSNR_real_values.std(), PSNR_fake_values.std(), PSNR_real_values_p.std(), PSNR_fake_values_p.std(), SSIM_real_values.std(), SSIM_fake_values.std(), SSIM_real_values_p.std(), SSIM_fake_values_p.std()]
     
