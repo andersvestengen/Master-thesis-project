@@ -45,7 +45,7 @@ class GAN_dataset(Dataset):
         else:
             self.BlackWhite = False
             
-        self.Colorranges = torch.tensor(([0, 0.20], [0.80, 1])).float()
+        self.Colorranges = torch.tensor(([0, 0], [0.80, 1])).float()
         self.defect_range = int(self.Settings["Num Defects"])
         self.mean = self.Settings["Data_mean"]
         self.std = self.Settings["Data_std"]
