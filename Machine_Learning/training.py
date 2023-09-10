@@ -35,7 +35,7 @@ Settings = {
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
             "Loss"                  : losses[1], # Which GAN loss to train with?
-            "Objective"             : Objective[4],
+            "Objective"             : Objective[0],
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 29467, #362, # random training seed # 172
             "num_workers"           : 4,
@@ -48,7 +48,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "noGAN_Final_20_epochs",
+            "ModelTrainingName"     : "Final_Inpainter_20_epochs",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #0.823, # Should be 100K per epoch #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True

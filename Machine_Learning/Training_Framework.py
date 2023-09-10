@@ -970,12 +970,10 @@ class Model_Inference():
 
         return y,x
 
-    def CreateMetrics(self):
-        total_len = 500
+    def CreateMetrics(self, total_len=500):
         metric = CalculateMetrics(self.model, self.dataloader, self.device)
         results = metric.ComputeMetrics(total_len, std=True)
         Score = results[1] + results[3] + results[5]*100 + results[7]*100
-        print("results:", results[8:])
         if not self.training:
             metloc = self.run_dir + "/Model_metrics.txt"
         else:
