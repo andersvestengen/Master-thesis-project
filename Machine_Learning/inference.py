@@ -24,14 +24,13 @@ if __name__ == '__main__':
 				"epochs"                : 5,
 				"batch_size"            : 1, # This must be 1 for inference!
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-				"BoxSet"               : [8,8], # min/max defect, inclusive
+				"BoxSet"               : [7,12], # min/max defect, inclusive
 				"Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
 				"Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
-				"BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
             	"CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
 				"lr"                    : 0.0002,
-				"BlackandWhite"         : False, #Whether to use black or white defects (or both)
-				"Num Defects"           : 1,
+				"BlackandWhite"         : True, #Whether to use black or white defects (or both)
+				"Num Defects"           : 3,
 				"dataset_loc"           : Machine_learning_dir,
 				"preprocess_storage"    : Preprocess_dir,
 				"seed"                  : 172, # random training seed
@@ -91,7 +90,7 @@ if __name__ == '__main__':
 
 		imloader = DataLoader(test_set,
 										num_workers = 0,
-										batch_size = 1, 
+										batch_size = Settings["batch_size"], 
 										shuffle = True,
 										drop_last=False)
 

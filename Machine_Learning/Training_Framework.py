@@ -170,12 +170,12 @@ class CalculateMetrics():
             num_defects = torch.sum(~mask)
             side = num_defects.divide(3).sqrt().floor().to(dtype=torch.int, device="cpu")
             Whole = side**2 * 3
-            if side == 8:
+            if num_defects == Whole:
                     real_B = torch.masked_select(image, ~mask).view(1,3,side,side)
             else:
                     real_B = torch.masked_select(image, ~mask)[:-(num_defects - Whole)].view(1,3,side,side)
             return real_B
-
+        
     def ComputeMetrics(self, iterations, batch=16, std=False):
         """
         Should have toggle to only compute SSIM
@@ -212,7 +212,6 @@ class CalculateMetrics():
                 real_B = images.to(self.device) #Target 
                 fake_B, _ = self.model(real_A.clone())
                 mask = defect_mask.to(self.device)
-                batch = fake_B.size(0)
 
 
                 psnr_calc.update((real_A, real_B))
@@ -273,10 +272,10 @@ class CalculateMetrics():
                     ssim_calc.reset()
             self.model.train()
         if std:
-            return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean(), PSNR_real_values.std(), PSNR_fake_values.std(), PSNR_real_values_p.std(), PSNR_fake_values_p.std(), SSIM_real_values.std(), SSIM_fake_values.std(), SSIM_real_values_p.std(), SSIM_fake_values_p.std()]
+            return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean().mul(batch), PSNR_fake_values_p.mean().mul(batch), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean().mul(batch), SSIM_fake_values_p.mean().mul(batch), PSNR_real_values.std(), PSNR_fake_values.std(), PSNR_real_values_p.std(), PSNR_fake_values_p.std(), SSIM_real_values.std(), SSIM_fake_values.std(), SSIM_real_values_p.std(), SSIM_fake_values_p.std()]
     
         else:
-            return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean()]
+            return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean().mul(batch), PSNR_fake_values_p.mean().mul(batch), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean().mul(batch), SSIM_fake_values_p.mean().mul(batch)]
         
    
 

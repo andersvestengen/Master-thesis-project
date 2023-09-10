@@ -30,7 +30,8 @@ Settings = {
             "n_crit"                : 2, # how many Discriminator training iterations per Generator iterations
             "lambda_gp"             : 10, #WGAN-GP constant
             "Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
-            "BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
+            "BlackandWhite"         : True, #Whether to use black or white defects (or both)
+            "Num Defects"           : 3,
             "CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
