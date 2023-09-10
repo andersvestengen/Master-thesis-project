@@ -167,8 +167,8 @@ class CalculateMetrics():
         """
 
     def get_defects(self, image, mask):
-            num_defects = torch.sum(~mask)
-            side = num_defects.divide(3).sqrt().floor().to(dtype=torch.int, device="cpu")
+            num_defects = torch.sum(~mask).to(device=self.device)
+            side = num_defects.divide(3).sqrt().floor().to(dtype=torch.int, device=self.device)
             Whole = side**2 * 3
             if num_defects == Whole:
                     real_B = torch.masked_select(image, ~mask).view(1,3,side,side)
@@ -213,23 +213,6 @@ class CalculateMetrics():
                 fake_B, _ = self.model(real_A.clone())
                 mask = defect_mask.to(self.device)
 
-
-                psnr_calc.update((real_A, real_B))
-                PSNR_real_values[num] = psnr_calc.compute()
-                psnr_calc.reset()
-
-                psnr_calc.update((fake_B, real_B))
-                PSNR_fake_values[num] = psnr_calc.compute()
-                psnr_calc.reset()
-
-                ssim_calc.update((real_A, real_B))
-                SSIM_real_values[num] = ssim_calc.compute()
-                ssim_calc.reset()
-
-                ssim_calc.update((fake_B, real_B))
-                SSIM_fake_values[num] = ssim_calc.compute()
-                ssim_calc.reset()
-
                 if batch > 1:
                     for i in range(batch):
                         fake_B_local = self.get_defects(fake_B[i,:], mask[i,:])
@@ -270,6 +253,23 @@ class CalculateMetrics():
                     ssim_calc.update((fake_B_local, real_B_local))
                     SSIM_fake_values_p[num] = ssim_calc.compute()
                     ssim_calc.reset()
+
+                psnr_calc.update((real_A, real_B))
+                PSNR_real_values[num] = psnr_calc.compute()
+                psnr_calc.reset()
+
+                psnr_calc.update((fake_B, real_B))
+                PSNR_fake_values[num] = psnr_calc.compute()
+                psnr_calc.reset()
+
+                ssim_calc.update((real_A, real_B))
+                SSIM_real_values[num] = ssim_calc.compute()
+                ssim_calc.reset()
+
+                ssim_calc.update((fake_B, real_B))
+                SSIM_fake_values[num] = ssim_calc.compute()
+                ssim_calc.reset()
+
             self.model.train()
         if std:
             return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean().mul(batch), PSNR_fake_values_p.mean().mul(batch), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean().mul(batch), SSIM_fake_values_p.mean().mul(batch), PSNR_real_values.std(), PSNR_fake_values.std(), PSNR_real_values_p.std(), PSNR_fake_values_p.std(), SSIM_real_values.std(), SSIM_fake_values.std(), SSIM_real_values_p.std(), SSIM_fake_values_p.std()]
@@ -943,6 +943,7 @@ class Model_Inference():
         self.Reverse_Normalization = NormalizeInverse(self.Settings["Data_mean"], self.Settings["Data_std"])
         self.run_dir = run_dir
         self.BoxSet = self.Settings["BoxSet"]
+        self.metric = CalculateMetrics(self.model, self.dataloader, self.device)
         if input("Autoencoder [y/n]?: "):
             self.autoencoder = True
         else:
@@ -982,12 +983,23 @@ class Model_Inference():
                     co = Image.fromarray(self.FromTorchTraining(real_B.squeeze(0)))
                     PIL_concatenate_h([co, im]).save(self.run_dir + "/output/image_" + str(run) + ".jpg")                
                 else:
-                    _ ,defect_image , mask = next(iter(self.dataloader))
-                    real_A = defect_image.to(self.device)
+                    real_image ,defect_image , mask = next(iter(self.dataloader))
+                    real_A = defect_image.to(device=self.device)
                     fake_B, _ = self.model(real_A.clone())
+                    real_B = real_image.to(device=self.device)
+                    defect_mask = mask.to(device=self.device)
+
+                    Ground_truth_area = Image.fromarray(self.FromTorchTraining(self.metric.get_defects(real_B, defect_mask).squeeze(0)))
+                    Generated_area = Image.fromarray(self.FromTorchTraining(self.metric.get_defects(fake_B, defect_mask).squeeze(0)))
+                    Defect_area = Image.fromarray(self.FromTorchTraining(self.metric.get_defects(real_A, defect_mask).squeeze(0)))
+
+                    Ground_truth_area.save(self.run_dir + "/output/image_" + str(run) + "_ground_truth_area.jpg")
+                    Generated_area.save(self.run_dir + "/output/image_" + str(run) + "_generated_area.jpg")
+                    Defect_area.save(self.run_dir + "/output/image_" + str(run) + "_defect_area.jpg")
+
                     im = Image.fromarray(self.FromTorchTraining(fake_B.squeeze(0)))
                     co = Image.fromarray(self.FromTorchTraining(real_A.squeeze(0)))
-                    ma = Image.fromarray(self.FromTorchTraining(mask.squeeze(0).int()))
+                    ma = Image.fromarray(self.FromTorchTraining(defect_mask.squeeze(0).int()))
                     PIL_concatenate_h([ma, co, im]).save(self.run_dir + "/output/image_" + str(run) + ".jpg")
 
         print("Done!")
@@ -1005,8 +1017,7 @@ class Model_Inference():
         return y,x
 
     def CreateMetrics(self, total_len=500):
-        metric = CalculateMetrics(self.model, self.dataloader, self.device)
-        results = metric.ComputeMetrics(total_len, batch=self.Settings["batch_size"], std=True)
+        results = self.metric.ComputeMetrics(total_len, batch=self.Settings["batch_size"], std=True)
         Score = results[1] + results[3] + results[5]*100 + results[7]*100
         if not self.training:
             metloc = self.run_dir + "/Model_metrics.txt"
