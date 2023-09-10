@@ -42,7 +42,7 @@ if __name__ == '__main__':
 				"shuffle"               : True,
 				"Datasplit"             : 0.7,
 				"device"                : "cuda",
-				"ImageHW"               : 128,
+				"ImageHW"               : 256,
 				"RestoreModel"          : False,
 				#No spaces in the model name, please use '_'
 				"ModelTrainingName"     : "RESOURCE_TEST_DELETE_ME",
@@ -138,7 +138,7 @@ if __name__ == '__main__':
 						os.makedirs(run_dir + "/output")
 						inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 						inference_run.Inference_run(runs=50)
-						inference_run.CreateMetrics()
+						inference_run.CreateMetrics(1000)
 						break
 					if choice == "n":
 						break
@@ -147,4 +147,4 @@ if __name__ == '__main__':
 			os.makedirs(run_dir + "/output")
 			inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 			inference_run.Inference_run()
-			inference_run.CreateMetrics()
+			inference_run.CreateMetrics(1000)
