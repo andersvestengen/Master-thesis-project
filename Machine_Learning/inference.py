@@ -30,6 +30,8 @@ if __name__ == '__main__':
 				"BlackorWhite"          : [True, False], #Whether to use black or white defects (or both)
             	"CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
 				"lr"                    : 0.0002,
+				"BlackandWhite"         : False, #Whether to use black or white defects (or both)
+				"Num Defects"           : 1,
 				"dataset_loc"           : Machine_learning_dir,
 				"preprocess_storage"    : Preprocess_dir,
 				"seed"                  : 172, # random training seed

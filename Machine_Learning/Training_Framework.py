@@ -166,6 +166,16 @@ class CalculateMetrics():
         
         """
 
+    def get_defects(self, image, mask):
+            num_defects = torch.sum(~mask)
+            side = num_defects.divide(3).sqrt().floor().to(dtype=torch.int, device="cpu")
+            Whole = side**2 * 3
+            if side == 8:
+                    real_B = torch.masked_select(image, ~mask).view(1,3,side,side)
+            else:
+                    real_B = torch.masked_select(image, ~mask)[:-(num_defects - Whole)].view(1,3,side,side)
+            return real_B
+
     def ComputeMetrics(self, iterations, std=False):
         """
         Should have toggle to only compute SSIM
@@ -178,15 +188,16 @@ class CalculateMetrics():
         with torch.no_grad():
             self.model.eval()
             total_images = total_len
+            total_defects = total_len * 16
             PSNR_real_values = torch.zeros((total_images))
             PSNR_fake_values = torch.zeros((total_images))
             SSIM_real_values = torch.zeros((total_images))
             SSIM_fake_values = torch.zeros((total_images))
 
-            PSNR_real_values_p = torch.zeros((total_images))
-            PSNR_fake_values_p = torch.zeros((total_images))
-            SSIM_real_values_p = torch.zeros((total_images))
-            SSIM_fake_values_p = torch.zeros((total_images))
+            PSNR_real_values_p = torch.zeros((total_defects))
+            PSNR_fake_values_p = torch.zeros((total_defects))
+            SSIM_real_values_p = torch.zeros((total_defects))
+            SSIM_fake_values_p = torch.zeros((total_defects))
             lbar = tqdm(range(total_images), leave=False)
             for num in lbar:
                 images, defect_images, defect_mask = next(iter(self.dataloader))
@@ -201,9 +212,7 @@ class CalculateMetrics():
                 fake_B, _ = self.model(real_A.clone())
                 mask = defect_mask.to(self.device)
                 batch = fake_B.size(0)
-                fake_B_local = torch.masked_select(fake_B, ~mask).view(batch,3,8,8)
-                real_B_local = torch.masked_select(real_B, ~mask).view(batch,3,8,8)
-                real_A_local = torch.masked_select(real_A, ~mask).view(batch,3,8,8)
+
 
 
                 psnr_calc.update((real_A, real_B))
@@ -214,14 +223,6 @@ class CalculateMetrics():
                 PSNR_fake_values[num] = psnr_calc.compute()
                 psnr_calc.reset()
 
-                psnr_calc.update((real_A_local, real_B_local))
-                PSNR_real_values_p[num] = psnr_calc.compute()
-                psnr_calc.reset()
-
-                psnr_calc.update((fake_B_local, real_B_local))
-                PSNR_fake_values_p[num] = psnr_calc.compute()
-                psnr_calc.reset()
-
                 ssim_calc.update((real_A, real_B))
                 SSIM_real_values[num] = ssim_calc.compute()
                 ssim_calc.reset()
@@ -230,13 +231,27 @@ class CalculateMetrics():
                 SSIM_fake_values[num] = ssim_calc.compute()
                 ssim_calc.reset()
 
-                ssim_calc.update((real_A_local, real_B_local))
-                SSIM_real_values_p[num] = ssim_calc.compute()
-                ssim_calc.reset()
+                for i in range(batch):
+                    fake_B_local = self.get_defects(fake_B[i,:], mask[i,:])
+                    real_A_local = self.get_defects(real_A[i,:], mask[i,:])
+                    real_B_local = self.get_defects(real_B[i,:], mask[i,:])
 
-                ssim_calc.update((fake_B_local, real_B_local))
-                SSIM_fake_values_p[num] = ssim_calc.compute()
-                ssim_calc.reset()
+                    psnr_calc.update((real_A_local, real_B_local))
+                    PSNR_real_values_p[num] = psnr_calc.compute()
+                    psnr_calc.reset()
+
+                    psnr_calc.update((fake_B_local, real_B_local))
+                    PSNR_fake_values_p[num] = psnr_calc.compute()
+                    psnr_calc.reset()
+
+                    ssim_calc.update((real_A_local, real_B_local))
+                    SSIM_real_values_p[num] = ssim_calc.compute()
+                    ssim_calc.reset()
+
+                    ssim_calc.update((fake_B_local, real_B_local))
+                    SSIM_fake_values_p[num] = ssim_calc.compute()
+                    ssim_calc.reset()
+
             self.model.train()
         if std:
             return [PSNR_real_values.mean(), PSNR_fake_values.mean(), PSNR_real_values_p.mean(), PSNR_fake_values_p.mean(), SSIM_real_values.mean(), SSIM_fake_values.mean(), SSIM_real_values_p.mean(), SSIM_fake_values_p.mean(), PSNR_real_values.std(), PSNR_fake_values.std(), PSNR_real_values_p.std(), PSNR_fake_values_p.std(), SSIM_real_values.std(), SSIM_fake_values.std(), SSIM_real_values_p.std(), SSIM_fake_values_p.std()]
