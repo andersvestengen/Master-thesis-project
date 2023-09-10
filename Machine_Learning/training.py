@@ -19,12 +19,12 @@ Standard_training_Set = "/home/anders/Master-thesis-project/Machine_Learning/Ima
 losses = ["Hinge_loss", "WGAN", "CGAN", "WGANGP"] #Choose one 
 Objective = ["Inpainting", "AutoEncoder", "DualEncoder", "InpainterWithLatentAutoencoder", "NoGAN"] #Choose one 
 Settings = {
-            "epochs"                : 20,
+            "epochs"                : 5,
             "batch_size"            : 16,
             "L1__local_loss_weight" : 100, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-            "L1_loss_weight"        : 100,
+            "L1_loss_weight"        : 10,
             "Latent_loss_weight"    : 1,
-            "BoxSet"               : [8,8], # min/max defect, inclusive
+            "BoxSet"               : [7,12], # min/max defect, inclusive
             "Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
             "Training_sample_rate"  : 15, # Sample analytics every N iterations
             "n_crit"                : 2, # how many Discriminator training iterations per Generator iterations
@@ -36,7 +36,7 @@ Settings = {
             "lr"                    : 0.0004,
             "dataset_loc"           : Server_dir,
             "Loss"                  : losses[1], # Which GAN loss to train with?
-            "Objective"             : Objective[0],
+            "Objective"             : Objective[3],
             "preprocess_storage"    : Preprocess_dir,
             "seed"                  : 29467, #362, # random training seed # 172
             "num_workers"           : 4,
@@ -49,7 +49,7 @@ Settings = {
             "ImageHW"               : 128,
             "RestoreModel"          : False,
             #No spaces in the model name, please use '_'
-            "ModelTrainingName"     : "Final_Inpainter_20_epochs",
+            "ModelTrainingName"     : "Final_LatentInpainter_Retrained_5_epochs ",
             "Drop_incomplete_batch" : True,
             "Num_training_samples"  : None, #0.823, # Should be 100K per epoch #[None] for all available images or float [0,1] for a fraction of total images
             "Pin_memory"            : True

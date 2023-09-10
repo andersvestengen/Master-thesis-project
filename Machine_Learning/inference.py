@@ -139,7 +139,7 @@ if __name__ == '__main__':
 						os.makedirs(run_dir + "/output")
 						inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 						inference_run.Inference_run(runs=50)
-						inference_run.CreateMetrics()
+						inference_run.CreateMetrics(total_len=10000)
 						break
 					if choice == "n":
 						break
@@ -148,4 +148,4 @@ if __name__ == '__main__':
 			os.makedirs(run_dir + "/output")
 			inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 			inference_run.Inference_run()
-			inference_run.CreateMetrics()
+			inference_run.CreateMetrics(total_len=10000)
