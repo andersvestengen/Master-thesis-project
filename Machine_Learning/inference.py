@@ -24,16 +24,16 @@ if __name__ == '__main__':
 				"epochs"                : 5,
 				"batch_size"            : 1, # This must be 1 for inference!
 				"L1__local_loss_weight" : 50, # Don't know how much higher than 100 is stable, 300 causes issues. Might be related to gradient calc. balooning.
-				"BoxSet"               : [8,8], # min/max defect, inclusive
+				"BoxSet"               : [7,12], # min/max defect, inclusive
 				"Loss_region_Box_mult"  : 1, # How many multiples of the defect box would you like the loss to account for?
 				"Blockmode"             : False, #Should the defects be random artifacts or solid chunks?
             	"CenterDefect"          : False, #This will disable the randomization of the defect within the image, and instead ensure the defect is always centered. Useful for initial training and prototyping.
 				"lr"                    : 0.0002,
 				"BlackandWhite"         : True, #Whether to use black or white defects (or both)
-				"Num Defects"           : 1,
+				"Num Defects"           : 3,
 				"dataset_loc"           : Machine_learning_dir,
 				"preprocess_storage"    : Preprocess_dir,
-				"seed"                  : 1842,#172, # random training seed
+				"seed"                  : 172, # random training seed
 				"num_workers"           : 1,
             	"Data_mean"             : [0.3212, 0.3858, 0.2613],
             	"Data_std"              : [0.2938, 0.2827, 0.2658],
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 						os.makedirs(run_dir + "/output")
 						inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 						inference_run.Inference_run(runs=50)
-						#inference_run.CreateMetrics()
+						inference_run.CreateMetrics()
 						break
 					if choice == "n":
 						break
@@ -148,4 +148,4 @@ if __name__ == '__main__':
 			os.makedirs(run_dir + "/output")
 			inference_run = Model_Inference(Model, imloader, Settings, modeldir, modelname=model_arch, run_dir=run_dir)
 			inference_run.Inference_run(runs=50)
-			#inference_run.CreateMetrics()
+			inference_run.CreateMetrics()

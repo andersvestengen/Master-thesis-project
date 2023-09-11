@@ -198,7 +198,6 @@ class CalculateMetrics():
             PSNR_fake_values_p = torch.zeros((total_defects))
             SSIM_real_values_p = torch.zeros((total_defects))
             SSIM_fake_values_p = torch.zeros((total_defects))
-            print("Total len:", total_len, "total defect:", total_defects)
             lbar = tqdm(range(total_images), leave=False)
             for num in lbar:
                 images, defect_images, defect_mask = next(iter(self.dataloader))
