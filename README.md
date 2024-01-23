@@ -2,7 +2,7 @@
 
 The following repository holds all the code used for testing, prototyping and creating the architecture and datasets for the project.
 
-The following images and graphs were created using the following sources.
+Images and graphs were created using the following sources.
   - Illustrations: https://github.com/HarisIqbal88/PlotNeuralNet
   - Images used for training and inference were taken from the Celeb-A dataset ref: https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html (citation provided in thesis)
 
