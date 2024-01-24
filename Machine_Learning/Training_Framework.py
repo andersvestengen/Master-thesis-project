@@ -943,7 +943,7 @@ class Model_Inference():
         self.run_dir = run_dir
         self.BoxSet = self.Settings["BoxSet"]
         self.metric = CalculateMetrics(self.model, self.dataloader, self.device)
-        if input("Autoencoder [y/n]?: "):
+        if input("Autoencoder [y/n]?: ") == "y":
             self.autoencoder = True
         else:
             self.autoencoder = False
