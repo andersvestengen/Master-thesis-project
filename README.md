@@ -1,4 +1,4 @@
-# Repository for my thesis work <br /> "Improving Image‐sensor performance by developing on‐chip machine‐learning algorithm"
+# Repository for my thesis work <br /> "Improving Image‐sensor performance by developing on‐chip machine‐learning algorithms"
 
 The following repository holds all the code used for testing, prototyping and creating the architecture and datasets for the project.
 
